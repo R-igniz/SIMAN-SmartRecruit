@@ -15,64 +15,156 @@
   <div class="main-content">
     <div id="topbar-container"></div>
     
-    <div class="card">
-      <div class="card-header">
-        <span><i class="fas fa-cog"></i> Configuración</span>
+    <!-- Sección: Configuración Rápida -->
+    <div class="config-section">
+      <div class="config-header">
+        <h2><i class="fas fa-cog"></i> Configuración del Sistema</h2>
       </div>
       
-      <div class="config-grid">
-        <div class="config-item" onclick="alert('Gestionar Usuarios')">
+      <div class="config-grid" id="configGrid">
+        <div class="config-item" onclick="abrirGestion('usuarios')">
           <i class="fas fa-users"></i>
           <span>Usuarios</span>
+          <span class="badge badge-blue" id="badgeUsuarios">0</span>
         </div>
-        <div class="config-item" onclick="alert('Gestionar Roles')">
+        <div class="config-item" onclick="abrirGestion('roles')">
           <i class="fas fa-user-tag"></i>
           <span>Roles</span>
+          <span class="badge badge-blue" id="badgeRoles">0</span>
         </div>
-        <div class="config-item" onclick="alert('Gestionar Comerciales')">
+        <div class="config-item" onclick="abrirGestion('comerciales')">
           <i class="fas fa-store"></i>
           <span>Comerciales</span>
+          <span class="badge badge-blue" id="badgeComerciales">0</span>
         </div>
-        <div class="config-item" onclick="alert('Gestionar Tiendas')">
+        <div class="config-item" onclick="abrirGestion('tiendas')">
           <i class="fas fa-shopping-bag"></i>
           <span>Tiendas</span>
+          <span class="badge badge-blue" id="badgeTiendas">0</span>
         </div>
-        <div class="config-item" onclick="alert('Gestionar Departamentos')">
+        <div class="config-item" onclick="abrirGestion('departamentos')">
           <i class="fas fa-building"></i>
           <span>Departamentos</span>
+          <span class="badge badge-blue" id="badgeDepartamentos">0</span>
         </div>
-        <div class="config-item" onclick="alert('Gestionar Estados')">
+        <div class="config-item" onclick="abrirGestion('estados')">
           <i class="fas fa-circle"></i>
           <span>Estados</span>
+          <span class="badge badge-blue" id="badgeEstados">0</span>
         </div>
-        <div class="config-item" onclick="alert('Gestionar Prioridades')">
+        <div class="config-item" onclick="abrirGestion('prioridades')">
           <i class="fas fa-flag"></i>
           <span>Prioridades</span>
+          <span class="badge badge-blue" id="badgePrioridades">0</span>
         </div>
-        <div class="config-item" onclick="alert('Gestionar Motivos')">
+        <div class="config-item" onclick="abrirGestion('motivos')">
           <i class="fas fa-question-circle"></i>
           <span>Motivos</span>
+          <span class="badge badge-blue" id="badgeMotivos">0</span>
         </div>
-        <div class="config-item" onclick="alert('Gestionar Tipos de contratación')">
+        <div class="config-item" onclick="abrirGestion('tiposContratacion')">
           <i class="fas fa-file-signature"></i>
           <span>Tipos de contratación</span>
+          <span class="badge badge-blue" id="badgeTiposContratacion">0</span>
         </div>
-        <div class="config-item" onclick="alert('Gestionar Asignaciones automáticas')">
+        <div class="config-item" onclick="abrirGestion('asignaciones')">
           <i class="fas fa-robot"></i>
           <span>Asignaciones automáticas</span>
+          <span class="badge badge-blue" id="badgeAsignaciones">0</span>
         </div>
-        <div class="config-item" onclick="alert('Gestionar Correos')">
+        <div class="config-item" onclick="abrirGestion('correos')">
           <i class="fas fa-envelope"></i>
           <span>Correos</span>
+          <span class="badge badge-blue" id="badgeCorreos">0</span>
         </div>
-        <div class="config-item" onclick="alert('Gestionar Plantillas')">
+        <div class="config-item" onclick="abrirGestion('plantillas')">
           <i class="fas fa-file-alt"></i>
           <span>Plantillas</span>
+          <span class="badge badge-blue" id="badgePlantillas">0</span>
         </div>
       </div>
     </div>
+
+    <!-- Panel de Gestión Dinámico -->
+    <div class="config-section" id="gestionPanel" style="display:none;">
+      <div class="config-header">
+        <h2 id="gestionTitulo"><i class="fas fa-list"></i> Gestión</h2>
+        <button class="btn btn-primary" onclick="abrirModalAgregar()">
+          <i class="fas fa-plus"></i> Agregar
+        </button>
+      </div>
+      
+      <div class="table-container">
+        <table class="modern-table" id="gestionTabla">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Estado</th>
+              <th style="text-align:center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="gestionBody">
+            <tr>
+              <td colspan="4" class="empty-state">
+                <i class="fas fa-inbox"></i><br />
+                No hay elementos registrados
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
-  
+
+  <!-- MODAL: Agregar/Editar -->
+  <div class="modal-overlay" id="modalGestion">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modalGestionTitulo"><i class="fas fa-plus"></i> Agregar</h3>
+        <button class="modal-close" onclick="cerrarModal('modalGestion')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="formGestion" onsubmit="guardarItem(event)">
+          <input type="hidden" id="gestionId" value="" />
+          <input type="hidden" id="gestionTipo" value="" />
+          
+          <div class="form-group">
+            <label id="labelNombre">Nombre</label>
+            <input type="text" id="gestionNombre" placeholder="Ingrese el nombre" required />
+          </div>
+          
+          <div class="form-group">
+            <label>Estado</label>
+            <select id="gestionEstado">
+              <option value="activo">Activo</option>
+              <option value="inactivo">Inactivo</option>
+            </select>
+          </div>
+          
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" onclick="cerrarModal('modalGestion')">Cancelar</button>
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i> Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Confirmación -->
+  <div class="modal-overlay" id="modalConfirmacion">
+    <div class="modal-box" style="max-width:400px; text-align:center;">
+      <div style="font-size:48px; color:var(--success); margin-bottom:16px;">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <h3 id="confirmacionTitulo" style="margin-bottom:8px;">¡Completado!</h3>
+      <p id="confirmacionMensaje" style="color:#5f6b7a; margin-bottom:20px;">Operación realizada correctamente.</p>
+      <button class="btn btn-primary" onclick="cerrarModal('modalConfirmacion')">Aceptar</button>
+    </div>
+  </div>
+
   <script src="js/auth.js"></script>
   <script src="js/router.js"></script>
   <script src="js/sidebar.js"></script>
