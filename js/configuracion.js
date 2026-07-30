@@ -1,7 +1,7 @@
 // ==========================================
 // DATA STORE - Persistencia en localStorage
 // ==========================================
-const CONFIG_STORE_KEY = 'siman_config_data';
+var CONFIG_STORE_KEY = 'siman_config_data';
 
 function obtenerDatosConfig() {
   var data = localStorage.getItem(CONFIG_STORE_KEY);
@@ -319,6 +319,39 @@ function mostrarConfirmacion(titulo, mensaje) {
   document.getElementById('confirmacionTitulo').textContent = titulo;
   document.getElementById('confirmacionMensaje').textContent = mensaje;
   abrirModal('modalConfirmacion');
+}
+
+// ==========================================
+// LIMPIAR DATOS (RESET)
+// ==========================================
+function limpiarDatos() {
+  if (!confirm('⚠️ ¿Estás seguro de limpiar TODOS los datos del sistema?\n\nSe eliminarán:\n- Centros comerciales\n- Tiendas\n- Departamentos\n- Usuarios\n- Roles\n- Estados\n- Prioridades\n- Motivos\n- Tipos de contratación\n- Asignaciones\n- Correos\n- Plantillas\n\nEsta acción no se puede deshacer.')) {
+    return;
+  }
+  
+  // Limpiar configuración
+  localStorage.removeItem(CONFIG_STORE_KEY);
+  
+  // Limpiar otros datos del sistema
+  localStorage.removeItem('siman_data');
+  localStorage.removeItem('requisiciones');
+  
+  alert('✅ Datos limpiados correctamente. Se restaurarán los valores por defecto.');
+  location.reload();
+}
+
+// ==========================================
+// EXPORTAR DATOS
+// ==========================================
+function exportarDatos() {
+  var data = obtenerDatosConfig();
+  var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'configuracion_' + new Date().toISOString().split('T')[0] + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ==========================================
