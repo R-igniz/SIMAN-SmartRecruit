@@ -78,6 +78,22 @@ function guardarDatosConfig(data) {
 }
 
 // ==========================================
+// SINCRONIZACIÓN ENTRE PESTAÑAS
+// ==========================================
+window.addEventListener('storage', function(e) {
+  if (e.key === CONFIG_STORE_KEY) {
+    // Actualizar contadores en la interfaz
+    actualizarContadores();
+    // Si estamos viendo una tabla, recargarla
+    if (tipoActual) {
+      var data = obtenerDatosConfig();
+      datosActuales = data[tipoActual] || [];
+      renderizarTabla();
+    }
+  }
+});
+
+// ==========================================
 // VARIABLES GLOBALES
 // ==========================================
 var tipoActual = '';
@@ -322,21 +338,36 @@ function mostrarConfirmacion(titulo, mensaje) {
 }
 
 // ==========================================
-// LIMPIAR DATOS (RESET)
+// LIMPIAR DATOS (CONSERVANDO USUARIOS Y ASIGNACIONES)
 // ==========================================
 function limpiarDatos() {
-  if (!confirm('⚠️ ¿Estás seguro de limpiar TODOS los datos del sistema?\n\nSe eliminarán:\n- Centros comerciales\n- Tiendas\n- Departamentos\n- Usuarios\n- Roles\n- Estados\n- Prioridades\n- Motivos\n- Tipos de contratación\n- Asignaciones\n- Correos\n- Plantillas\n\nEsta acción no se puede deshacer.')) {
+  if (!confirm('⚠️ ¿Estás seguro de limpiar los datos del sistema?\n\nSe ELIMINARÁN:\n- Roles\n- Centros comerciales\n- Tiendas\n- Departamentos\n- Estados\n- Prioridades\n- Motivos\n- Tipos de contratación\n- Correos\n- Plantillas\n\nSe CONSERVARÁN:\n- Usuarios (con sus datos)\n- Asignaciones automáticas\n\nEsta acción no se puede deshacer.')) {
     return;
   }
   
-  // Limpiar configuración
-  localStorage.removeItem(CONFIG_STORE_KEY);
+  var data = obtenerDatosConfig();
   
-  // Limpiar otros datos del sistema
-  localStorage.removeItem('siman_data');
-  localStorage.removeItem('requisiciones');
+  // Conservar usuarios y asignaciones
+  var usuarios = data.usuarios || [];
+  var asignaciones = data.asignaciones || [];
   
-  alert('✅ Datos limpiados correctamente. Se restaurarán los valores por defecto.');
+  // Reiniciar el resto a cero (arrays vacíos)
+  data.usuarios = usuarios;
+  data.asignaciones = asignaciones;
+  data.roles = [];
+  data.comerciales = [];
+  data.tiendas = [];
+  data.departamentos = [];
+  data.estados = [];
+  data.prioridades = [];
+  data.motivos = [];
+  data.tiposContratacion = [];
+  data.correos = [];
+  data.plantillas = [];
+  
+  guardarDatosConfig(data);
+  
+  alert('✅ Datos limpiados correctamente.\n\nUsuarios y asignaciones se han conservado.\nEl resto de datos se ha puesto a cero.');
   location.reload();
 }
 

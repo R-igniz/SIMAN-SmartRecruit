@@ -73,6 +73,16 @@ function cargarDatosFormulario() {
 }
 
 // ==========================================
+// SINCRONIZACIÓN ENTRE PESTAÑAS
+// ==========================================
+window.addEventListener('storage', function(e) {
+  if (e.key === CONFIG_STORE_KEY) {
+    // Recargar los selects automáticamente cuando hay cambios en configuración
+    cargarDatosFormulario();
+  }
+});
+
+// ==========================================
 // WIZARD NAVEGACIÓN
 // ==========================================
 var currentStep = 1;
