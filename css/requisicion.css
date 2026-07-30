@@ -48,6 +48,43 @@
   margin: 20px 0;
 }
 
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-group label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border: 1px solid #dce3ec;
+  background: var(--white);
+  font-size: 0.9rem;
+  font-family: var(--font);
+  transition: var(--transition);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 86, 166, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
 .btn-group {
   display: flex;
   gap: 14px;

@@ -294,6 +294,15 @@
   color: var(--primary);
 }
 
+.btn-danger {
+  background: var(--danger);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #992e2e;
+}
+
 /* ===== BADGES ===== */
 .badge {
   padding: 4px 12px;
