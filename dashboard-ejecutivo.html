@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIMAN SmartRecruit - Dashboard Ejecutivo</title>
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/ejecutivo.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+</head>
+<body>
+  <div id="sidebar-container"></div>
+  
+  <div class="main-content">
+    <div id="topbar-container"></div>
+    
+    <div class="executive-header">
+      <h1><i class="fas fa-crown" style="color:var(--primary);"></i> Dashboard Ejecutivo</h1>
+      <p>Visión estratégica del reclutamiento</p>
+    </div>
+    
+    <!-- KPIs Ejecutivos -->
+    <div class="kpi-grid executive-kpis">
+      <div class="kpi-card">
+        <div class="label">Tiempo Promedio</div>
+        <div class="value">4.7</div>
+        <div class="trend up"><i class="fas fa-arrow-up"></i> +0.3</div>
+        <div class="sub-label">días</div>
+      </div>
+      <div class="kpi-card">
+        <div class="label">Tasa de Éxito</div>
+        <div class="value">82%</div>
+        <div class="trend up"><i class="fas fa-arrow-up"></i> +5%</div>
+        <div class="sub-label">vs mes anterior</div>
+      </div>
+      <div class="kpi-card">
+        <div class="label">Top Reclutadora</div>
+        <div class="value">12</div>
+        <div class="trend up"><i class="fas fa-arrow-up"></i> +2</div>
+        <div class="sub-label">María Gómez</div>
+      </div>
+      <div class="kpi-card">
+        <div class="label">Contrataciones Mens.</div>
+        <div class="value">18</div>
+        <div class="trend up"><i class="fas fa-arrow-up"></i> +4</div>
+        <div class="sub-label">Julio 2026</div>
+      </div>
+    </div>
+    
+    <!-- Gráficas ejecutivas -->
+    <div class="executive-grid">
+      <div class="card">
+        <div class="card-header">
+          <span><i class="fas fa-chart-bar"></i> Vacantes por Tienda</span>
+        </div>
+        <div class="chart-bars">
+          <div class="chart-row">
+            <span>Gran Vía</span>
+            <div class="bar-track"><div class="bar-fill" style="width:75%;"></div></div>
+            <span>15</span>
+          </div>
+          <div class="chart-row">
+            <span>Multiplaza</span>
+            <div class="bar-track"><div class="bar-fill" style="width:60%;"></div></div>
+            <span>12</span>
+          </div>
+          <div class="chart-row">
+            <span>Galerías</span>
+            <div class="bar-track"><div class="bar-fill" style="width:40%;"></div></div>
+            <span>8</span>
+          </div>
+          <div class="chart-row">
+            <span>Metrocentro</span>
+            <div class="bar-track"><div class="bar-fill" style="width:50%;"></div></div>
+            <span>10</span>
+          </div>
+          <div class="chart-row">
+            <span>La Pradera</span>
+            <div class="bar-track"><div class="bar-fill" style="width:30%;"></div></div>
+            <span>6</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">
+          <span><i class="fas fa-users"></i> Top Reclutadoras</span>
+        </div>
+        <div class="top-list">
+          <div class="top-item">
+            <div class="top-avatar" style="background:#0056A6;">MG</div>
+            <div class="top-info">
+              <div class="top-name">María Gómez</div>
+              <div class="top-meta">12 contrataciones</div>
+            </div>
+            <span class="badge badge-green">Top</span>
+          </div>
+          <div class="top-item">
+            <div class="top-avatar" style="background:#1e6bb8;">AL</div>
+            <div class="top-info">
+              <div class="top-name">Ana López</div>
+              <div class="top-meta">9 contrataciones</div>
+            </div>
+          </div>
+          <div class="top-item">
+            <div class="top-avatar" style="background:#3b7fc9;">CR</div>
+            <div class="top-info">
+              <div class="top-name">Carlos Rodríguez</div>
+              <div class="top-meta">7 contrataciones</div>
+            </div>
+          </div>
+          <div class="top-item">
+            <div class="top-avatar" style="background:#0a4a8a;">LP</div>
+            <div class="top-info">
+              <div class="top-name">Laura Pérez</div>
+              <div class="top-meta">6 contrataciones</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Embudo de reclutamiento -->
+    <div class="card" style="margin-top:24px;">
+      <div class="card-header">
+        <span><i class="fas fa-funnel-dollar"></i> Embudo de Reclutamiento</span>
+        <span class="badge badge-blue">Julio 2026</span>
+      </div>
+      <div class="funnel">
+        <div class="funnel-stage">
+          <div class="funnel-label">CVs Recibidos</div>
+          <div class="funnel-bar" style="width:100%; background:#0056A6;">248</div>
+        </div>
+        <div class="funnel-stage">
+          <div class="funnel-label">Preseleccionados</div>
+          <div class="funnel-bar" style="width:65%; background:#1e6bb8;">161</div>
+        </div>
+        <div class="funnel-stage">
+          <div class="funnel-label">Entrevistas</div>
+          <div class="funnel-bar" style="width:38%; background:#3b7fc9;">94</div>
+        </div>
+        <div class="funnel-stage">
+          <div class="funnel-label">Ofertas</div>
+          <div class="funnel-bar" style="width:20%; background:#0a4a8a;">50</div>
+        </div>
+        <div class="funnel-stage">
+          <div class="funnel-label">Contratados</div>
+          <div class="funnel-bar" style="width:12%; background:var(--success);">30</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="js/auth.js"></script>
+  <script src="js/router.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script src="js/ejecutivo.js"></script>
+</body>
+</html>

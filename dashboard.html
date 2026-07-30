@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIMAN SmartRecruit - Dashboard</title>
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+</head>
+<body>
+  <div id="sidebar-container"></div>
+  
+  <div class="main-content">
+    <div id="topbar-container"></div>
+    
+    <!-- KPIs -->
+    <div class="kpi-grid" id="kpiGrid">
+      <div class="kpi-card">
+        <div class="label">Vacantes abiertas</div>
+        <div class="value">24</div>
+        <div class="trend up"><i class="fas fa-arrow-up"></i> +3</div>
+      </div>
+      <div class="kpi-card">
+        <div class="label">Vacantes cerradas</div>
+        <div class="value">18</div>
+        <div class="trend down"><i class="fas fa-arrow-down"></i> -1</div>
+      </div>
+      <div class="kpi-card">
+        <div class="label">Contrataciones del mes</div>
+        <div class="value">9</div>
+        <div class="trend up"><i class="fas fa-arrow-up"></i> +2</div>
+      </div>
+      <div class="kpi-card">
+        <div class="label">Tiempo promedio</div>
+        <div class="value">12d</div>
+        <div class="trend up"><i class="fas fa-arrow-up"></i> +1d</div>
+      </div>
+      <div class="kpi-card">
+        <div class="label">Solicitudes pendientes</div>
+        <div class="value">7</div>
+        <div class="trend danger"><i class="fas fa-exclamation-triangle"></i> 3 urgentes</div>
+      </div>
+      <div class="kpi-card">
+        <div class="label">Alertas</div>
+        <div class="value">4</div>
+        <div class="trend danger"><i class="fas fa-circle" style="color:var(--danger); font-size:0.5rem;"></i> 2 críticas</div>
+      </div>
+    </div>
+    
+    <!-- Gráficas -->
+    <div class="dash-grid">
+      <div class="card">
+        <div class="card-header">
+          <span><i class="fas fa-chart-bar"></i> Vacantes por comercial</span>
+          <span class="badge badge-blue">Últimos 30d</span>
+        </div>
+        <div class="chart-placeholder" id="chartCommercial">
+          <div class="bar" style="height:40px;"></div>
+          <div class="bar" style="height:70px;"></div>
+          <div class="bar" style="height:30px;"></div>
+          <div class="bar" style="height:90px;"></div>
+          <div class="bar" style="height:55px;"></div>
+          <div class="bar" style="height:85px;"></div>
+        </div>
+        <div class="chart-labels">
+          <span>Gran Vía</span><span>Multiplaza</span><span>Galerías</span>
+          <span>Metrocentro</span><span>La Pradera</span><span>Las Cascadas</span>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">
+          <span><i class="fas fa-clock"></i> Actividad reciente</span>
+          <i class="far fa-calendar-alt"></i>
+        </div>
+        <div class="mini-list">
+          <div class="item">
+            <span><i class="fas fa-file-alt" style="color:var(--primary);"></i> Requisición #R-124</span>
+            <span class="badge badge-blue">Nueva</span>
+          </div>
+          <div class="item">
+            <span><i class="fas fa-user-check" style="color:var(--success);"></i> Contratación Ana Pérez</span>
+            <span class="badge badge-green">Cerrada</span>
+          </div>
+          <div class="item">
+            <span><i class="fas fa-exclamation-triangle" style="color:var(--danger);"></i> #R-098 vencida</span>
+            <span class="badge badge-red">Urgente</span>
+          </div>
+          <div class="item">
+            <span><i class="fas fa-clock" style="color:var(--warning);"></i> #R-115 en revisión</span>
+            <span class="badge badge-yellow">Revisando</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Últimas requisiciones -->
+    <div class="card" style="margin-top:24px;">
+      <div class="card-header">
+        <span><i class="fas fa-list"></i> Últimas requisiciones</span>
+        <span class="badge badge-blue" style="cursor:pointer;" onclick="navigateTo('/mis-requisiciones')">Ver todas</span>
+      </div>
+      <div class="mini-list">
+        <div class="item">
+          <span><strong>#R-145</strong> · Analista Financiero · Gran Vía</span>
+          <span class="badge badge-yellow">Revisando</span>
+        </div>
+        <div class="item">
+          <span><strong>#R-142</strong> · Cajero · Multiplaza</span>
+          <span class="badge badge-blue">Publicada</span>
+        </div>
+        <div class="item">
+          <span><strong>#R-138</strong> · Jefe de Marketing · Galerías</span>
+          <span class="badge badge-green">Entrevistas</span>
+        </div>
+        <div class="item">
+          <span><strong>#R-130</strong> · Auxiliar RH · La Pradera</span>
+          <span class="badge badge-red">Urgente</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- IA Quick Access -->
+    <div class="card" style="margin-top:24px; background: linear-gradient(135deg, #f0f4fe 0%, #e8edf8 100%);">
+      <div class="card-header">
+        <span><i class="fas fa-robot" style="color:var(--primary);"></i> SmartRecruit AI</span>
+        <span class="badge badge-blue">Beta</span>
+      </div>
+      <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
+        <span style="font-size:14px; color:#5f6b7a;">¿Cómo puedo ayudarte hoy?</span>
+        <button class="btn btn-primary" onclick="navigateTo('/ia')" style="padding:8px 20px;">
+          <i class="fas fa-comment"></i> Consultar IA
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <script src="js/auth.js"></script>
+  <script src="js/router.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

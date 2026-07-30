@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/login.html" },
+    { "source": "/dashboard", "destination": "/dashboard.html" },
+    { "source": "/nueva-requisicion", "destination": "/nueva-requisicion.html" },
+    { "source": "/detalle", "destination": "/detalle-requisicion.html" },
+    { "source": "/reclutadora", "destination": "/reclutadora.html" },
+    { "source": "/administrar", "destination": "/administrar-requisicion.html" },
+    { "source": "/ejecutivo", "destination": "/dashboard-ejecutivo.html" },
+    { "source": "/reportes", "destination": "/reportes.html" },
+    { "source": "/configuracion", "destination": "/configuracion.html" },
+    { "source": "/notificaciones", "destination": "/notificaciones.html" },
+    { "source": "/perfil", "destination": "/perfil.html" },
+    { "source": "/ia", "destination": "/ia.html" }
+  ]
+}

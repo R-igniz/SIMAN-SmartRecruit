@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIMAN SmartRecruit - Configuración</title>
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/configuracion.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+</head>
+<body>
+  <div id="sidebar-container"></div>
+  
+  <div class="main-content">
+    <div id="topbar-container"></div>
+    
+    <div class="card">
+      <div class="card-header">
+        <span><i class="fas fa-cog"></i> Configuración</span>
+      </div>
+      
+      <div class="config-grid">
+        <div class="config-item" onclick="alert('Gestionar Usuarios')">
+          <i class="fas fa-users"></i>
+          <span>Usuarios</span>
+        </div>
+        <div class="config-item" onclick="alert('Gestionar Roles')">
+          <i class="fas fa-user-tag"></i>
+          <span>Roles</span>
+        </div>
+        <div class="config-item" onclick="alert('Gestionar Comerciales')">
+          <i class="fas fa-store"></i>
+          <span>Comerciales</span>
+        </div>
+        <div class="config-item" onclick="alert('Gestionar Tiendas')">
+          <i class="fas fa-shopping-bag"></i>
+          <span>Tiendas</span>
+        </div>
+        <div class="config-item" onclick="alert('Gestionar Departamentos')">
+          <i class="fas fa-building"></i>
+          <span>Departamentos</span>
+        </div>
+        <div class="config-item" onclick="alert('Gestionar Estados')">
+          <i class="fas fa-circle"></i>
+          <span>Estados</span>
+        </div>
+        <div class="config-item" onclick="alert('Gestionar Prioridades')">
+          <i class="fas fa-flag"></i>
+          <span>Prioridades</span>
+        </div>
+        <div class="config-item" onclick="alert('Gestionar Motivos')">
+          <i class="fas fa-question-circle"></i>
+          <span>Motivos</span>
+        </div>
+        <div class="config-item" onclick="alert('Gestionar Tipos de contratación')">
+          <i class="fas fa-file-signature"></i>
+          <span>Tipos de contratación</span>
+        </div>
+        <div class="config-item" onclick="alert('Gestionar Asignaciones automáticas')">
+          <i class="fas fa-robot"></i>
+          <span>Asignaciones automáticas</span>
+        </div>
+        <div class="config-item" onclick="alert('Gestionar Correos')">
+          <i class="fas fa-envelope"></i>
+          <span>Correos</span>
+        </div>
+        <div class="config-item" onclick="alert('Gestionar Plantillas')">
+          <i class="fas fa-file-alt"></i>
+          <span>Plantillas</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="js/auth.js"></script>
+  <script src="js/router.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script src="js/configuracion.js"></script>
+</body>
+</html>
