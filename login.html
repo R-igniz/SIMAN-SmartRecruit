@@ -1,69 +1,74 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SIMAN SmartRecruit - Login</title>
-  <link rel="stylesheet" href="css/global.css" />
-  <link rel="stylesheet" href="css/login.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SIMAN SmartRecruit - Login</title>
+    <link rel="stylesheet" href="css/global.css" />
+    <link rel="stylesheet" href="css/login.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
 </head>
 <body>
-  <div class="login-page">
-    <div class="login-left">
-      <div class="login-box">
-        <div class="logo-area">
-          <div class="logo-icon">S</div>
-          <div>
-            <span class="logo-text">SIMAN</span>
-            <span class="logo-sub">SmartRecruit</span>
-          </div>
+    <div class="login-page">
+        <div class="login-left">
+            <div class="login-box">
+                <div class="logo-area">
+                    <div class="logo-icon">S</div>
+                    <div>
+                        <span class="logo-text">SIMAN</span>
+                        <span class="logo-sub">SmartRecruit</span>
+                    </div>
+                </div>
+                <h1>Iniciar sesión</h1>
+                <p class="sub">Sistema Inteligente de Requisición y Gestión de Personal</p>
+
+                <div id="errorMessage" class="error-message" style="display:none; background:#ffdede; color:#b33c3c; padding:10px 16px; border-radius:12px; margin-bottom:16px;">
+                    <i class="fas fa-exclamation-circle"></i> <span id="errorText">Usuario o contraseña incorrectos</span>
+                </div>
+
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label>Usuario corporativo</label>
+                        <input type="email" id="username" placeholder="usuario@siman.com" value="admin@siman.com" required />
+                    </div>
+                    <div class="form-group">
+                        <label>Contraseña</label>
+                        <input type="password" id="password" placeholder="••••••••" value="admin123" required />
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</button>
+                </form>
+
+                <button class="btn btn-microsoft" onclick="alert('Redirigiendo a Microsoft 365...')" style="background:#2b2b2b; color:white; width:100%; padding:12px; border-radius:40px; border:none; font-weight:500; font-size:0.9rem; cursor:pointer; margin-top:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
+                    <i class="fab fa-microsoft"></i> Microsoft 365
+                </button>
+
+                <div class="forgot" onclick="alert('Se enviará un correo para restablecer su contraseña')" style="text-align:right; font-size:0.8rem; color:var(--primary); margin-top:12px; cursor:pointer;">
+                    Olvidé mi contraseña
+                </div>
+
+                <div class="test-users" style="margin-top:16px; padding:16px; background:var(--bg-body); border-radius:12px; font-size:0.8rem; color:var(--text-muted); line-height:1.8;">
+                    <i class="fas fa-users"></i> Usuario administrador por defecto:
+                    <span style="display:block; font-family:monospace; font-size:0.8rem; color:var(--text-primary);">
+                        <strong>👑 Administrador:</strong> admin@siman.com / admin123
+                    </span>
+                    <span style="display:block; font-size:0.7rem; color:var(--text-muted); margin-top:4px;">
+                        ℹ️ Desde Configuración podrás crear más usuarios con diferentes roles
+                    </span>
+                </div>
+            </div>
         </div>
-        <h1>Iniciar sesión</h1>
-        <p class="sub">Sistema Inteligente de Requisición y Gestión de Personal</p>
-
-        <div id="errorMessage" class="error-message" style="display:none; background:#ffdede; color:#b33c3c; padding:10px 16px; border-radius:12px; margin-bottom:16px;">
-          <i class="fas fa-exclamation-circle"></i> <span id="errorText">Usuario o contraseña incorrectos</span>
+        <div class="login-right">
+            <div class="illustration" style="text-align:center; padding:40px; background:var(--bg-card); border-radius:24px; box-shadow:var(--shadow); max-width:400px; width:100%;">
+                <i class="fas fa-users-cog" style="font-size:80px; color:#0056A6;"></i>
+                <p style="margin-top:20px; color:var(--text-muted); font-size:18px;">Gestión de Talento Moderna</p>
+                <p style="color:var(--text-muted); font-size:14px;">SIMAN SmartRecruit v2.0</p>
+            </div>
         </div>
-
-        <form id="loginForm">
-          <div class="form-group">
-            <label>Usuario corporativo</label>
-            <input type="email" id="username" placeholder="usuario@siman.com" value="admin@siman.com" required />
-          </div>
-          <div class="form-group">
-            <label>Contraseña</label>
-            <input type="password" id="password" placeholder="••••••••" value="admin123" required />
-          </div>
-          <button type="submit" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</button>
-        </form>
-
-        <button class="btn btn-microsoft" onclick="alert('Redirigiendo a Microsoft 365...')" style="background:#2b2b2b; color:white; width:100%; padding:12px; border-radius:40px; border:none; font-weight:500; font-size:0.9rem; cursor:pointer; margin-top:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
-          <i class="fab fa-microsoft"></i> Microsoft 365
-        </button>
-
-        <div class="forgot" onclick="alert('Se enviará un correo para restablecer su contraseña')" style="text-align:right; font-size:0.8rem; color:var(--primary); margin-top:12px; cursor:pointer;">
-          Olvidé mi contraseña
-        </div>
-
-        <div class="test-users" style="margin-top:16px; padding:16px; background:#f5f8ff; border-radius:12px; font-size:0.8rem; color:#5f6b7a; line-height:1.8;">
-          <i class="fas fa-users"></i> Usuario de prueba:
-          <span style="display:block; font-family:monospace; font-size:0.8rem; color:var(--gray-dark);">admin@siman.com / admin123</span>
-        </div>
-      </div>
     </div>
-    <div class="login-right">
-      <div class="illustration" style="text-align:center; padding:40px; background:var(--white); border-radius:24px; box-shadow:var(--shadow); max-width:400px; width:100%;">
-        <i class="fas fa-users-cog" style="font-size:80px; color:#0056A6;"></i>
-        <p style="margin-top:20px; color:#5f6b7a; font-size:18px;">Gestión de Talento Moderna</p>
-        <p style="color:#a0aec0; font-size:14px;">SIMAN SmartRecruit v2.0</p>
-      </div>
-    </div>
-  </div>
 
-  <script src="js/auth.js"></script>
-  <script src="js/login.js"></script>
-  <script src="js/darkmode.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/login.js"></script>
+    <script src="js/darkmode.js"></script>
 </body>
 </html>

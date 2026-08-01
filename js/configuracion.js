@@ -16,7 +16,7 @@ function obtenerDatosConfig() {
         console.error('Error al leer datos:', e);
     }
     
-    // Datos iniciales si no existen
+    // Datos iniciales - SOLO ADMIN
     var inicial = {
         usuarios: [
             { id: 1, nombre: 'Administrador', email: 'admin@siman.com', password: 'admin123', rol: 'Administrador', centro: 'Central', estado: 'activo' }
@@ -32,53 +32,16 @@ function obtenerDatosConfig() {
             { id: 2, nombre: 'Multiplaza', estado: 'activo' },
             { id: 3, nombre: 'Galerías', estado: 'activo' }
         ],
-        tiendas: [
-            { id: 1, nombre: 'Electrónica', estado: 'activo' },
-            { id: 2, nombre: 'Ropa', estado: 'activo' },
-            { id: 3, nombre: 'Calzado', estado: 'activo' }
-        ],
-        departamentos: [
-            { id: 1, nombre: 'Financiero', estado: 'activo' },
-            { id: 2, nombre: 'Marketing', estado: 'activo' },
-            { id: 3, nombre: 'RRHH', estado: 'activo' }
-        ],
-        estados: [
-            { id: 1, nombre: 'Nueva', estado: 'activo' },
-            { id: 2, nombre: 'Revisando', estado: 'activo' },
-            { id: 3, nombre: 'Publicada', estado: 'activo' },
-            { id: 4, nombre: 'Cerrado', estado: 'activo' }
-        ],
-        prioridades: [
-            { id: 1, nombre: 'Alta', estado: 'activo' },
-            { id: 2, nombre: 'Media', estado: 'activo' },
-            { id: 3, nombre: 'Baja', estado: 'activo' }
-        ],
-        motivos: [
-            { id: 1, nombre: 'Nueva posición', estado: 'activo' },
-            { id: 2, nombre: 'Reemplazo', estado: 'activo' },
-            { id: 3, nombre: 'Expansión', estado: 'activo' }
-        ],
-        tiposContratacion: [
-            { id: 1, nombre: 'Directa', estado: 'activo' },
-            { id: 2, nombre: 'Temporal', estado: 'activo' },
-            { id: 3, nombre: 'Prácticas', estado: 'activo' }
-        ],
-        asignaciones: [
-            { id: 1, nombre: 'Automática por centro', estado: 'activo' },
-            { id: 2, nombre: 'Manual', estado: 'activo' }
-        ],
-        correos: [
-            { id: 1, nombre: 'Notificación de requisición', estado: 'activo' },
-            { id: 2, nombre: 'Confirmación de contratación', estado: 'activo' }
-        ],
-        plantillas: [
-            { id: 1, nombre: 'Perfil de puesto', estado: 'activo' },
-            { id: 2, nombre: 'Carta de oferta', estado: 'activo' }
-        ],
-        cartasOferta: [
-            { id: 1, nombre: 'Carta oferta - Juan Pérez', monto: 1500, archivo: 'carta_juan.pdf', estado: 'activo' },
-            { id: 2, nombre: 'Carta oferta - María Gómez', monto: 2000, archivo: 'carta_maria.pdf', estado: 'activo' }
-        ]
+        tiendas: [],
+        departamentos: [],
+        estados: [],
+        prioridades: [],
+        motivos: [],
+        tiposContratacion: [],
+        asignaciones: [],
+        correos: [],
+        plantillas: [],
+        cartasOferta: []
     };
     localStorage.setItem(CONFIG_STORE_KEY, JSON.stringify(inicial));
     return inicial;
@@ -90,23 +53,19 @@ function obtenerDatosConfig() {
 function guardarDatosConfig(data) {
     localStorage.setItem(CONFIG_STORE_KEY, JSON.stringify(data));
     
-    // Refrescar usuarios en auth.js
     if (typeof refreshAuthUsers === 'function') {
         refreshAuthUsers();
     }
     
-    // Disparar evento para sincronizar otras pestañas
     try {
         window.dispatchEvent(new StorageEvent('storage', { 
             key: CONFIG_STORE_KEY, 
             newValue: JSON.stringify(data) 
         }));
     } catch (e) {
-        // Fallback para navegadores que no soportan StorageEvent
         console.log('Datos guardados:', data);
     }
     
-    // Actualizar contadores si existen
     if (typeof actualizarContadores === 'function') {
         actualizarContadores();
     }
@@ -119,12 +78,10 @@ window.addEventListener('storage', function(e) {
     if (e.key === CONFIG_STORE_KEY) {
         console.log('🔄 Datos sincronizados desde otra pestaña');
         
-        // Actualizar contadores
         if (typeof actualizarContadores === 'function') {
             actualizarContadores();
         }
         
-        // Recargar tabla si estamos en configuración
         if (typeof tipoActual !== 'undefined' && tipoActual) {
             var data = obtenerDatosConfig();
             datosActuales = data[tipoActual] || [];
@@ -133,14 +90,8 @@ window.addEventListener('storage', function(e) {
             }
         }
         
-        // Recargar usuarios en otras páginas
         if (document.getElementById('usuariosBody')) {
             cargarUsuarios();
-        }
-        
-        // Recargar requisiciones
-        if (document.getElementById('requisicionesBody')) {
-            cargarRequisiciones();
         }
     }
 });
@@ -198,11 +149,9 @@ function cargarSelects() {
         var select = document.getElementById(id);
         if (select) {
             var options = select.options;
-            // Mantener solo la primera opción
             while (options.length > 1) {
                 select.remove(1);
             }
-            // Agregar opciones según el caso
             if (id === 'usuarioRol' || id === 'filtroRol') {
                 data.roles.forEach(function(r) {
                     if (r.estado === 'activo') {
@@ -256,7 +205,6 @@ function abrirGestion(tipo) {
         panel.style.display = 'block';
         renderizarTabla();
     } else {
-        // Si estamos en otra página, redirigir a configuración
         navigateTo('/configuracion.html?tab=' + tipo);
     }
 }
@@ -279,7 +227,6 @@ function renderizarTabla() {
         return;
     }
 
-    // Definir columnas según tipo
     var columnas = [];
     if (tipoActual === 'usuarios') {
         columnas = ['ID', 'Nombre', 'Email', 'Rol', 'Estado', 'Acciones'];
@@ -356,7 +303,6 @@ function cerrarModal(id) {
     if (modal) modal.classList.remove('show');
 }
 
-// Cerrar modal al hacer clic fuera
 document.addEventListener('click', function(e) {
     if (e.target.classList.contains('modal-overlay')) {
         e.target.classList.remove('show');
@@ -375,7 +321,6 @@ function abrirModalAgregar() {
     document.getElementById('gestionTipo').value = tipoActual;
     document.getElementById('gestionEstado').value = 'activo';
 
-    // Ocultar campos específicos
     var camposUsuario = document.getElementById('camposUsuario');
     var camposCarta = document.getElementById('camposCarta');
     var campoNombre = document.getElementById('campoNombre');
@@ -431,7 +376,7 @@ function cargarRolesEnSelect() {
 }
 
 // ==========================================
-// GUARDAR ITEM
+// GUARDAR ITEM (CREAR O EDITAR)
 // ==========================================
 function guardarItem(e) {
     e.preventDefault();
@@ -558,7 +503,6 @@ function editarItem(id) {
     document.getElementById('gestionEstado').value = item.estado;
     document.getElementById('gestionTipo').value = tipoActual;
 
-    // Ocultar campos específicos
     var camposUsuario = document.getElementById('camposUsuario');
     var camposCarta = document.getElementById('camposCarta');
     var campoNombre = document.getElementById('campoNombre');
@@ -618,6 +562,12 @@ function eliminarItem(id) {
     var item = items.find(function(i) { return i.id === id; });
     if (!item) return;
 
+    // No permitir eliminar al administrador por defecto
+    if (tipoActual === 'usuarios' && item.email === 'admin@siman.com') {
+        alert('⚠️ No se puede eliminar al usuario administrador por defecto.');
+        return;
+    }
+
     items = items.filter(function(i) { return i.id !== id; });
     data[tipoActual] = items;
     guardarDatosConfig(data);
@@ -641,15 +591,17 @@ function mostrarConfirmacion(titulo, mensaje) {
 }
 
 // ==========================================
-// LIMPIAR DATOS
+// LIMPIAR DATOS (CONSERVAR ADMIN)
 // ==========================================
 function limpiarDatos() {
-    if (!confirm('⚠️ ¿Estás seguro de limpiar los datos del sistema?\n\nSe ELIMINARÁN:\n- Comerciales\n- Tiendas\n- Departamentos\n- Estados\n- Prioridades\n- Motivos\n- Tipos de contratación\n- Asignaciones\n- Correos\n- Plantillas\n- Cartas Oferta\n\nSe CONSERVARÁN:\n- Usuarios\n- Roles')) {
+    if (!confirm('⚠️ ¿Estás seguro de limpiar los datos del sistema?\n\nSe ELIMINARÁN:\n- Comerciales\n- Tiendas\n- Departamentos\n- Estados\n- Prioridades\n- Motivos\n- Tipos de contratación\n- Asignaciones\n- Correos\n- Plantillas\n- Cartas Oferta\n\nSe CONSERVARÁN:\n- Usuario administrador\n- Roles')) {
         return;
     }
 
     var data = obtenerDatosConfig();
-    data.usuarios = data.usuarios || [];
+    // Conservar solo el admin
+    var admin = data.usuarios.find(function(u) { return u.email === 'admin@siman.com'; });
+    data.usuarios = admin ? [admin] : [];
     data.roles = data.roles || [];
     data.comerciales = [];
     data.tiendas = [];
@@ -664,7 +616,7 @@ function limpiarDatos() {
     data.cartasOferta = [];
 
     guardarDatosConfig(data);
-    alert('✅ Datos limpiados correctamente.\n\nUsuarios y Roles se han conservado.');
+    alert('✅ Datos limpiados correctamente.\n\nUsuario administrador y Roles se han conservado.');
     location.reload();
 }
 
@@ -683,7 +635,7 @@ function exportarDatos() {
 }
 
 // ==========================================
-// CARGAR USUARIOS EN TABLA (para otras páginas)
+// CARGAR USUARIOS EN TABLA
 // ==========================================
 function cargarUsuarios() {
     var tbody = document.getElementById('usuariosBody');
@@ -715,54 +667,6 @@ function cargarUsuarios() {
             <td>${u.email}</td>
             <td><span class="badge ${rolClass}">${u.rol}</span></td>
             <td><span class="badge ${estadoClass}">${u.estado}</span></td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-
-// ==========================================
-// CARGAR REQUISICIONES
-// ==========================================
-function cargarRequisiciones() {
-    var tbody = document.getElementById('requisicionesBody');
-    if (!tbody) return;
-    
-    // Datos de ejemplo - en producción vendrían de una API
-    var requisiciones = [
-        { id: 'R-145', puesto: 'Analista Financiero', centro: 'Gran Vía', estado: 'Revisando', fecha: '2026-07-24' },
-        { id: 'R-142', puesto: 'Cajero', centro: 'Multiplaza', estado: 'Publicada', fecha: '2026-07-22' },
-        { id: 'R-138', puesto: 'Jefe de Marketing', centro: 'Galerías', estado: 'Entrevistas', fecha: '2026-07-20' },
-        { id: 'R-130', puesto: 'Auxiliar RH', centro: 'La Pradera', estado: 'Urgente', fecha: '2026-07-15' }
-    ];
-    
-    tbody.innerHTML = '';
-    if (requisiciones.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fas fa-inbox"></i>No hay requisiciones registradas</td></tr>';
-        return;
-    }
-    
-    var estadoMap = {
-        'Revisando': 'badge-yellow',
-        'Publicada': 'badge-blue',
-        'Entrevistas': 'badge-green',
-        'Urgente': 'badge-red',
-        'Cerrada': 'badge-gray',
-        'Nueva': 'badge-blue'
-    };
-    
-    requisiciones.forEach(function(r) {
-        var tr = document.createElement('tr');
-        var estadoClass = estadoMap[r.estado] || 'badge-gray';
-        tr.innerHTML = `
-            <td><strong>${r.id}</strong></td>
-            <td>${r.puesto}</td>
-            <td>${r.centro}</td>
-            <td><span class="badge ${estadoClass}">${r.estado}</span></td>
-            <td>${r.fecha}</td>
-            <td style="text-align:center;">
-                <button class="btn-icon" onclick="navigateTo('/detalle-requisicion.html')"><i class="fas fa-eye"></i></button>
-                <button class="btn-icon" onclick="navigateTo('/administrar-requisicion.html')"><i class="fas fa-edit"></i></button>
-            </td>
         `;
         tbody.appendChild(tr);
     });
