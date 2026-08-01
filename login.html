@@ -23,39 +23,39 @@
         <h1>Iniciar sesión</h1>
         <p class="sub">Sistema Inteligente de Requisición y Gestión de Personal</p>
         
+        <div id="errorMessage" class="error-message" style="display:none; background:#ffdede; color:#b33c3c; padding:10px 16px; border-radius:12px; margin-bottom:16px;">
+          <i class="fas fa-exclamation-circle"></i> <span id="errorText">Usuario o contraseña incorrectos</span>
+        </div>
+        
         <form id="loginForm">
           <div class="form-group">
             <label>Usuario corporativo</label>
-            <input type="email" id="username" placeholder="usuario@siman.com" value="carlos.aranda@siman.com" required />
+            <input type="email" id="username" placeholder="usuario@siman.com" value="admin@siman.com" required />
           </div>
           <div class="form-group">
             <label>Contraseña</label>
-            <input type="password" id="password" placeholder="••••••••" value="12345678" required />
+            <input type="password" id="password" placeholder="••••••••" value="admin123" required />
           </div>
-          <button type="submit" class="btn btn-primary">
-            <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
-          </button>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</button>
         </form>
         
-        <button class="btn btn-microsoft" onclick="alert('Redirigiendo a Microsoft 365...')">
+        <button class="btn btn-microsoft" onclick="alert('Redirigiendo a Microsoft 365...')" style="background:#2b2b2b; color:white; width:100%; padding:12px; border-radius:40px; border:none; font-weight:500; font-size:0.9rem; cursor:pointer; margin-top:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
           <i class="fab fa-microsoft"></i> Microsoft 365
         </button>
         
-        <div class="forgot" onclick="alert('Se enviará un correo para restablecer su contraseña')">
+        <div class="forgot" onclick="alert('Se enviará un correo para restablecer su contraseña')" style="text-align:right; font-size:0.8rem; color:var(--primary); margin-top:12px; cursor:pointer;">
           Olvidé mi contraseña
         </div>
         
-        <div class="test-users">
-          <i class="fas fa-users"></i> Usuarios de prueba:
-          <span>carlos.aranda@siman.com / 12345678</span>
-          <span>maria.gomez@siman.com / 12345678</span>
-          <span>ana.lopez@siman.com / 12345678</span>
-          <span>admin@siman.com / admin123</span>
+        <div class="test-users" style="margin-top:24px; padding:16px; background:#f5f8ff; border-radius:12px; font-size:0.8rem; color:#5f6b7a; line-height:1.8;">
+          <i class="fas fa-users"></i> Usuario de prueba:
+          <span style="display:block; font-family:monospace; font-size:0.8rem; color:var(--gray-dark);">admin@siman.com / admin123</span>
+          <span style="display:block; font-family:monospace; font-size:0.8rem; color:#5f6b7a; margin-top:4px;">⚠️ Solo el administrador puede crear nuevos usuarios desde Configuración</span>
         </div>
       </div>
     </div>
     <div class="login-right">
-      <div class="illustration">
+      <div class="illustration" style="text-align:center; padding:40px; background:var(--white); border-radius:24px; box-shadow:var(--shadow); max-width:400px; width:100%;">
         <i class="fas fa-users-cog" style="font-size:80px; color:#0056A6;"></i>
         <p style="margin-top:20px; color:#5f6b7a; font-size:18px;">Gestión de Talento Moderna</p>
         <p style="color:#a0aec0; font-size:14px;">SIMAN SmartRecruit v2.0</p>

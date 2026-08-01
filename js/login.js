@@ -1,32 +1,36 @@
 document.addEventListener('DOMContentLoaded', function() {
-  // Si ya está autenticado, redirigir al dashboard
-  if (isAuthenticated()) {
+  if (typeof isAuthenticated === 'function' && isAuthenticated()) {
     window.location.href = '/dashboard';
     return;
   }
-
-  const form = document.getElementById('loginForm');
+  
+  var form = document.getElementById('loginForm');
+  var errorMsg = document.getElementById('errorMessage');
+  var errorText = document.getElementById('errorText');
   
   form.addEventListener('submit', function(e) {
     e.preventDefault();
+    errorMsg.style.display = 'none';
     
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value.trim();
+    var username = document.getElementById('username').value.trim();
+    var password = document.getElementById('password').value.trim();
     
     if (!username || !password) {
-      alert('Por favor ingrese usuario y contraseña');
+      errorText.textContent = 'Por favor ingrese usuario y contraseña';
+      errorMsg.style.display = 'block';
       return;
     }
     
-    const user = login(username, password);
+    var user = login(username, password);
     
     if (user) {
       window.location.href = '/dashboard';
     } else {
-      alert('Usuario o contraseña incorrectos. Por favor verifique sus credenciales.');
+      errorText.textContent = 'Usuario o contraseña incorrectos. Verifique sus credenciales.';
+      errorMsg.style.display = 'block';
     }
   });
-
+  
   // Enter key support
   document.addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {

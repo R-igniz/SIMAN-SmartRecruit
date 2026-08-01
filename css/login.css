@@ -78,6 +78,8 @@
   font-size: 0.8rem;
   font-weight: 500;
   color: var(--gray-dark);
+  display: block;
+  margin-bottom: 4px;
 }
 
 .login-box .form-group input {
@@ -86,8 +88,7 @@
   border-radius: var(--radius);
   border: 1px solid #dce3ec;
   font-size: 0.9rem;
-  margin-top: 4px;
-  transition: var(--transition);
+  transition: all 0.2s;
 }
 
 .login-box .form-group input:focus {
@@ -103,77 +104,16 @@
   padding: 14px;
 }
 
-.login-box .btn-microsoft {
-  background: #2b2b2b;
-  color: white;
-  margin-top: 10px;
-}
-
-.login-box .btn-microsoft:hover {
-  background: #3b3b3b;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.login-box .forgot {
-  text-align: right;
-  font-size: 0.8rem;
-  color: var(--primary);
-  margin-top: 12px;
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.login-box .forgot:hover {
-  color: var(--primary-dark);
-  text-decoration: underline;
-}
-
-.login-box .test-users {
-  margin-top: 24px;
-  padding: 16px;
-  background: #f5f8ff;
-  border-radius: var(--radius);
-  font-size: 0.8rem;
-  color: #5f6b7a;
-  line-height: 1.8;
-}
-
-.login-box .test-users i {
-  color: var(--primary);
-  margin-right: 6px;
-}
-
-.login-box .test-users span {
-  display: block;
-  font-family: monospace;
-  font-size: 0.8rem;
-  color: var(--gray-dark);
-}
-
-.illustration {
-  text-align: center;
-  padding: 40px;
-  background: var(--white);
-  border-radius: 24px;
-  box-shadow: var(--shadow);
-  max-width: 400px;
-  width: 100%;
-}
-
 @media (max-width: 768px) {
   .login-page {
     flex-direction: column;
   }
-  
   .login-right {
     display: none;
   }
-  
   .login-left {
     padding: 30px 20px;
   }
-  
   .login-box {
     max-width: 100%;
   }

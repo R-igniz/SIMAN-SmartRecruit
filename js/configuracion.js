@@ -392,4 +392,17 @@ function logout() {
   sessionStorage.removeItem('currentUser');
   sessionStorage.removeItem('isAuthenticated');
   window.location.href = '/login.html';
+
+  // ==========================================
+// ACTUALIZAR AUTH DESPUÉS DE GUARDAR USUARIOS
+// ==========================================
+function guardarDatosConfig(data) {
+  localStorage.setItem(CONFIG_STORE_KEY, JSON.stringify(data));
+  // Refrescar usuarios en auth.js
+  if (typeof refreshAuthUsers === 'function') {
+    refreshAuthUsers();
+  }
+  // Disparar evento para sincronizar otras pestañas
+  window.dispatchEvent(new StorageEvent('storage', { key: CONFIG_STORE_KEY, newValue: JSON.stringify(data) }));
+}
 }

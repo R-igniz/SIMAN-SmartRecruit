@@ -36,13 +36,33 @@ var PERMISOS = {
 };
 
 // ==========================================
+// USUARIO ADMIN POR DEFECTO
+// ==========================================
+var DEFAULT_ADMIN = {
+  id: 1,
+  nombre: 'Administrador',
+  email: 'admin@siman.com',
+  password: 'admin123',
+  rol: 'Administrador',
+  centro: 'Central',
+  estado: 'activo'
+};
+
+// ==========================================
 // OBTENER USUARIOS DESDE STORAGE
 // ==========================================
 function getUsersFromStorage() {
   var data = localStorage.getItem('siman_config_data');
   if (data) {
     var parsed = JSON.parse(data);
-    return (parsed.usuarios || []).map(function(u) {
+    var usuarios = parsed.usuarios || [];
+    // Si no hay usuarios, crear el admin por defecto
+    if (usuarios.length === 0) {
+      usuarios = [DEFAULT_ADMIN];
+      parsed.usuarios = usuarios;
+      localStorage.setItem('siman_config_data', JSON.stringify(parsed));
+    }
+    return usuarios.map(function(u) {
       return {
         username: u.email,
         password: u.password,
@@ -52,12 +72,30 @@ function getUsersFromStorage() {
       };
     });
   }
-  // Fallback
+  // Si no hay datos, crear configuración inicial con admin
+  var initialData = {
+    usuarios: [DEFAULT_ADMIN],
+    roles: [
+      { id: 1, nombre: 'Administrador', estado: 'activo' },
+      { id: 2, nombre: 'Gerente RH', estado: 'activo' },
+      { id: 3, nombre: 'Reclutadora', estado: 'activo' },
+      { id: 4, nombre: 'Ejecutivo', estado: 'activo' }
+    ],
+    cartasOferta: [],
+    comerciales: [],
+    tiendas: [],
+    departamentos: [],
+    estados: [],
+    prioridades: [],
+    motivos: [],
+    tiposContratacion: [],
+    asignaciones: [],
+    correos: [],
+    plantillas: []
+  };
+  localStorage.setItem('siman_config_data', JSON.stringify(initialData));
   return [
-    { username: 'admin@siman.com', password: 'admin123', name: 'Administrador', role: 'Administrador', store: 'Central' },
-    { username: 'carlos.aranda@siman.com', password: '12345678', name: 'Carlos Aranda', role: 'Gerente RH', store: 'Gran Vía' },
-    { username: 'maria.gomez@siman.com', password: '12345678', name: 'María Gómez', role: 'Reclutadora', store: 'Multiplaza' },
-    { username: 'ana.lopez@siman.com', password: '12345678', name: 'Ana López', role: 'Reclutadora', store: 'Galerías' }
+    { username: 'admin@siman.com', password: 'admin123', name: 'Administrador', role: 'Administrador', store: 'Central' }
   ];
 }
 
@@ -134,6 +172,25 @@ function protegerRuta(permisoRequerido, redirectUrl) {
     return false;
   }
   return true;
+}
+
+// ==========================================
+// ACTUALIZAR USUARIOS EN AUTH (después de cambios en config)
+// ==========================================
+function refreshAuthUsers() {
+  // Forzar recarga de usuarios desde storage
+  getUsersFromStorage();
+  // Si el usuario actual está logueado, actualizar sus datos
+  var currentUser = getCurrentUser();
+  if (currentUser) {
+    var users = getUsersFromStorage();
+    var updatedUser = users.find(function(u) {
+      return u.username === currentUser.username;
+    });
+    if (updatedUser) {
+      sessionStorage.setItem('currentUser', JSON.stringify(updatedUser));
+    }
+  }
 }
 
 // Proteger páginas automáticamente
