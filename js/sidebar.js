@@ -1,5 +1,5 @@
 // ==========================================
-// MENÚ LATERAL ORIGINAL
+// SIDEBAR
 // ==========================================
 function getSidebarHTML() {
   var user = getCurrentUser();
@@ -62,11 +62,11 @@ function getSidebarHTML() {
         </div>
       </div>
 
-      <div style="display:flex; align-items:center; gap:12px; padding:12px 8px; margin-bottom:16px; border-radius:var(--radius); background:var(--gray-light);">
+      <div style="display:flex; align-items:center; gap:12px; padding:12px 8px; margin-bottom:16px; border-radius:var(--radius); background:var(--bg-body);">
         <div style="width:44px; height:44px; border-radius:50%; background:var(--primary); color:white; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:18px;">${initial}</div>
         <div>
-          <div style="font-weight:500; font-size:14px; color:var(--gray-dark);">${user.name || 'Usuario'}</div>
-          <div style="font-size:12px; color:#5f6b7a;">${user.role || 'Colaborador'}</div>
+          <div style="font-weight:500; font-size:14px; color:var(--text-primary);">${user.name || 'Usuario'}</div>
+          <div style="font-size:12px; color:var(--text-muted);">${user.role || 'Colaborador'}</div>
         </div>
       </div>
 
@@ -119,7 +119,7 @@ function getTopbarHTML(user) {
 }
 
 // ==========================================
-// INICIALIZAR LAYOUT
+// INICIALIZAR
 // ==========================================
 function initLayout() {
   var user = getCurrentUser();

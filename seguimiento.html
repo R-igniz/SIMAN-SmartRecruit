@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIMAN SmartRecruit - Seguimiento</title>
+  <link rel="stylesheet" href="css/global.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+</head>
+<body>
+  <div id="sidebar-container"></div>
+  
+  <div class="main-content">
+    <div id="topbar-container"></div>
+    
+    <div class="card">
+      <div class="card-header">
+        <span><i class="fas fa-tasks"></i> Seguimiento de Procesos</span>
+        <span class="badge badge-blue">3 activos</span>
+      </div>
+      
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <!-- Item 1 -->
+        <div class="card" style="border-left:4px solid var(--primary);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div>
+              <strong>#R-145</strong> - Analista Financiero
+              <span style="color:#5f6b7a; font-size:13px; margin-left:8px;"><i class="fas fa-store"></i> Gran Vía</span>
+            </div>
+            <span class="badge badge-blue">En proceso</span>
+          </div>
+          <div style="margin-top:12px;">
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              <span style="font-size:12px; color:#5f6b7a;">Progreso:</span>
+              <div style="flex:1; height:6px; background:#eef2f7; border-radius:10px; min-width:100px;">
+                <div style="width:60%; height:100%; background:var(--primary); border-radius:10px;"></div>
+              </div>
+              <span style="font-size:12px; font-weight:500;">60%</span>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+              <span class="badge badge-green"><i class="fas fa-check"></i> CV Recibidos</span>
+              <span class="badge badge-yellow"><i class="fas fa-spinner"></i> Entrevistas</span>
+              <span class="badge badge-gray"><i class="far fa-clock"></i> Oferta</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Item 2 -->
+        <div class="card" style="border-left:4px solid var(--warning);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div>
+              <strong>#R-142</strong> - Cajero
+              <span style="color:#5f6b7a; font-size:13px; margin-left:8px;"><i class="fas fa-store"></i> Multiplaza</span>
+            </div>
+            <span class="badge badge-yellow">Pendiente</span>
+          </div>
+          <div style="margin-top:12px;">
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              <span style="font-size:12px; color:#5f6b7a;">Progreso:</span>
+              <div style="flex:1; height:6px; background:#eef2f7; border-radius:10px; min-width:100px;">
+                <div style="width:30%; height:100%; background:var(--warning); border-radius:10px;"></div>
+              </div>
+              <span style="font-size:12px; font-weight:500;">30%</span>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+              <span class="badge badge-blue"><i class="fas fa-spinner"></i> Publicada</span>
+              <span class="badge badge-gray"><i class="far fa-clock"></i> CV Recibidos</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Item 3 -->
+        <div class="card" style="border-left:4px solid var(--danger);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div>
+              <strong>#R-130</strong> - Auxiliar RH
+              <span style="color:#5f6b7a; font-size:13px; margin-left:8px;"><i class="fas fa-store"></i> La Pradera</span>
+            </div>
+            <span class="badge badge-red">Urgente</span>
+          </div>
+          <div style="margin-top:12px;">
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              <span style="font-size:12px; color:#5f6b7a;">Progreso:</span>
+              <div style="flex:1; height:6px; background:#eef2f7; border-radius:10px; min-width:100px;">
+                <div style="width:15%; height:100%; background:var(--danger); border-radius:10px;"></div>
+              </div>
+              <span style="font-size:12px; font-weight:500;">15%</span>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+              <span class="badge badge-red"><i class="fas fa-exclamation-triangle"></i> Retrasado</span>
+              <span class="badge badge-gray"><i class="far fa-clock"></i> Revisar</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/router.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script src="js/seguimiento.js"></script>
+</body>
+</html>
