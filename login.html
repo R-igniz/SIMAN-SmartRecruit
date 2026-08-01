@@ -8,6 +8,35 @@
   <link rel="stylesheet" href="css/login.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <style>
+    .error-message {
+      display: none;
+      background: #ffdede;
+      color: #b33c3c;
+      padding: 10px 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+    .error-message.show {
+      display: block;
+    }
+    .btn-reset {
+      background: #f0f0f0;
+      color: #666;
+      width: 100%;
+      padding: 10px;
+      border-radius: 40px;
+      border: 1px solid #ddd;
+      font-weight: 500;
+      font-size: 0.8rem;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: all 0.2s;
+    }
+    .btn-reset:hover {
+      background: #e0e0e0;
+    }
+  </style>
 </head>
 <body>
   <div class="login-page">
@@ -23,7 +52,7 @@
         <h1>Iniciar sesión</h1>
         <p class="sub">Sistema Inteligente de Requisición y Gestión de Personal</p>
         
-        <div id="errorMessage" class="error-message" style="display:none; background:#ffdede; color:#b33c3c; padding:10px 16px; border-radius:12px; margin-bottom:16px;">
+        <div id="errorMessage" class="error-message">
           <i class="fas fa-exclamation-circle"></i> <span id="errorText">Usuario o contraseña incorrectos</span>
         </div>
         
@@ -36,7 +65,9 @@
             <label>Contraseña</label>
             <input type="password" id="password" placeholder="••••••••" value="admin123" required />
           </div>
-          <button type="submit" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+          </button>
         </form>
         
         <button class="btn btn-microsoft" onclick="alert('Redirigiendo a Microsoft 365...')" style="background:#2b2b2b; color:white; width:100%; padding:12px; border-radius:40px; border:none; font-weight:500; font-size:0.9rem; cursor:pointer; margin-top:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
@@ -47,10 +78,14 @@
           Olvidé mi contraseña
         </div>
         
-        <div class="test-users" style="margin-top:24px; padding:16px; background:#f5f8ff; border-radius:12px; font-size:0.8rem; color:#5f6b7a; line-height:1.8;">
+        <button class="btn-reset" onclick="resetearDatosLogin()">
+          <i class="fas fa-sync-alt"></i> Restablecer datos del sistema
+        </button>
+        
+        <div class="test-users" style="margin-top:16px; padding:16px; background:#f5f8ff; border-radius:12px; font-size:0.8rem; color:#5f6b7a; line-height:1.8;">
           <i class="fas fa-users"></i> Usuario de prueba:
           <span style="display:block; font-family:monospace; font-size:0.8rem; color:var(--gray-dark);">admin@siman.com / admin123</span>
-          <span style="display:block; font-family:monospace; font-size:0.8rem; color:#5f6b7a; margin-top:4px;">⚠️ Solo el administrador puede crear nuevos usuarios desde Configuración</span>
+          <span style="display:block; font-family:monospace; font-size:0.8rem; color:#5f6b7a; margin-top:4px;">⚠️ Si el login falla, haz clic en "Restablecer datos del sistema"</span>
         </div>
       </div>
     </div>
@@ -63,7 +98,61 @@
     </div>
   </div>
 
-  <script src="js/auth.js"></script>
-  <script src="js/login.js"></script>
+  <script>
+    // ==========================================
+    // FUNCIÓN DE RESET DE DATOS
+    // ==========================================
+    function resetearDatosLogin() {
+      if (confirm('⚠️ ¿Restablecer los datos del sistema a valores por defecto?\n\nSe eliminarán todos los datos guardados y se creará el usuario administrador por defecto.\n\nUsuario: admin@siman.com\nContraseña: admin123')) {
+        // Limpiar localStorage
+        localStorage.clear();
+        // Crear datos iniciales
+        var initialData = {
+          usuarios: [
+            { id: 1, nombre: 'Administrador', email: 'admin@siman.com', password: 'admin123', rol: 'Administrador', centro: 'Central', estado: 'activo' }
+          ],
+          roles: [
+            { id: 1, nombre: 'Administrador', estado: 'activo' },
+            { id: 2, nombre: 'Gerente RH', estado: 'activo' },
+            { id: 3, nombre: 'Reclutadora', estado: 'activo' },
+            { id: 4, nombre: 'Ejecutivo', estado: 'activo' }
+          ],
+          cartasOferta: [],
+          comerciales: [],
+          tiendas: [],
+          departamentos: [],
+          estados: [],
+          prioridades: [],
+          motivos: [],
+          tiposContratacion: [],
+          asignaciones: [],
+          correos: [],
+          plantillas: []
+        };
+        localStorage.setItem('siman_config_data', JSON.stringify(initialData));
+        
+        // Limpiar sesión
+        sessionStorage.removeItem('currentUser');
+        sessionStorage.removeItem('isAuthenticated');
+        
+        alert('✅ Datos restablecidos correctamente.\n\nUsuario: admin@siman.com\nContraseña: admin123');
+        location.reload();
+      }
+    }
+    
+    // ==========================================
+    // INYECTAR AUTH.JS Y LOGIN.JS
+    // ==========================================
+    // Cargar auth.js primero
+    var authScript = document.createElement('script');
+    authScript.src = 'js/auth.js';
+    authScript.onload = function() {
+      // Luego cargar login.js
+      var loginScript = document.createElement('script');
+      loginScript.src = 'js/login.js';
+      document.head.appendChild(loginScript);
+    };
+    document.head.appendChild(authScript);
+  </script>
 </body>
 </html>
