@@ -13,6 +13,9 @@ function toggleDarkMode() {
         toggle.checked = isDark;
     }
     
+    // Forzar actualización de estilos
+    document.body.style.transition = 'background-color 0.3s ease, color 0.3s ease';
+    
     console.log('🌙 Modo oscuro:', isDark ? 'activado' : 'desactivado');
 }
 
@@ -85,3 +88,12 @@ function forceDarkMode(enable) {
         }
     }
 }
+
+// Forzar actualización después de cargar completamente
+window.addEventListener('load', function() {
+    // Asegurar que el modo oscuro se aplique correctamente
+    var darkMode = localStorage.getItem('darkMode') === 'true';
+    if (darkMode) {
+        document.body.classList.add('dark-mode');
+    }
+});
