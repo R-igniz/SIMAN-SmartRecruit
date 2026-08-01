@@ -8,8 +8,53 @@
   <link rel="stylesheet" href="css/dashboard.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  
+  <style>
+    /* Estilos de carga mientras se inicializa */
+    #loadingOverlay {
+      display: flex;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #F5F7FA;
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      gap: 16px;
+      transition: opacity 0.5s ease;
+    }
+    #loadingOverlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #loadingOverlay .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #eef2f7;
+      border-top: 4px solid #0056A6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    #loadingOverlay p {
+      color: #5f6b7a;
+      font-size: 16px;
+    }
+  </style>
 </head>
 <body>
+  <!-- Overlay de carga -->
+  <div id="loadingOverlay">
+    <div class="spinner"></div>
+    <p>🔐 Verificando autenticación...</p>
+  </div>
+  
   <div id="sidebar-container"></div>
   
   <div class="main-content">
@@ -141,5 +186,15 @@
   <script src="js/router.js"></script>
   <script src="js/sidebar.js"></script>
   <script src="js/dashboard.js"></script>
+  
+  <script>
+    // Ocultar overlay cuando todo esté cargado
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(function() {
+        var overlay = document.getElementById('loadingOverlay');
+        if (overlay) overlay.classList.add('hidden');
+      }, 500);
+    });
+  </script>
 </body>
 </html>

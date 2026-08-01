@@ -1,4 +1,10 @@
 // ==========================================
+// AUTH - VERSIÓN CORREGIDA
+// ==========================================
+
+console.log('🔐 Auth - Inicializando...');
+
+// ==========================================
 // CONFIGURACIÓN DE ROLES Y PERMISOS
 // ==========================================
 var ROLES = {
@@ -49,31 +55,10 @@ var DEFAULT_ADMIN = {
 };
 
 // ==========================================
-// OBTENER USUARIOS DESDE STORAGE
+// DATOS INICIALES POR DEFECTO
 // ==========================================
-function getUsersFromStorage() {
-  var data = localStorage.getItem('siman_config_data');
-  if (data) {
-    var parsed = JSON.parse(data);
-    var usuarios = parsed.usuarios || [];
-    // Si no hay usuarios, crear el admin por defecto
-    if (usuarios.length === 0) {
-      usuarios = [DEFAULT_ADMIN];
-      parsed.usuarios = usuarios;
-      localStorage.setItem('siman_config_data', JSON.stringify(parsed));
-    }
-    return usuarios.map(function(u) {
-      return {
-        username: u.email,
-        password: u.password,
-        name: u.nombre,
-        role: u.rol || 'Reclutadora',
-        store: u.centro || 'Central'
-      };
-    });
-  }
-  // Si no hay datos, crear configuración inicial con admin
-  var initialData = {
+function getDefaultConfigData() {
+  return {
     usuarios: [DEFAULT_ADMIN],
     roles: [
       { id: 1, nombre: 'Administrador', estado: 'activo' },
@@ -93,29 +78,80 @@ function getUsersFromStorage() {
     correos: [],
     plantillas: []
   };
-  localStorage.setItem('siman_config_data', JSON.stringify(initialData));
-  return [
-    { username: 'admin@siman.com', password: 'admin123', name: 'Administrador', role: 'Administrador', store: 'Central' }
-  ];
+}
+
+// ==========================================
+// OBTENER USUARIOS DESDE STORAGE
+// ==========================================
+function getUsersFromStorage() {
+  try {
+    var data = localStorage.getItem('siman_config_data');
+    
+    // Si no hay datos, crear configuración inicial
+    if (!data) {
+      console.log('📦 No hay datos, creando configuración inicial...');
+      var initialData = getDefaultConfigData();
+      localStorage.setItem('siman_config_data', JSON.stringify(initialData));
+      return [
+        { username: 'admin@siman.com', password: 'admin123', name: 'Administrador', role: 'Administrador', store: 'Central' }
+      ];
+    }
+    
+    var parsed = JSON.parse(data);
+    var usuarios = parsed.usuarios || [];
+    
+    // Si no hay usuarios, agregar el admin por defecto
+    if (usuarios.length === 0) {
+      console.log('📦 No hay usuarios, agregando admin por defecto...');
+      usuarios = [DEFAULT_ADMIN];
+      parsed.usuarios = usuarios;
+      localStorage.setItem('siman_config_data', JSON.stringify(parsed));
+    }
+    
+    return usuarios.map(function(u) {
+      return {
+        username: u.email,
+        password: u.password,
+        name: u.nombre,
+        role: u.rol || 'Reclutadora',
+        store: u.centro || 'Central'
+      };
+    });
+  } catch (error) {
+    console.error('❌ Error al obtener usuarios:', error);
+    var initialData = getDefaultConfigData();
+    localStorage.setItem('siman_config_data', JSON.stringify(initialData));
+    return [
+      { username: 'admin@siman.com', password: 'admin123', name: 'Administrador', role: 'Administrador', store: 'Central' }
+    ];
+  }
 }
 
 // ==========================================
 // SESSION MANAGEMENT
 // ==========================================
 function login(username, password) {
+  console.log('🔐 Intentando login con:', username);
   var users = getUsersFromStorage();
+  console.log('👥 Usuarios disponibles:', users.map(function(u) { return u.username; }));
+  
   var user = users.find(function(u) {
     return u.username === username && u.password === password;
   });
+  
   if (user) {
+    console.log('✅ Login exitoso para:', user.username);
     sessionStorage.setItem('currentUser', JSON.stringify(user));
     sessionStorage.setItem('isAuthenticated', 'true');
     return user;
   }
+  
+  console.log('❌ Login fallido para:', username);
   return null;
 }
 
 function logout() {
+  console.log('🔓 Cerrando sesión...');
   sessionStorage.removeItem('currentUser');
   sessionStorage.removeItem('isAuthenticated');
   window.location.href = '/login.html';
@@ -132,6 +168,7 @@ function isAuthenticated() {
 
 function requireAuth() {
   if (!isAuthenticated()) {
+    console.log('🔒 Usuario no autenticado, redirigiendo a login');
     window.location.href = '/login.html';
     return null;
   }
@@ -159,7 +196,19 @@ function esAdministrador() {
 }
 
 // ==========================================
-// PROTEGER RUTAS POR ROL
+// ACTUALIZAR USUARIOS EN AUTH
+// ==========================================
+function refreshAuthUsers() {
+  var data = localStorage.getItem('siman_config_data');
+  if (!data) {
+    var initialData = getDefaultConfigData();
+    localStorage.setItem('siman_config_data', JSON.stringify(initialData));
+  }
+  return getUsersFromStorage();
+}
+
+// ==========================================
+// PROTEGER RUTAS
 // ==========================================
 function protegerRuta(permisoRequerido, redirectUrl) {
   var user = getCurrentUser();
@@ -168,48 +217,42 @@ function protegerRuta(permisoRequerido, redirectUrl) {
     return false;
   }
   if (permisoRequerido && !tienePermiso(permisoRequerido)) {
-    window.location.href = redirectUrl || '/dashboard';
+    window.location.href = redirectUrl || '/dashboard.html';
     return false;
   }
   return true;
 }
 
 // ==========================================
-// ACTUALIZAR USUARIOS EN AUTH (después de cambios en config)
+// PROTEGER PÁGINAS AUTOMÁTICAMENTE
 // ==========================================
-function refreshAuthUsers() {
-  // Forzar recarga de usuarios desde storage
-  getUsersFromStorage();
-  // Si el usuario actual está logueado, actualizar sus datos
-  var currentUser = getCurrentUser();
-  if (currentUser) {
-    var users = getUsersFromStorage();
-    var updatedUser = users.find(function(u) {
-      return u.username === currentUser.username;
-    });
-    if (updatedUser) {
-      sessionStorage.setItem('currentUser', JSON.stringify(updatedUser));
-    }
-  }
-}
-
-// Proteger páginas automáticamente
 document.addEventListener('DOMContentLoaded', function() {
   var currentPage = window.location.pathname;
+  console.log('📄 Página actual:', currentPage);
+  
   if (!currentPage.includes('login.html') && currentPage !== '/') {
     var user = requireAuth();
     if (user) {
+      console.log('✅ Usuario autenticado:', user.username);
+      
       var permisosPorPagina = {
         '/configuracion': 'ver_configuracion',
         '/configuracion.html': 'ver_configuracion',
         '/dashboard-ejecutivo': 'ver_dashboard_ejecutivo',
+        '/dashboard-ejecutivo.html': 'ver_dashboard_ejecutivo',
         '/reportes': 'ver_reportes',
-        '/usuarios': 'ver_usuarios'
+        '/reportes.html': 'ver_reportes',
+        '/usuarios': 'ver_usuarios',
+        '/usuarios.html': 'ver_usuarios'
       };
+      
       var permiso = permisosPorPagina[currentPage];
       if (permiso && !tienePermiso(permiso)) {
-        window.location.href = '/dashboard';
+        console.log('🔒 Acceso denegado a:', currentPage);
+        window.location.href = '/dashboard.html';
       }
     }
   }
 });
+
+console.log('✅ Auth - Inicialización completada');

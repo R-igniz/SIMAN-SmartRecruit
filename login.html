@@ -36,6 +36,17 @@
     .btn-reset:hover {
       background: #e0e0e0;
     }
+    .success-message {
+      display: none;
+      background: #e2f3e4;
+      color: #1e6d3b;
+      padding: 10px 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+    .success-message.show {
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -56,6 +67,10 @@
           <i class="fas fa-exclamation-circle"></i> <span id="errorText">Usuario o contraseña incorrectos</span>
         </div>
         
+        <div id="successMessage" class="success-message">
+          <i class="fas fa-check-circle"></i> <span id="successText">Redirigiendo al dashboard...</span>
+        </div>
+        
         <form id="loginForm">
           <div class="form-group">
             <label>Usuario corporativo</label>
@@ -65,7 +80,7 @@
             <label>Contraseña</label>
             <input type="password" id="password" placeholder="••••••••" value="admin123" required />
           </div>
-          <button type="submit" class="btn btn-primary">
+          <button type="submit" class="btn btn-primary" id="loginBtn">
             <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
           </button>
         </form>
@@ -104,9 +119,7 @@
     // ==========================================
     function resetearDatosLogin() {
       if (confirm('⚠️ ¿Restablecer los datos del sistema a valores por defecto?\n\nSe eliminarán todos los datos guardados y se creará el usuario administrador por defecto.\n\nUsuario: admin@siman.com\nContraseña: admin123')) {
-        // Limpiar localStorage
         localStorage.clear();
-        // Crear datos iniciales
         var initialData = {
           usuarios: [
             { id: 1, nombre: 'Administrador', email: 'admin@siman.com', password: 'admin123', rol: 'Administrador', centro: 'Central', estado: 'activo' }
@@ -130,29 +143,15 @@
           plantillas: []
         };
         localStorage.setItem('siman_config_data', JSON.stringify(initialData));
-        
-        // Limpiar sesión
         sessionStorage.removeItem('currentUser');
         sessionStorage.removeItem('isAuthenticated');
-        
         alert('✅ Datos restablecidos correctamente.\n\nUsuario: admin@siman.com\nContraseña: admin123');
         location.reload();
       }
     }
-    
-    // ==========================================
-    // INYECTAR AUTH.JS Y LOGIN.JS
-    // ==========================================
-    // Cargar auth.js primero
-    var authScript = document.createElement('script');
-    authScript.src = 'js/auth.js';
-    authScript.onload = function() {
-      // Luego cargar login.js
-      var loginScript = document.createElement('script');
-      loginScript.src = 'js/login.js';
-      document.head.appendChild(loginScript);
-    };
-    document.head.appendChild(authScript);
   </script>
+  
+  <script src="js/auth.js"></script>
+  <script src="js/login.js"></script>
 </body>
 </html>

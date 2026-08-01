@@ -1,237 +1,130 @@
 // ==========================================
-// CONFIGURACIÓN DE ROLES Y PERMISOS
+// LOGIN - VERSIÓN CORREGIDA
 // ==========================================
-var ROLES = {
-  ADMINISTRADOR: 'Administrador',
-  GERENTE_RH: 'Gerente RH',
-  RECLUTADORA: 'Reclutadora',
-  EJECUTIVO: 'Ejecutivo'
-};
 
-var PERMISOS = {
-  'Administrador': [
-    'ver_dashboard', 'ver_configuracion', 'ver_usuarios', 'crear_usuario',
-    'editar_usuario', 'eliminar_usuario', 'ver_roles', 'crear_rol',
-    'editar_rol', 'eliminar_rol', 'ver_cartas_oferta', 'crear_carta_oferta',
-    'editar_carta_oferta', 'eliminar_carta_oferta', 'ver_reportes',
-    'ver_dashboard_ejecutivo', 'ver_notificaciones', 'ver_ia',
-    'crear_requisicion', 'ver_requisiciones', 'editar_requisicion',
-    'eliminar_requisicion', 'ver_reclutadora', 'administrar_requisicion'
-  ],
-  'Gerente RH': [
-    'ver_dashboard', 'crear_requisicion', 'ver_requisiciones',
-    'editar_requisicion', 'ver_reportes', 'ver_notificaciones', 'ver_ia',
-    'ver_reclutadora', 'administrar_requisicion', 'ver_cartas_oferta',
-    'crear_carta_oferta', 'editar_carta_oferta', 'eliminar_carta_oferta'
-  ],
-  'Reclutadora': [
-    'ver_dashboard', 'ver_requisiciones', 'ver_reclutadora',
-    'administrar_requisicion', 'ver_notificaciones', 'ver_ia',
-    'ver_cartas_oferta', 'editar_requisicion'
-  ],
-  'Ejecutivo': [
-    'ver_dashboard', 'ver_dashboard_ejecutivo', 'ver_reportes',
-    'ver_requisiciones', 'ver_notificaciones', 'ver_ia'
-  ]
-};
-
-// ==========================================
-// USUARIO ADMIN POR DEFECTO
-// ==========================================
-var DEFAULT_ADMIN = {
-  id: 1,
-  nombre: 'Administrador',
-  email: 'admin@siman.com',
-  password: 'admin123',
-  rol: 'Administrador',
-  centro: 'Central',
-  estado: 'activo'
-};
-
-// ==========================================
-// DATOS INICIALES POR DEFECTO
-// ==========================================
-function getDefaultConfigData() {
-  return {
-    usuarios: [DEFAULT_ADMIN],
-    roles: [
-      { id: 1, nombre: 'Administrador', estado: 'activo' },
-      { id: 2, nombre: 'Gerente RH', estado: 'activo' },
-      { id: 3, nombre: 'Reclutadora', estado: 'activo' },
-      { id: 4, nombre: 'Ejecutivo', estado: 'activo' }
-    ],
-    cartasOferta: [],
-    comerciales: [],
-    tiendas: [],
-    departamentos: [],
-    estados: [],
-    prioridades: [],
-    motivos: [],
-    tiposContratacion: [],
-    asignaciones: [],
-    correos: [],
-    plantillas: []
-  };
-}
-
-// ==========================================
-// OBTENER USUARIOS DESDE STORAGE
-// ==========================================
-function getUsersFromStorage() {
+// Esperar a que el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🔐 Login - Inicializando...');
+  
+  // Verificar si ya está autenticado
+  if (typeof isAuthenticated === 'function' && isAuthenticated()) {
+    console.log('✅ Usuario ya autenticado, redirigiendo...');
+    window.location.href = '/dashboard.html';
+    return;
+  }
+  
+  // Verificar que los datos de configuración existan
   try {
     var data = localStorage.getItem('siman_config_data');
-    
-    // Si no hay datos, crear configuración inicial
     if (!data) {
-      var initialData = getDefaultConfigData();
+      console.log('📦 Creando datos iniciales de configuración...');
+      var initialData = {
+        usuarios: [
+          { id: 1, nombre: 'Administrador', email: 'admin@siman.com', password: 'admin123', rol: 'Administrador', centro: 'Central', estado: 'activo' }
+        ],
+        roles: [
+          { id: 1, nombre: 'Administrador', estado: 'activo' },
+          { id: 2, nombre: 'Gerente RH', estado: 'activo' },
+          { id: 3, nombre: 'Reclutadora', estado: 'activo' },
+          { id: 4, nombre: 'Ejecutivo', estado: 'activo' }
+        ],
+        cartasOferta: [],
+        comerciales: [],
+        tiendas: [],
+        departamentos: [],
+        estados: [],
+        prioridades: [],
+        motivos: [],
+        tiposContratacion: [],
+        asignaciones: [],
+        correos: [],
+        plantillas: []
+      };
       localStorage.setItem('siman_config_data', JSON.stringify(initialData));
-      return [
-        { username: 'admin@siman.com', password: 'admin123', name: 'Administrador', role: 'Administrador', store: 'Central' }
-      ];
+      console.log('✅ Datos iniciales creados');
+    }
+  } catch(e) {
+    console.error('❌ Error al crear datos iniciales:', e);
+  }
+  
+  // Obtener elementos del DOM
+  var form = document.getElementById('loginForm');
+  var errorMsg = document.getElementById('errorMessage');
+  var errorText = document.getElementById('errorText');
+  var successMsg = document.getElementById('successMessage');
+  var successText = document.getElementById('successText');
+  var loginBtn = document.getElementById('loginBtn');
+  
+  // Ocultar mensajes al inicio
+  if (errorMsg) errorMsg.classList.remove('show');
+  if (successMsg) successMsg.classList.remove('show');
+  
+  // Manejar envío del formulario
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    console.log('📤 Intentando login...');
+    
+    // Ocultar mensajes previos
+    if (errorMsg) errorMsg.classList.remove('show');
+    if (successMsg) successMsg.classList.remove('show');
+    
+    var username = document.getElementById('username').value.trim();
+    var password = document.getElementById('password').value.trim();
+    
+    console.log('👤 Usuario:', username);
+    console.log('🔑 Contraseña:', password);
+    
+    if (!username || !password) {
+      if (errorText) errorText.textContent = '⚠️ Por favor ingrese usuario y contraseña';
+      if (errorMsg) errorMsg.classList.add('show');
+      return;
     }
     
-    var parsed = JSON.parse(data);
-    var usuarios = parsed.usuarios || [];
-    
-    // Si no hay usuarios, agregar el admin por defecto
-    if (usuarios.length === 0) {
-      usuarios = [DEFAULT_ADMIN];
-      parsed.usuarios = usuarios;
-      localStorage.setItem('siman_config_data', JSON.stringify(parsed));
+    // Deshabilitar botón mientras procesa
+    if (loginBtn) {
+      loginBtn.disabled = true;
+      loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
     }
     
-    return usuarios.map(function(u) {
-      return {
-        username: u.email,
-        password: u.password,
-        name: u.nombre,
-        role: u.rol || 'Reclutadora',
-        store: u.centro || 'Central'
-      };
-    });
-  } catch (error) {
-    console.error('Error al obtener usuarios:', error);
-    // En caso de error, recrear datos
-    var initialData = getDefaultConfigData();
-    localStorage.setItem('siman_config_data', JSON.stringify(initialData));
-    return [
-      { username: 'admin@siman.com', password: 'admin123', name: 'Administrador', role: 'Administrador', store: 'Central' }
-    ];
-  }
-}
-
-// ==========================================
-// SESSION MANAGEMENT
-// ==========================================
-function login(username, password) {
-  console.log('Intentando login con:', username);
-  var users = getUsersFromStorage();
-  console.log('Usuarios disponibles:', users);
-  
-  var user = users.find(function(u) {
-    return u.username === username && u.password === password;
-  });
-  
-  if (user) {
-    console.log('Login exitoso:', user);
-    sessionStorage.setItem('currentUser', JSON.stringify(user));
-    sessionStorage.setItem('isAuthenticated', 'true');
-    return user;
-  }
-  
-  console.log('Login fallido');
-  return null;
-}
-
-function logout() {
-  sessionStorage.removeItem('currentUser');
-  sessionStorage.removeItem('isAuthenticated');
-  window.location.href = '/login.html';
-}
-
-function getCurrentUser() {
-  var data = sessionStorage.getItem('currentUser');
-  return data ? JSON.parse(data) : null;
-}
-
-function isAuthenticated() {
-  return sessionStorage.getItem('isAuthenticated') === 'true' && getCurrentUser() !== null;
-}
-
-function requireAuth() {
-  if (!isAuthenticated()) {
-    window.location.href = '/login.html';
-    return null;
-  }
-  return getCurrentUser();
-}
-
-// ==========================================
-// VERIFICAR PERMISOS
-// ==========================================
-function tienePermiso(permiso) {
-  var user = getCurrentUser();
-  if (!user) return false;
-  var permisos = PERMISOS[user.role] || [];
-  return permisos.indexOf(permiso) !== -1;
-}
-
-function tieneRol(rol) {
-  var user = getCurrentUser();
-  if (!user) return false;
-  return user.role === rol;
-}
-
-function esAdministrador() {
-  return tieneRol(ROLES.ADMINISTRADOR);
-}
-
-// ==========================================
-// ACTUALIZAR USUARIOS EN AUTH
-// ==========================================
-function refreshAuthUsers() {
-  // Forzar recarga de datos
-  var data = localStorage.getItem('siman_config_data');
-  if (!data) {
-    var initialData = getDefaultConfigData();
-    localStorage.setItem('siman_config_data', JSON.stringify(initialData));
-  }
-  return getUsersFromStorage();
-}
-
-// ==========================================
-// PROTEGER RUTAS
-// ==========================================
-function protegerRuta(permisoRequerido, redirectUrl) {
-  var user = getCurrentUser();
-  if (!user) {
-    window.location.href = '/login.html';
-    return false;
-  }
-  if (permisoRequerido && !tienePermiso(permisoRequerido)) {
-    window.location.href = redirectUrl || '/dashboard';
-    return false;
-  }
-  return true;
-}
-
-// Proteger páginas automáticamente
-document.addEventListener('DOMContentLoaded', function() {
-  var currentPage = window.location.pathname;
-  if (!currentPage.includes('login.html') && currentPage !== '/') {
-    var user = requireAuth();
+    // Intentar login
+    var user = login(username, password);
+    console.log('🔍 Resultado login:', user);
+    
     if (user) {
-      var permisosPorPagina = {
-        '/configuracion': 'ver_configuracion',
-        '/configuracion.html': 'ver_configuracion',
-        '/dashboard-ejecutivo': 'ver_dashboard_ejecutivo',
-        '/reportes': 'ver_reportes',
-        '/usuarios': 'ver_usuarios'
-      };
-      var permiso = permisosPorPagina[currentPage];
-      if (permiso && !tienePermiso(permiso)) {
-        window.location.href = '/dashboard';
+      console.log('✅ Login exitoso! Redirigiendo...');
+      
+      // Mostrar mensaje de éxito
+      if (successText) successText.textContent = '✅ ¡Login exitoso! Redirigiendo al dashboard...';
+      if (successMsg) successMsg.classList.add('show');
+      
+      // Redirigir después de un pequeño delay
+      setTimeout(function() {
+        console.log('🚀 Redirigiendo a /dashboard.html');
+        window.location.href = '/dashboard.html';
+      }, 500);
+      
+    } else {
+      console.log('❌ Login fallido');
+      if (errorText) errorText.textContent = '❌ Usuario o contraseña incorrectos. Verifique sus credenciales.';
+      if (errorMsg) errorMsg.classList.add('show');
+      
+      // Rehabilitar botón
+      if (loginBtn) {
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Iniciar Sesión';
       }
     }
-  }
+  });
+  
+  // Soporte para tecla Enter
+  document.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      var active = document.activeElement;
+      if (active && (active.id === 'username' || active.id === 'password')) {
+        form.dispatchEvent(new Event('submit'));
+      }
+    }
+  });
+  
+  console.log('✅ Login - Inicialización completada');
 });
