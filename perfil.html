@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SIMAN SmartRecruit - Perfil de Usuario</title>
+  <title>SIMAN SmartRecruit - Perfil</title>
   <link rel="stylesheet" href="css/global.css" />
   <link rel="stylesheet" href="css/perfil.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
@@ -16,36 +16,46 @@
     <div id="topbar-container"></div>
     
     <div class="profile-grid">
+      <!-- Perfil -->
       <div class="card profile-card">
         <div class="profile-header">
-          <div class="profile-avatar-large">CA</div>
+          <div class="profile-avatar-large">U</div>
           <div>
-            <h2 id="profileName">Carlos Aranda</h2>
-            <p id="profileRole">Gerente RH</p>
-            <p id="profileStore"><i class="fas fa-store"></i> Gran Vía</p>
+            <h2 id="profileName">Usuario</h2>
+            <p id="profileRole">Cargando...</p>
+            <p id="profileStore"><i class="fas fa-store"></i> Cargando...</p>
           </div>
         </div>
         
         <div class="profile-info">
           <div class="info-row">
             <span class="info-label">Email</span>
-            <span class="info-value" id="profileEmail">carlos.aranda@siman.com</span>
+            <span class="info-value" id="profileEmail">-</span>
           </div>
           <div class="info-row">
             <span class="info-label">Rol</span>
-            <span class="info-value" id="profileRoleDetail">Gerente RH</span>
+            <span class="info-value" id="profileRoleDetail">-</span>
           </div>
           <div class="info-row">
             <span class="info-label">Centro Comercial</span>
-            <span class="info-value" id="profileStoreDetail">Gran Vía</span>
+            <span class="info-value" id="profileStoreDetail">-</span>
           </div>
           <div class="info-row">
             <span class="info-label">Permisos</span>
-            <span class="info-value"><span class="badge badge-blue">Admin</span> <span class="badge badge-green">Requisiciones</span></span>
+            <span class="info-value" id="profilePermisos">
+              <span class="badge badge-blue">Cargando...</span>
+            </span>
           </div>
+        </div>
+        
+        <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border-color);">
+          <button class="btn btn-outline" onclick="exportarPerfil()" style="width:100%; justify-content:center;">
+            <i class="fas fa-download"></i> Exportar Perfil
+          </button>
         </div>
       </div>
       
+      <!-- Configuración -->
       <div class="card">
         <div class="card-header">
           <span><i class="fas fa-sliders-h"></i> Configuración</span>
@@ -55,20 +65,28 @@
           <div class="setting-item">
             <span><i class="fas fa-moon"></i> Modo oscuro</span>
             <label class="switch">
-              <input type="checkbox" />
+              <input type="checkbox" id="darkModeToggle" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <span><i class="fas fa-chevron-left"></i> Menú colapsado</span>
+            <label class="switch">
+              <input type="checkbox" id="sidebarTogglePreference" onchange="toggleSidebarPreference()" />
               <span class="slider"></span>
             </label>
           </div>
           <div class="setting-item">
             <span><i class="fas fa-language"></i> Idioma</span>
-            <select>
-              <option>Español</option>
-              <option>Inglés</option>
+            <select id="languageSelect" onchange="changeLanguage()">
+              <option value="es">Español</option>
+              <option value="en">English</option>
             </select>
           </div>
         </div>
       </div>
       
+      <!-- Seguridad -->
       <div class="card">
         <div class="card-header">
           <span><i class="fas fa-shield-alt"></i> Seguridad</span>
@@ -77,14 +95,22 @@
         <div class="settings-list">
           <div class="setting-item">
             <span><i class="fas fa-key"></i> Cambiar contraseña</span>
-            <button class="btn btn-outline" style="padding:6px 16px;" onclick="alert('Cambiar contraseña')">Cambiar</button>
+            <button class="btn btn-outline" style="padding:6px 16px;" onclick="cambiarContrasena()">Cambiar</button>
           </div>
           <div class="setting-item">
-            <span><i class="fas fa-mobile-alt"></i> Autenticación de dos factores</span>
+            <span><i class="fas fa-mobile-alt"></i> Autenticación 2FA</span>
             <label class="switch">
               <input type="checkbox" />
               <span class="slider"></span>
             </label>
+          </div>
+          <div class="setting-item">
+            <span><i class="fas fa-history"></i> Sesiones activas</span>
+            <span class="badge badge-blue">1 dispositivo</span>
+          </div>
+          <div class="setting-item">
+            <span><i class="fas fa-clock"></i> Último acceso</span>
+            <span class="badge badge-gray">Hoy</span>
           </div>
         </div>
       </div>
@@ -94,6 +120,7 @@
   <script src="js/auth.js"></script>
   <script src="js/router.js"></script>
   <script src="js/sidebar.js"></script>
+  <script src="js/darkmode.js"></script>
   <script src="js/perfil.js"></script>
 </body>
 </html>
