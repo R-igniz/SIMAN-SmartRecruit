@@ -1,5 +1,5 @@
 // ==========================================
-// MENÚ LATERAL CON BOTÓN DE SINCRONIZACIÓN
+// MENÚ LATERAL - CONFIGURACIÓN POR ROL
 // ==========================================
 
 var MENU_CONFIG = {
@@ -56,6 +56,10 @@ var MENU_CONFIG = {
     ]
 };
 
+// ==========================================
+// GENERAR SIDEBAR HTML
+// ==========================================
+
 function getSidebarHTML() {
     var user = getCurrentUser();
     if (!user) return '';
@@ -81,34 +85,55 @@ function getSidebarHTML() {
         `;
     });
 
-    // Botón de sincronización
-    navHTML += `
-        <div class="nav-divider"></div>
-        <div style="padding: 8px 12px;">
-            <button onclick="sincronizarConSupabase()" style="
-                width: 100%;
-                padding: 10px 12px;
-                border: none;
-                border-radius: 8px;
-                background: var(--primary);
-                color: white;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                font-size: 13px;
-                font-weight: 500;
-                transition: all 0.2s;
-            ">
-                <i class="fas fa-cloud-upload-alt"></i> Sincronizar
-            </button>
-            <div style="font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 6px;">
-                ${navigator.onLine ? '🟢 En línea' : '🔴 Sin conexión'}
+    // Botones de sincronización (solo para administradores)
+    if (user.role === 'Administrador') {
+        navHTML += `
+            <div class="nav-divider"></div>
+            <div style="padding: 8px 12px; display: flex; flex-direction: column; gap: 6px;">
+                <button onclick="sincronizarConSupabase()" style="
+                    width: 100%;
+                    padding: 10px 12px;
+                    border: none;
+                    border-radius: 8px;
+                    background: var(--primary);
+                    color: white;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    font-size: 13px;
+                    font-weight: 500;
+                    transition: all 0.2s;
+                ">
+                    <i class="fas fa-cloud-upload-alt"></i> Subir a nube
+                </button>
+                <button onclick="recargarDesdeNube()" style="
+                    width: 100%;
+                    padding: 10px 12px;
+                    border: none;
+                    border-radius: 8px;
+                    background: #2b8c4a;
+                    color: white;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    font-size: 13px;
+                    font-weight: 500;
+                    transition: all 0.2s;
+                ">
+                    <i class="fas fa-cloud-download-alt"></i> Bajar de nube
+                </button>
+                <div style="font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 4px;">
+                    ${navigator.onLine ? '🟢 En línea' : '🔴 Sin conexión'}
+                </div>
             </div>
-        </div>
-    `;
+        `;
+    }
 
+    // Logout
     navHTML += `
         <div class="nav-divider"></div>
         <a class="nav-item" onclick="logout()" style="color: var(--danger); cursor: pointer;">
@@ -144,6 +169,10 @@ function getSidebarHTML() {
     `;
 }
 
+// ==========================================
+// TOPBAR HTML
+// ==========================================
+
 function getTopbarHTML(user) {
     var name = user ? user.name : 'Usuario';
     var role = user ? user.role : 'Colaborador';
@@ -171,7 +200,7 @@ function getTopbarHTML(user) {
             <div class="topbar-right">
                 <div class="search-box">
                     <i class="fas fa-search"></i>
-                    <input placeholder="Buscar..." />
+                    <input placeholder="Buscar..." id="globalSearch" />
                 </div>
                 <div class="icon-btn" onclick="navigateTo('/notificaciones.html')">
                     <i class="far fa-bell"></i>
@@ -182,6 +211,10 @@ function getTopbarHTML(user) {
         </div>
     `;
 }
+
+// ==========================================
+// INICIALIZAR LAYOUT
+// ==========================================
 
 function initLayout() {
     var user = getCurrentUser();
@@ -198,6 +231,10 @@ function initLayout() {
     }
 }
 
+// ==========================================
+// INICIALIZAR EN DOMContentLoaded
+// ==========================================
+
 document.addEventListener('DOMContentLoaded', function() {
     var currentPage = window.location.pathname;
     if (!currentPage.includes('login.html') && currentPage !== '/') {
@@ -208,4 +245,57 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// ==========================================
+// FUNCIONES DE SINCRONIZACIÓN (exponer globalmente)
+// ==========================================
+
+// Función para recargar desde la nube
+function recargarDesdeNube() {
+    if (typeof initSupabaseData === 'function') {
+        if (confirm('⚠️ ¿Deseas cargar los datos desde la nube?\n\nEsto fusionará los datos locales con los de la nube.')) {
+            initSupabaseData().then(function() {
+                if (typeof agregarNotificacion === 'function') {
+                    agregarNotificacion('success', '✅ Datos cargados desde la nube correctamente', '#');
+                }
+            }).catch(function(error) {
+                if (typeof agregarNotificacion === 'function') {
+                    agregarNotificacion('danger', '❌ Error al cargar desde la nube: ' + error.message, '#');
+                }
+            });
+        }
+    } else {
+        if (typeof agregarNotificacion === 'function') {
+            agregarNotificacion('warning', '⚠️ La función de sincronización no está disponible', '#');
+        }
+    }
+}
+
+// Función para sincronizar (subir a la nube)
+function sincronizarConSupabase() {
+    if (typeof sincronizarConSupabase === 'function') {
+        if (confirm('⚠️ ¿Deseas subir tus datos a la nube?\n\nEsto guardará todos los cambios en la nube.')) {
+            sincronizarConSupabase().then(function(resultado) {
+                if (typeof agregarNotificacion === 'function') {
+                    if (resultado && resultado.error) {
+                        agregarNotificacion('danger', '❌ Error al sincronizar: ' + resultado.error, '#');
+                    } else {
+                        agregarNotificacion('success', '✅ Datos sincronizados correctamente', '#');
+                    }
+                }
+            }).catch(function(error) {
+                if (typeof agregarNotificacion === 'function') {
+                    agregarNotificacion('danger', '❌ Error al sincronizar: ' + error.message, '#');
+                }
+            });
+        }
+    } else {
+        if (typeof agregarNotificacion === 'function') {
+            agregarNotificacion('warning', '⚠️ La función de sincronización no está disponible', '#');
+        }
+    }
+}
+
+// Exponer funciones globalmente
+window.recargarDesdeNube = recargarDesdeNube;
 window.sincronizarConSupabase = sincronizarConSupabase;
+window.initLayout = initLayout;

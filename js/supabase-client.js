@@ -122,7 +122,7 @@ function suscribirseATabla(tabla, callback) {
 }
 
 // ==========================================
-// SINCRONIZAR DATOS LOCALES CON SUPABASE
+// SINCRONIZAR DATOS LOCALES CON SUPABASE (ENVIAR)
 // ==========================================
 
 async function sincronizarConSupabase() {
@@ -134,14 +134,20 @@ async function sincronizarConSupabase() {
             usuarios: 0,
             roles: 0,
             comerciales: 0,
-            requisiciones: 0
+            requisiciones: 0,
+            errores: 0
         };
         
         // Sincronizar usuarios
         if (data.usuarios && data.usuarios.length > 0) {
             for (var i = 0; i < data.usuarios.length; i++) {
                 var result = await guardarEnSupabase('usuarios', data.usuarios[i]);
-                if (result.success) resultados.usuarios++;
+                if (result.success) {
+                    resultados.usuarios++;
+                } else {
+                    resultados.errores++;
+                    console.warn('Error guardando usuario:', data.usuarios[i].nombre, result.error);
+                }
             }
         }
         
@@ -172,25 +178,31 @@ async function sincronizarConSupabase() {
         
         console.log('✅ Sincronización completada:', resultados);
         
+        var mensaje = '✅ Datos sincronizados: ' + 
+            resultados.usuarios + ' usuarios, ' + 
+            resultados.roles + ' roles, ' + 
+            resultados.comerciales + ' comerciales';
+        
+        if (resultados.errores > 0) {
+            mensaje += ' ⚠️ ' + resultados.errores + ' errores';
+        }
+        
         if (typeof agregarNotificacion === 'function') {
-            agregarNotificacion('success', 
-                '✅ Datos sincronizados: ' + 
-                resultados.usuarios + ' usuarios, ' + 
-                resultados.roles + ' roles, ' + 
-                resultados.comerciales + ' comerciales',
-                '#'
-            );
+            agregarNotificacion(resultados.errores > 0 ? 'warning' : 'success', mensaje, '#');
         }
         
         return resultados;
     } catch (error) {
         console.error('❌ Error en sincronización:', error);
+        if (typeof agregarNotificacion === 'function') {
+            agregarNotificacion('danger', '❌ Error al sincronizar: ' + error.message, '#');
+        }
         return { error: error.message };
     }
 }
 
 // ==========================================
-// CARGAR DATOS DESDE SUPABASE
+// CARGAR DATOS DESDE SUPABASE (RECIBIR) - FUSIONAR EN LUGAR DE SOBRESCRIBIR
 // ==========================================
 
 async function cargarDesdeSupabase(tabla) {
@@ -201,38 +213,100 @@ async function cargarDesdeSupabase(tabla) {
     return [];
 }
 
+function fusionarDatos(datosLocales, datosRemotos, claveUnica) {
+    // Crear un mapa con los datos locales
+    var mapaLocal = {};
+    datosLocales.forEach(function(item) {
+        mapaLocal[item[claveUnica]] = item;
+    });
+    
+    // Agregar o actualizar con datos remotos
+    datosRemotos.forEach(function(item) {
+        var key = item[claveUnica];
+        if (mapaLocal[key]) {
+            // Si ya existe, actualizar solo si el remoto es más reciente
+            // (asumimos que el remoto tiene prioridad por ser la fuente central)
+            mapaLocal[key] = item;
+        } else {
+            // Si no existe, agregar
+            mapaLocal[key] = item;
+        }
+    });
+    
+    // Convertir mapa de vuelta a array
+    return Object.values(mapaLocal);
+}
+
 // ==========================================
-// INICIALIZAR TODO
+// INICIALIZAR DATOS DESDE SUPABASE (FUSIONANDO)
 // ==========================================
 
-function initSupabaseData() {
-    Promise.all([
-        cargarDesdeSupabase('usuarios'),
-        cargarDesdeSupabase('roles'),
-        cargarDesdeSupabase('comerciales'),
-        cargarDesdeSupabase('requisiciones')
-    ]).then(function(results) {
-        var data = {
-            usuarios: results[0] || [],
-            roles: results[1] || [],
-            comerciales: results[2] || [],
-            tiendas: [],
-            departamentos: [],
-            estados: [],
-            prioridades: [],
-            motivos: [],
-            tiposContratacion: [],
-            asignaciones: [],
-            correos: [],
-            plantillas: [],
-            cartasOferta: []
+async function initSupabaseData(forceLoad) {
+    console.log('🔄 Cargando datos desde Supabase...');
+    
+    try {
+        // Cargar datos desde Supabase
+        var [usuariosRemotos, rolesRemotos, comercialesRemotos, requisicionesRemotos] = await Promise.all([
+            cargarDesdeSupabase('usuarios'),
+            cargarDesdeSupabase('roles'),
+            cargarDesdeSupabase('comerciales'),
+            cargarDesdeSupabase('requisiciones')
+        ]);
+        
+        // Obtener datos locales actuales
+        var dataLocal = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
+        
+        // Fusionar datos (preservar admin local si existe)
+        var usuariosLocales = dataLocal.usuarios || [];
+        
+        // Asegurar que el admin por defecto esté siempre presente
+        var adminLocal = usuariosLocales.find(function(u) { return u.email === 'admin@siman.com'; });
+        var adminRemoto = usuariosRemotos.find(function(u) { return u.email === 'admin@siman.com'; });
+        
+        // Si no hay admin en remoto y hay admin local, agregarlo al remoto
+        if (!adminRemoto && adminLocal) {
+            await guardarEnSupabase('usuarios', adminLocal);
+            usuariosRemotos.push(adminLocal);
+        }
+        
+        // Si no hay admin en local y hay admin remoto, usarlo
+        if (!adminLocal && adminRemoto) {
+            usuariosLocales.push(adminRemoto);
+        }
+        
+        // Fusionar usuarios
+        var usuariosFusionados = fusionarDatos(usuariosLocales, usuariosRemotos, 'email');
+        
+        // Fusionar roles
+        var rolesFusionados = fusionarDatos(dataLocal.roles || [], rolesRemotos, 'id');
+        
+        // Fusionar comerciales
+        var comercialesFusionados = fusionarDatos(dataLocal.comerciales || [], comercialesRemotos, 'id');
+        
+        // Guardar datos fusionados
+        var dataFinal = {
+            usuarios: usuariosFusionados,
+            roles: rolesFusionados,
+            comerciales: comercialesFusionados,
+            tiendas: dataLocal.tiendas || [],
+            departamentos: dataLocal.departamentos || [],
+            estados: dataLocal.estados || [],
+            prioridades: dataLocal.prioridades || [],
+            motivos: dataLocal.motivos || [],
+            tiposContratacion: dataLocal.tiposContratacion || [],
+            asignaciones: dataLocal.asignaciones || [],
+            correos: dataLocal.correos || [],
+            plantillas: dataLocal.plantillas || [],
+            cartasOferta: dataLocal.cartasOferta || []
         };
         
-        localStorage.setItem('siman_config_data', JSON.stringify(data));
-        localStorage.setItem('requisiciones_data', JSON.stringify(results[3] || []));
+        localStorage.setItem('siman_config_data', JSON.stringify(dataFinal));
+        localStorage.setItem('requisiciones_data', JSON.stringify(requisicionesRemotos));
         
-        console.log('✅ Datos cargados desde Supabase');
+        console.log('✅ Datos cargados y fusionados desde Supabase');
+        console.log('👥 Usuarios totales:', usuariosFusionados.length);
         
+        // Actualizar interfaces
         if (typeof actualizarContadores === 'function') {
             actualizarContadores();
         }
@@ -244,13 +318,32 @@ function initSupabaseData() {
         if (typeof cargarRequisiciones === 'function') {
             cargarRequisiciones();
         }
-    }).catch(function(error) {
-        console.error('Error cargando datos:', error);
-    });
+        
+        if (typeof refreshAuthUsers === 'function') {
+            refreshAuthUsers();
+        }
+        
+        if (typeof agregarNotificacion === 'function') {
+            agregarNotificacion('success', 
+                '✅ Datos cargados: ' + usuariosFusionados.length + ' usuarios, ' + 
+                rolesFusionados.length + ' roles, ' + 
+                comercialesFusionados.length + ' comerciales', 
+                '#'
+            );
+        }
+        
+        return dataFinal;
+    } catch (error) {
+        console.error('❌ Error cargando datos:', error);
+        if (typeof agregarNotificacion === 'function') {
+            agregarNotificacion('danger', '❌ Error al cargar datos: ' + error.message, '#');
+        }
+        return null;
+    }
 }
 
 // ==========================================
-// SUSCRIBIRSE A TODAS LAS TABLAS
+// SUSCRIBIRSE A TODAS LAS TABLAS (RECIBIR CAMBIOS EN TIEMPO REAL)
 // ==========================================
 
 function suscribirseATodas() {
@@ -260,20 +353,24 @@ function suscribirseATodas() {
         suscribirseATabla(tabla, function(payload) {
             console.log('🔄 Cambio en ' + tabla + ':', payload);
             
+            // Recargar solo la tabla afectada
             cargarDesdeSupabase(tabla).then(function(data) {
+                var dataLocal = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
+                
                 if (tabla === 'usuarios') {
-                    var config = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
-                    config.usuarios = data;
-                    localStorage.setItem('siman_config_data', JSON.stringify(config));
+                    // Fusionar usuarios
+                    var usuariosLocales = dataLocal.usuarios || [];
+                    var usuariosFusionados = fusionarDatos(usuariosLocales, data, 'email');
+                    dataLocal.usuarios = usuariosFusionados;
+                    localStorage.setItem('siman_config_data', JSON.stringify(dataLocal));
                     if (typeof cargarUsuarios === 'function') cargarUsuarios();
                     if (typeof refreshAuthUsers === 'function') refreshAuthUsers();
                 } else if (tabla === 'requisiciones') {
                     localStorage.setItem('requisiciones_data', JSON.stringify(data));
                     if (typeof cargarRequisiciones === 'function') cargarRequisiciones();
                 } else {
-                    var config = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
-                    config[tabla] = data;
-                    localStorage.setItem('siman_config_data', JSON.stringify(config));
+                    dataLocal[tabla] = data;
+                    localStorage.setItem('siman_config_data', JSON.stringify(dataLocal));
                 }
                 
                 if (typeof actualizarContadores === 'function') {
@@ -281,7 +378,7 @@ function suscribirseATodas() {
                 }
                 
                 if (typeof agregarNotificacion === 'function') {
-                    agregarNotificacion('info', '🔄 Datos actualizados: ' + tabla, '#');
+                    agregarNotificacion('info', '🔄 Actualización automática: ' + tabla, '#');
                 }
             });
         });
@@ -301,3 +398,4 @@ window.cargarDesdeSupabase = cargarDesdeSupabase;
 window.initSupabaseData = initSupabaseData;
 window.suscribirseATodas = suscribirseATodas;
 window.suscribirseATabla = suscribirseATabla;
+window.fusionarDatos = fusionarDatos;
