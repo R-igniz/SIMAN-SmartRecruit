@@ -1,5 +1,5 @@
 // ==========================================
-// CONFIGURACIÓN - DATA STORE
+// CONFIGURACIÓN - DATA STORE CON SUPABASE
 // ==========================================
 var CONFIG_STORE_KEY = 'siman_config_data';
 
@@ -16,7 +16,6 @@ function obtenerDatosConfig() {
         console.error('Error al leer datos:', e);
     }
     
-    // Datos iniciales - SOLO ADMIN
     var inicial = {
         usuarios: [
             { id: 1, nombre: 'Administrador', email: 'admin@siman.com', password: 'admin123', rol: 'Administrador', centro: 'Central', estado: 'activo' }
@@ -48,23 +47,46 @@ function obtenerDatosConfig() {
 }
 
 // ==========================================
-// GUARDAR DATOS Y SINCRONIZAR
+// GUARDAR DATOS Y SINCRONIZAR CON SUPABASE
 // ==========================================
 function guardarDatosConfig(data) {
+    // Guardar localmente
     localStorage.setItem(CONFIG_STORE_KEY, JSON.stringify(data));
     
+    // Guardar en Supabase
+    if (typeof guardarEnSupabase === 'function') {
+        // Guardar usuarios
+        if (data.usuarios) {
+            data.usuarios.forEach(function(u) {
+                guardarEnSupabase('usuarios', u);
+            });
+        }
+        // Guardar roles
+        if (data.roles) {
+            data.roles.forEach(function(r) {
+                guardarEnSupabase('roles', r);
+            });
+        }
+        // Guardar comerciales
+        if (data.comerciales) {
+            data.comerciales.forEach(function(c) {
+                guardarEnSupabase('comerciales', c);
+            });
+        }
+    }
+    
+    // Refrescar auth
     if (typeof refreshAuthUsers === 'function') {
         refreshAuthUsers();
     }
     
+    // Disparar evento para sincronizar pestañas
     try {
-        window.dispatchEvent(new StorageEvent('storage', { 
-            key: CONFIG_STORE_KEY, 
-            newValue: JSON.stringify(data) 
+        window.dispatchEvent(new StorageEvent('storage', {
+            key: CONFIG_STORE_KEY,
+            newValue: JSON.stringify(data)
         }));
-    } catch (e) {
-        console.log('Datos guardados:', data);
-    }
+    } catch (e) {}
     
     if (typeof actualizarContadores === 'function') {
         actualizarContadores();
@@ -72,38 +94,7 @@ function guardarDatosConfig(data) {
 }
 
 // ==========================================
-// SINCRONIZAR ENTRE PESTAÑAS
-// ==========================================
-window.addEventListener('storage', function(e) {
-    if (e.key === CONFIG_STORE_KEY) {
-        console.log('🔄 Datos sincronizados desde otra pestaña');
-        
-        if (typeof actualizarContadores === 'function') {
-            actualizarContadores();
-        }
-        
-        if (typeof tipoActual !== 'undefined' && tipoActual) {
-            var data = obtenerDatosConfig();
-            datosActuales = data[tipoActual] || [];
-            if (typeof renderizarTabla === 'function') {
-                renderizarTabla();
-            }
-        }
-        
-        if (document.getElementById('usuariosBody')) {
-            cargarUsuarios();
-        }
-    }
-});
-
-// ==========================================
-// VARIABLES GLOBALES
-// ==========================================
-var tipoActual = '';
-var datosActuales = [];
-
-// ==========================================
-// INICIALIZAR CONFIGURACIÓN
+// INICIALIZAR CON SUPABASE
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     var user = getCurrentUser();
@@ -116,8 +107,24 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = '/dashboard.html';
         return;
     }
+    
     actualizarContadores();
     cargarSelects();
+    
+    // Inicializar Supabase en segundo plano
+    if (typeof initSupabase === 'function') {
+        initSupabase().then(function() {
+            console.log('✅ Supabase listo');
+            if (typeof suscribirseATodas === 'function') {
+                suscribirseATodas();
+            }
+            if (typeof initSupabaseData === 'function') {
+                initSupabaseData();
+            }
+        }).catch(function(error) {
+            console.warn('⚠️ Usando modo offline (Supabase no disponible)');
+        });
+    }
 });
 
 // ==========================================
@@ -376,7 +383,7 @@ function cargarRolesEnSelect() {
 }
 
 // ==========================================
-// GUARDAR ITEM (CREAR O EDITAR)
+// GUARDAR ITEM
 // ==========================================
 function guardarItem(e) {
     e.preventDefault();
@@ -394,7 +401,6 @@ function guardarItem(e) {
     var data = obtenerDatosConfig();
     var items = data[tipo] || [];
 
-    // Validar duplicado
     var existe = items.some(function(item) {
         return item.nombre.toLowerCase() === nombre.toLowerCase() && item.id != id;
     });
@@ -405,7 +411,6 @@ function guardarItem(e) {
 
     var nuevoItem = { id: id ? parseInt(id) : 0, nombre: nombre, estado: estado };
 
-    // Campos específicos para usuarios
     if (tipo === 'usuarios') {
         var email = document.getElementById('usuarioEmail').value.trim();
         var password = document.getElementById('usuarioPassword').value;
@@ -443,7 +448,6 @@ function guardarItem(e) {
         }
     }
 
-    // Campos específicos para cartas oferta
     if (tipo === 'cartasOferta') {
         var monto = parseFloat(document.getElementById('cartaMonto').value) || 0;
         var archivoInput = document.getElementById('cartaArchivo');
@@ -459,7 +463,6 @@ function guardarItem(e) {
     }
 
     if (id) {
-        // Editar
         var index = items.findIndex(function(i) { return i.id == id; });
         if (index !== -1) {
             nuevoItem.id = parseInt(id);
@@ -474,7 +477,6 @@ function guardarItem(e) {
         guardarDatosConfig(data);
         mostrarConfirmacion('Actualizado', 'El elemento ha sido actualizado correctamente.');
     } else {
-        // Nuevo
         var maxId = 0;
         items.forEach(function(i) { if (i.id > maxId) maxId = i.id; });
         nuevoItem.id = maxId + 1;
@@ -492,67 +494,7 @@ function guardarItem(e) {
 }
 
 // ==========================================
-// EDITAR ITEM
-// ==========================================
-function editarItem(id) {
-    var item = datosActuales.find(function(i) { return i.id === id; });
-    if (!item) return;
-
-    document.getElementById('gestionId').value = item.id;
-    document.getElementById('gestionNombre').value = item.nombre;
-    document.getElementById('gestionEstado').value = item.estado;
-    document.getElementById('gestionTipo').value = tipoActual;
-
-    var camposUsuario = document.getElementById('camposUsuario');
-    var camposCarta = document.getElementById('camposCarta');
-    var campoNombre = document.getElementById('campoNombre');
-    var labelNombre = document.getElementById('labelNombre');
-    
-    if (camposUsuario) camposUsuario.style.display = 'none';
-    if (camposCarta) camposCarta.style.display = 'none';
-    if (campoNombre) campoNombre.style.display = 'block';
-    if (labelNombre) labelNombre.textContent = 'Nombre';
-
-    var titulo = 'Editar ';
-    if (tipoActual === 'usuarios') {
-        titulo += 'Usuario';
-        if (camposUsuario) {
-            camposUsuario.style.display = 'block';
-            document.getElementById('usuarioEmail').value = item.email || '';
-            document.getElementById('usuarioPassword').value = '';
-            document.getElementById('usuarioPassword').placeholder = 'Dejar en blanco para mantener';
-            document.getElementById('usuarioPassword').required = false;
-            cargarRolesEnSelect();
-            document.getElementById('usuarioRol').value = item.rol || '';
-        }
-    } else if (tipoActual === 'cartasOferta') {
-        titulo += 'Carta Oferta';
-        if (camposCarta) {
-            camposCarta.style.display = 'block';
-            if (labelNombre) labelNombre.textContent = 'Nombre de la carta';
-            document.getElementById('cartaMonto').value = item.monto || '';
-            var archivoLabel = document.querySelector('#camposCarta small');
-            if (archivoLabel) {
-                if (item.archivo) {
-                    archivoLabel.textContent = 'Archivo actual: ' + item.archivo + ' (subir uno nuevo para reemplazar)';
-                } else {
-                    archivoLabel.textContent = 'Opcional: sube un archivo PDF';
-                }
-            }
-        }
-    } else {
-        titulo += tipoActual.charAt(0).toUpperCase() + tipoActual.slice(1);
-    }
-
-    var modalTitulo = document.getElementById('modalGestionTitulo');
-    if (modalTitulo) {
-        modalTitulo.innerHTML = '<i class="fas fa-edit"></i> ' + titulo;
-    }
-    abrirModal('modalGestion');
-}
-
-// ==========================================
-// ELIMINAR ITEM
+    // ELIMINAR ITEM
 // ==========================================
 function eliminarItem(id) {
     if (!confirm('¿Eliminar este elemento?')) return;
@@ -562,7 +504,6 @@ function eliminarItem(id) {
     var item = items.find(function(i) { return i.id === id; });
     if (!item) return;
 
-    // No permitir eliminar al administrador por defecto
     if (tipoActual === 'usuarios' && item.email === 'admin@siman.com') {
         alert('⚠️ No se puede eliminar al usuario administrador por defecto.');
         return;
@@ -591,18 +532,17 @@ function mostrarConfirmacion(titulo, mensaje) {
 }
 
 // ==========================================
-// LIMPIAR DATOS (CONSERVAR ADMIN)
+// LIMPIAR DATOS
 // ==========================================
 function limpiarDatos() {
-    if (!confirm('⚠️ ¿Estás seguro de limpiar los datos del sistema?\n\nSe ELIMINARÁN:\n- Comerciales\n- Tiendas\n- Departamentos\n- Estados\n- Prioridades\n- Motivos\n- Tipos de contratación\n- Asignaciones\n- Correos\n- Plantillas\n- Cartas Oferta\n\nSe CONSERVARÁN:\n- Usuario administrador\n- Roles')) {
+    if (!confirm('⚠️ ¿Estás seguro de limpiar los datos del sistema?\n\nSe ELIMINARÁN todos los datos excepto el administrador.')) {
         return;
     }
 
     var data = obtenerDatosConfig();
-    // Conservar solo el admin
     var admin = data.usuarios.find(function(u) { return u.email === 'admin@siman.com'; });
     data.usuarios = admin ? [admin] : [];
-    data.roles = data.roles || [];
+    data.roles = [];
     data.comerciales = [];
     data.tiendas = [];
     data.departamentos = [];
@@ -616,7 +556,7 @@ function limpiarDatos() {
     data.cartasOferta = [];
 
     guardarDatosConfig(data);
-    alert('✅ Datos limpiados correctamente.\n\nUsuario administrador y Roles se han conservado.');
+    alert('✅ Datos limpiados correctamente.');
     location.reload();
 }
 
@@ -635,7 +575,7 @@ function exportarDatos() {
 }
 
 // ==========================================
-// CARGAR USUARIOS EN TABLA
+// CARGAR USUARIOS
 // ==========================================
 function cargarUsuarios() {
     var tbody = document.getElementById('usuariosBody');
@@ -667,6 +607,48 @@ function cargarUsuarios() {
             <td>${u.email}</td>
             <td><span class="badge ${rolClass}">${u.rol}</span></td>
             <td><span class="badge ${estadoClass}">${u.estado}</span></td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// ==========================================
+// CARGAR REQUISICIONES
+// ==========================================
+function cargarRequisiciones() {
+    var tbody = document.getElementById('requisicionesBody');
+    if (!tbody) return;
+    
+    var requisiciones = JSON.parse(localStorage.getItem('requisiciones_data') || '[]');
+    
+    tbody.innerHTML = '';
+    if (requisiciones.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fas fa-inbox"></i>No hay requisiciones registradas</td></tr>';
+        return;
+    }
+    
+    var estadoMap = {
+        'Revisando': 'badge-yellow',
+        'Publicada': 'badge-blue',
+        'Entrevistas': 'badge-green',
+        'Urgente': 'badge-red',
+        'Cerrada': 'badge-gray',
+        'Nueva': 'badge-blue'
+    };
+    
+    requisiciones.forEach(function(r) {
+        var tr = document.createElement('tr');
+        var estadoClass = estadoMap[r.estado] || 'badge-gray';
+        tr.innerHTML = `
+            <td><strong>${r.id}</strong></td>
+            <td>${r.puesto}</td>
+            <td>${r.centro}</td>
+            <td><span class="badge ${estadoClass}">${r.estado}</span></td>
+            <td>${r.fecha}</td>
+            <td style="text-align:center;">
+                <button class="btn-icon" onclick="navigateTo('/detalle-requisicion.html')"><i class="fas fa-eye"></i></button>
+                <button class="btn-icon" onclick="navigateTo('/administrar-requisicion.html')"><i class="fas fa-edit"></i></button>
+            </td>
         `;
         tbody.appendChild(tr);
     });

@@ -45,9 +45,6 @@ function getDefaultConfigData() {
     };
 }
 
-// ==========================================
-// OBTENER USUARIOS DESDE STORAGE
-// ==========================================
 function getUsersFromStorage() {
     try {
         var data = localStorage.getItem('siman_config_data');
@@ -103,9 +100,6 @@ function getUsersFromStorage() {
     }
 }
 
-// ==========================================
-// SESSION MANAGEMENT
-// ==========================================
 function login(username, password) {
     var users = getUsersFromStorage();
     var user = users.find(function(u) {
@@ -146,9 +140,6 @@ function refreshAuthUsers() {
     return getUsersFromStorage();
 }
 
-// ==========================================
-// VERIFICAR ROL
-// ==========================================
 function tieneRol(rol) {
     var user = getCurrentUser();
     if (!user) return false;
@@ -159,21 +150,6 @@ function esAdministrador() {
     return tieneRol('Administrador');
 }
 
-function esGerenteRH() {
-    return tieneRol('Gerente RH');
-}
-
-function esReclutadora() {
-    return tieneRol('Reclutadora');
-}
-
-function esEjecutivo() {
-    return tieneRol('Ejecutivo');
-}
-
-// ==========================================
-// PROTEGER RUTAS POR ROL
-// ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     var currentPage = window.location.pathname;
     if (!currentPage.includes('login.html') && currentPage !== '/') {
@@ -183,9 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 '/configuracion': ['Administrador'],
                 '/configuracion.html': ['Administrador'],
                 '/usuarios': ['Administrador'],
-                '/usuarios.html': ['Administrador'],
-                '/dashboard-ejecutivo': ['Administrador', 'Ejecutivo'],
-                '/dashboard-ejecutivo.html': ['Administrador', 'Ejecutivo']
+                '/usuarios.html': ['Administrador']
             };
             
             var rutaActual = currentPage;
