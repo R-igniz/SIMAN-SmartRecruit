@@ -108,7 +108,7 @@ function getSidebarHTML() {
                 ">
                     <i class="fas fa-cloud-upload-alt"></i> Subir a nube
                 </button>
-                <button onclick="recargarDesdeNube()" style="
+                <button onclick="initSupabaseData()" style="
                     width: 100%;
                     padding: 10px 12px;
                     border: none;
@@ -133,7 +133,6 @@ function getSidebarHTML() {
         `;
     }
 
-    // Logout
     navHTML += `
         <div class="nav-divider"></div>
         <a class="nav-item" onclick="logout()" style="color: var(--danger); cursor: pointer;">
@@ -246,35 +245,14 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ==========================================
-// FUNCIONES DE SINCRONIZACIÓN (exponer globalmente)
+// FUNCIONES DE SINCRONIZACIÓN (wrapper)
 // ==========================================
 
-// Función para recargar desde la nube
-function recargarDesdeNube() {
-    if (typeof initSupabaseData === 'function') {
-        if (confirm('⚠️ ¿Deseas cargar los datos desde la nube?\n\nEsto fusionará los datos locales con los de la nube.')) {
-            initSupabaseData().then(function() {
-                if (typeof agregarNotificacion === 'function') {
-                    agregarNotificacion('success', '✅ Datos cargados desde la nube correctamente', '#');
-                }
-            }).catch(function(error) {
-                if (typeof agregarNotificacion === 'function') {
-                    agregarNotificacion('danger', '❌ Error al cargar desde la nube: ' + error.message, '#');
-                }
-            });
-        }
-    } else {
-        if (typeof agregarNotificacion === 'function') {
-            agregarNotificacion('warning', '⚠️ La función de sincronización no está disponible', '#');
-        }
-    }
-}
-
-// Función para sincronizar (subir a la nube)
+// Esta función llama a la función real de supabase-client.js
 function sincronizarConSupabase() {
-    if (typeof sincronizarConSupabase === 'function') {
+    if (typeof window.sincronizarConSupabase === 'function') {
         if (confirm('⚠️ ¿Deseas subir tus datos a la nube?\n\nEsto guardará todos los cambios en la nube.')) {
-            sincronizarConSupabase().then(function(resultado) {
+            window.sincronizarConSupabase().then(function(resultado) {
                 if (typeof agregarNotificacion === 'function') {
                     if (resultado && resultado.error) {
                         agregarNotificacion('danger', '❌ Error al sincronizar: ' + resultado.error, '#');
@@ -289,13 +267,30 @@ function sincronizarConSupabase() {
             });
         }
     } else {
-        if (typeof agregarNotificacion === 'function') {
-            agregarNotificacion('warning', '⚠️ La función de sincronización no está disponible', '#');
+        alert('⚠️ La función de sincronización no está disponible. Asegúrate de que supabase-client.js esté cargado.');
+    }
+}
+
+// Esta función llama a la función real de supabase-client.js
+function initSupabaseData() {
+    if (typeof window.initSupabaseData === 'function') {
+        if (confirm('⚠️ ¿Deseas cargar los datos desde la nube?\n\nEsto fusionará los datos locales con los de la nube.')) {
+            window.initSupabaseData().then(function() {
+                if (typeof agregarNotificacion === 'function') {
+                    agregarNotificacion('success', '✅ Datos cargados desde la nube correctamente', '#');
+                }
+            }).catch(function(error) {
+                if (typeof agregarNotificacion === 'function') {
+                    agregarNotificacion('danger', '❌ Error al cargar desde la nube: ' + error.message, '#');
+                }
+            });
         }
+    } else {
+        alert('⚠️ La función de carga desde la nube no está disponible. Asegúrate de que supabase-client.js esté cargado.');
     }
 }
 
 // Exponer funciones globalmente
-window.recargarDesdeNube = recargarDesdeNube;
 window.sincronizarConSupabase = sincronizarConSupabase;
+window.initSupabaseData = initSupabaseData;
 window.initLayout = initLayout;

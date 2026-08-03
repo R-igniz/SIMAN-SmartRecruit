@@ -96,7 +96,7 @@ async function eliminarDeSupabase(tabla, id) {
 }
 
 // ==========================================
-    // SUSCRIPCIÓN EN TIEMPO REAL
+// SUSCRIPCIÓN EN TIEMPO REAL
 // ==========================================
 
 function suscribirseATabla(tabla, callback) {
@@ -126,10 +126,23 @@ function suscribirseATabla(tabla, callback) {
 // ==========================================
 
 async function sincronizarConSupabase() {
-    console.log('🔄 Sincronizando datos con Supabase...');
+    console.log('🔄 Iniciando sincronización con Supabase...');
     
     try {
+        // Verificar conexión a Internet
+        if (!navigator.onLine) {
+            if (typeof agregarNotificacion === 'function') {
+                agregarNotificacion('danger', '❌ Sin conexión a Internet. No se puede sincronizar.', '#');
+            }
+            return { error: 'Sin conexión a Internet' };
+        }
+        
+        // Inicializar Supabase
+        await initSupabase();
+        
         var data = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
+        var requisiciones = JSON.parse(localStorage.getItem('requisiciones_data') || '[]');
+        
         var resultados = {
             usuarios: 0,
             roles: 0,
@@ -168,7 +181,6 @@ async function sincronizarConSupabase() {
         }
         
         // Sincronizar requisiciones
-        var requisiciones = JSON.parse(localStorage.getItem('requisiciones_data') || '[]');
         if (requisiciones.length > 0) {
             for (var i = 0; i < requisiciones.length; i++) {
                 var result = await guardarEnSupabase('requisiciones', requisiciones[i]);
@@ -181,7 +193,8 @@ async function sincronizarConSupabase() {
         var mensaje = '✅ Datos sincronizados: ' + 
             resultados.usuarios + ' usuarios, ' + 
             resultados.roles + ' roles, ' + 
-            resultados.comerciales + ' comerciales';
+            resultados.comerciales + ' comerciales, ' +
+            resultados.requisiciones + ' requisiciones';
         
         if (resultados.errores > 0) {
             mensaje += ' ⚠️ ' + resultados.errores + ' errores';
@@ -202,7 +215,7 @@ async function sincronizarConSupabase() {
 }
 
 // ==========================================
-// CARGAR DATOS DESDE SUPABASE (RECIBIR) - FUSIONAR EN LUGAR DE SOBRESCRIBIR
+// CARGAR DATOS DESDE SUPABASE (RECIBIR) - FUSIONAR
 // ==========================================
 
 async function cargarDesdeSupabase(tabla) {
@@ -214,26 +227,20 @@ async function cargarDesdeSupabase(tabla) {
 }
 
 function fusionarDatos(datosLocales, datosRemotos, claveUnica) {
-    // Crear un mapa con los datos locales
     var mapaLocal = {};
     datosLocales.forEach(function(item) {
         mapaLocal[item[claveUnica]] = item;
     });
     
-    // Agregar o actualizar con datos remotos
     datosRemotos.forEach(function(item) {
         var key = item[claveUnica];
         if (mapaLocal[key]) {
-            // Si ya existe, actualizar solo si el remoto es más reciente
-            // (asumimos que el remoto tiene prioridad por ser la fuente central)
             mapaLocal[key] = item;
         } else {
-            // Si no existe, agregar
             mapaLocal[key] = item;
         }
     });
     
-    // Convertir mapa de vuelta a array
     return Object.values(mapaLocal);
 }
 
@@ -245,7 +252,16 @@ async function initSupabaseData(forceLoad) {
     console.log('🔄 Cargando datos desde Supabase...');
     
     try {
-        // Cargar datos desde Supabase
+        // Verificar conexión
+        if (!navigator.onLine) {
+            if (typeof agregarNotificacion === 'function') {
+                agregarNotificacion('warning', '⚠️ Sin conexión a Internet. Usando datos locales.', '#');
+            }
+            return null;
+        }
+        
+        await initSupabase();
+        
         var [usuariosRemotos, rolesRemotos, comercialesRemotos, requisicionesRemotos] = await Promise.all([
             cargarDesdeSupabase('usuarios'),
             cargarDesdeSupabase('roles'),
@@ -253,37 +269,27 @@ async function initSupabaseData(forceLoad) {
             cargarDesdeSupabase('requisiciones')
         ]);
         
-        // Obtener datos locales actuales
         var dataLocal = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
         
-        // Fusionar datos (preservar admin local si existe)
-        var usuariosLocales = dataLocal.usuarios || [];
-        
-        // Asegurar que el admin por defecto esté siempre presente
-        var adminLocal = usuariosLocales.find(function(u) { return u.email === 'admin@siman.com'; });
+        // Asegurar admin
+        var adminLocal = dataLocal.usuarios ? dataLocal.usuarios.find(function(u) { return u.email === 'admin@siman.com'; }) : null;
         var adminRemoto = usuariosRemotos.find(function(u) { return u.email === 'admin@siman.com'; });
         
-        // Si no hay admin en remoto y hay admin local, agregarlo al remoto
         if (!adminRemoto && adminLocal) {
             await guardarEnSupabase('usuarios', adminLocal);
             usuariosRemotos.push(adminLocal);
         }
         
-        // Si no hay admin en local y hay admin remoto, usarlo
         if (!adminLocal && adminRemoto) {
-            usuariosLocales.push(adminRemoto);
+            if (!dataLocal.usuarios) dataLocal.usuarios = [];
+            dataLocal.usuarios.push(adminRemoto);
         }
         
-        // Fusionar usuarios
-        var usuariosFusionados = fusionarDatos(usuariosLocales, usuariosRemotos, 'email');
-        
-        // Fusionar roles
+        // Fusionar
+        var usuariosFusionados = fusionarDatos(dataLocal.usuarios || [], usuariosRemotos, 'email');
         var rolesFusionados = fusionarDatos(dataLocal.roles || [], rolesRemotos, 'id');
-        
-        // Fusionar comerciales
         var comercialesFusionados = fusionarDatos(dataLocal.comerciales || [], comercialesRemotos, 'id');
         
-        // Guardar datos fusionados
         var dataFinal = {
             usuarios: usuariosFusionados,
             roles: rolesFusionados,
@@ -343,7 +349,7 @@ async function initSupabaseData(forceLoad) {
 }
 
 // ==========================================
-// SUSCRIBIRSE A TODAS LAS TABLAS (RECIBIR CAMBIOS EN TIEMPO REAL)
+// SUSCRIBIRSE A TODAS LAS TABLAS
 // ==========================================
 
 function suscribirseATodas() {
@@ -353,12 +359,10 @@ function suscribirseATodas() {
         suscribirseATabla(tabla, function(payload) {
             console.log('🔄 Cambio en ' + tabla + ':', payload);
             
-            // Recargar solo la tabla afectada
             cargarDesdeSupabase(tabla).then(function(data) {
                 var dataLocal = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
                 
                 if (tabla === 'usuarios') {
-                    // Fusionar usuarios
                     var usuariosLocales = dataLocal.usuarios || [];
                     var usuariosFusionados = fusionarDatos(usuariosLocales, data, 'email');
                     dataLocal.usuarios = usuariosFusionados;
@@ -386,7 +390,7 @@ function suscribirseATodas() {
 }
 
 // ==========================================
-// EXPORTAR FUNCIONES
+// EXPORTAR FUNCIONES GLOBALMENTE
 // ==========================================
 
 window.initSupabase = initSupabase;
@@ -399,3 +403,5 @@ window.initSupabaseData = initSupabaseData;
 window.suscribirseATodas = suscribirseATodas;
 window.suscribirseATabla = suscribirseATabla;
 window.fusionarDatos = fusionarDatos;
+
+console.log('✅ Supabase client cargado - Funciones disponibles: sincronizarConSupabase, initSupabaseData');
