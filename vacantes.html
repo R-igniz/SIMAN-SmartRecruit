@@ -1,101 +1,55 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SIMAN SmartRecruit - Vacantes</title>
-  <link rel="stylesheet" href="css/global.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SIMAN SmartRecruit - Vacantes</title>
+    <link rel="stylesheet" href="css/global.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        .vacante-card {
+            transition: all 0.2s;
+        }
+        .vacante-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover);
+        }
+    </style>
 </head>
 <body>
-  <div id="sidebar-container"></div>
-  
-  <div class="main-content">
-    <div id="topbar-container"></div>
+    <div id="sidebar-container"></div>
     
-    <div class="card">
-      <div class="card-header">
-        <span><i class="fas fa-briefcase"></i> Vacantes Disponibles</span>
-        <span class="badge badge-blue">4 abiertas</span>
-      </div>
-      
-      <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
-        <div class="card" style="border-left:4px solid var(--primary);">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-            <div>
-              <h4 style="font-size:16px;">Analista Financiero</h4>
-              <p style="color:#5f6b7a; font-size:13px;"><i class="fas fa-store"></i> Gran Vía</p>
-            </div>
-            <span class="badge badge-blue">2 plazas</span>
-          </div>
-          <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
-            <span class="badge badge-green">Activa</span>
-            <span style="font-size:12px; color:#5f6b7a;"><i class="far fa-clock"></i> Publicada hace 3d</span>
-          </div>
-          <button class="btn btn-primary" style="width:100%; margin-top:12px; justify-content:center; padding:8px;" onclick="navigateTo('/detalle-requisicion.html')">
-            <i class="fas fa-file-alt"></i> Ver Detalle
-          </button>
-        </div>
+    <div class="main-content">
+        <div id="topbar-container"></div>
         
-        <div class="card" style="border-left:4px solid var(--warning);">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-            <div>
-              <h4 style="font-size:16px;">Cajero</h4>
-              <p style="color:#5f6b7a; font-size:13px;"><i class="fas fa-store"></i> Multiplaza</p>
+        <div class="card">
+            <div class="card-header">
+                <span><i class="fas fa-briefcase"></i> Vacantes Disponibles</span>
+                <div>
+                    <span class="badge badge-blue" id="totalVacantes">0 activas</span>
+                    <button class="btn btn-outline" onclick="cargarVacantes()" style="padding:4px 12px; margin-left:8px;">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
             </div>
-            <span class="badge badge-yellow">5 plazas</span>
-          </div>
-          <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
-            <span class="badge badge-yellow">Media</span>
-            <span style="font-size:12px; color:#5f6b7a;"><i class="far fa-clock"></i> Publicada hace 5d</span>
-          </div>
-          <button class="btn btn-primary" style="width:100%; margin-top:12px; justify-content:center; padding:8px;" onclick="navigateTo('/detalle-requisicion.html')">
-            <i class="fas fa-file-alt"></i> Ver Detalle
-          </button>
-        </div>
-        
-        <div class="card" style="border-left:4px solid var(--danger);">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-            <div>
-              <h4 style="font-size:16px;">Auxiliar RH</h4>
-              <p style="color:#5f6b7a; font-size:13px;"><i class="fas fa-store"></i> La Pradera</p>
+            
+            <div id="vacantesContainer" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:16px;">
+                <div class="empty-state">
+                    <i class="fas fa-briefcase"></i>
+                    No hay vacantes disponibles
+                </div>
             </div>
-            <span class="badge badge-red">Urgente</span>
-          </div>
-          <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
-            <span class="badge badge-red">Alta</span>
-            <span style="font-size:12px; color:#5f6b7a;"><i class="far fa-clock"></i> Publicada hace 12d</span>
-          </div>
-          <button class="btn btn-primary" style="width:100%; margin-top:12px; justify-content:center; padding:8px;" onclick="navigateTo('/detalle-requisicion.html')">
-            <i class="fas fa-file-alt"></i> Ver Detalle
-          </button>
         </div>
-        
-        <div class="card" style="border-left:4px solid var(--success);">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-            <div>
-              <h4 style="font-size:16px;">Jefe de Marketing</h4>
-              <p style="color:#5f6b7a; font-size:13px;"><i class="fas fa-store"></i> Galerías</p>
-            </div>
-            <span class="badge badge-green">1 plaza</span>
-          </div>
-          <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
-            <span class="badge badge-green">Entrevistas</span>
-            <span style="font-size:12px; color:#5f6b7a;"><i class="far fa-clock"></i> Publicada hace 8d</span>
-          </div>
-          <button class="btn btn-primary" style="width:100%; margin-top:12px; justify-content:center; padding:8px;" onclick="navigateTo('/detalle-requisicion.html')">
-            <i class="fas fa-file-alt"></i> Ver Detalle
-          </button>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <script src="js/auth.js"></script>
-  <script src="js/router.js"></script>
-  <script src="js/sidebar.js"></script>
-  <script src="js/vacantes.js"></script>
-  <script src="js/darkmode.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/sidebar.js"></script>
+    <script src="js/darkmode.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/configuracion.js"></script>
+    <script src="js/vacantes.js"></script>
 </body>
 </html>

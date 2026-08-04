@@ -12,8 +12,9 @@ function cargarVacantes() {
     
     container.innerHTML = '';
     
+    // Mostrar solo vacantes activas (no cerradas)
     var activas = requisiciones.filter(function(r) {
-        return r.estado !== 'Cerrado';
+        return r.estado !== 'Cerrado' && r.estado !== 'Cerrada';
     });
     
     if (activas.length === 0) {
@@ -27,6 +28,15 @@ function cargarVacantes() {
         'Baja': 'badge-blue'
     };
     
+    var estadoMap = {
+        'Nueva': 'badge-blue',
+        'Revisando': 'badge-yellow',
+        'Publicada': 'badge-blue',
+        'En Proceso': 'badge-yellow',
+        'Entrevistas': 'badge-green',
+        'Urgente': 'badge-red'
+    };
+    
     activas.forEach(function(r) {
         var reclutadorNombre = r.reclutador || 'No asignado';
         if (r.reclutador && reclutadores.length > 0) {
@@ -35,13 +45,15 @@ function cargarVacantes() {
         }
         
         var card = document.createElement('div');
-        card.className = 'card';
+        card.className = 'card vacante-card';
         card.style.cssText = 'border-left:4px solid ' + (r.prioridad === 'Alta' ? 'var(--danger)' : r.prioridad === 'Media' ? 'var(--warning)' : 'var(--primary)') + ';';
+        
+        var fecha = r.fecha ? new Date(r.fecha).toLocaleDateString('es-ES') : 'Sin fecha';
         
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                 <div>
-                    <h4 style="font-size:16px;">${r.puesto || 'Sin título'}</h4>
+                    <h4 style="font-size:16px; color:var(--text-secondary);">${r.puesto || 'Sin título'}</h4>
                     <p style="color:var(--text-muted); font-size:13px;">
                         <i class="fas fa-store"></i> ${r.centro || '-'}
                         ${r.tienda ? '· ' + r.tienda : ''}
@@ -52,37 +64,68 @@ function cargarVacantes() {
                 </div>
                 <div style="text-align:right;">
                     <span class="badge ${prioridadBadge[r.prioridad] || 'badge-gray'}">${r.prioridad || 'Media'}</span>
-                    <span class="badge ${r.estado === 'Urgente' ? 'badge-red' : 'badge-blue'}" style="display:block; margin-top:4px;">${r.estado || 'Nueva'}</span>
+                    <div style="margin-top:4px;">
+                        <span class="badge ${estadoMap[r.estado] || 'badge-gray'}">${r.estado || 'Nueva'}</span>
+                    </div>
                 </div>
             </div>
             <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
                 <div>
                     <span style="font-size:12px; color:var(--text-muted);">
-                        <i class="far fa-clock"></i> ${r.fecha || 'Sin fecha'}
+                        <i class="far fa-calendar-alt"></i> ${fecha}
                     </span>
                     <span style="font-size:12px; color:var(--text-muted); margin-left:12px;">
                         <i class="fas fa-users"></i> ${r.cantidad || 1} plaza(s)
                     </span>
                 </div>
-                <button class="btn btn-primary" style="padding:6px 16px; font-size:12px;" onclick="navigateTo('/detalle-requisicion.html')">
-                    <i class="fas fa-file-alt"></i> Ver Detalle
-                </button>
+                <div style="display:flex; gap:6px;">
+                    <button class="btn btn-primary" style="padding:6px 16px; font-size:12px;" onclick="navigateTo('/detalle-requisicion.html?id=${r.id}')">
+                        <i class="fas fa-file-alt"></i> Ver Detalle
+                    </button>
+                    <button class="btn btn-outline" style="padding:6px 16px; font-size:12px;" onclick="navigateTo('/administrar-requisicion.html?id=${r.id}')">
+                        <i class="fas fa-tasks"></i> Gestionar
+                    </button>
+                </div>
             </div>
         `;
         container.appendChild(card);
     });
+    
+    // Actualizar contador
+    var totalBadge = document.getElementById('totalVacantes');
+    if (totalBadge) {
+        totalBadge.textContent = activas.length + ' activas';
+    }
 }
 
+// ==========================================
+// SINCRONIZAR
+// ==========================================
 window.addEventListener('storage', function(e) {
     if (e.key === 'requisiciones_data' || e.key === 'siman_config_data') {
         cargarVacantes();
     }
 });
 
+// ==========================================
+// INICIALIZAR
+// ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     var user = getCurrentUser();
-    if (!user) return;
+    if (!user) {
+        window.location.href = '/login.html';
+        return;
+    }
+    
     cargarVacantes();
+    
+    if (typeof initSupabase === 'function') {
+        initSupabase().then(function() {
+            if (typeof sincronizarRequisiciones === 'function') {
+                sincronizarRequisiciones();
+            }
+        });
+    }
 });
 
 window.cargarVacantes = cargarVacantes;
