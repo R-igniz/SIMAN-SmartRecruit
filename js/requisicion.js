@@ -1,196 +1,257 @@
 // ==========================================
+// REQUISICIÓN - NUEVA REQUISICIÓN
+// ==========================================
+
+var currentStep = 1;
+var totalSteps = 4;
+
+// ==========================================
 // CARGA DE DATOS DESDE CONFIGURACIÓN
 // ==========================================
-var CONFIG_STORE_KEY = 'siman_config_data';
-
-function obtenerConfiguracion() {
-  var data = localStorage.getItem(CONFIG_STORE_KEY);
-  if (data) {
-    return JSON.parse(data);
-  }
-  // Datos por defecto si no hay configuración
-  return {
-    comerciales: [
-      { id: 1, nombre: 'Gran Vía', estado: 'activo' },
-      { id: 2, nombre: 'Multiplaza', estado: 'activo' },
-      { id: 3, nombre: 'Galerías', estado: 'activo' }
-    ],
-    tiendas: [
-      { id: 1, nombre: 'Electrónica', estado: 'activo' },
-      { id: 2, nombre: 'Ropa', estado: 'activo' },
-      { id: 3, nombre: 'Calzado', estado: 'activo' }
-    ],
-    departamentos: [
-      { id: 1, nombre: 'Financiero', estado: 'activo' },
-      { id: 2, nombre: 'Marketing', estado: 'activo' },
-      { id: 3, nombre: 'RRHH', estado: 'activo' }
-    ],
-    tiposContratacion: [
-      { id: 1, nombre: 'Directa', estado: 'activo' },
-      { id: 2, nombre: 'Temporal', estado: 'activo' },
-      { id: 3, nombre: 'Prácticas', estado: 'activo' }
-    ],
-    prioridades: [
-      { id: 1, nombre: 'Alta', estado: 'activo' },
-      { id: 2, nombre: 'Media', estado: 'activo' },
-      { id: 3, nombre: 'Baja', estado: 'activo' }
-    ],
-    motivos: [
-      { id: 1, nombre: 'Nueva posición', estado: 'activo' },
-      { id: 2, nombre: 'Reemplazo', estado: 'activo' },
-      { id: 3, nombre: 'Expansión', estado: 'activo' }
-    ]
-  };
-}
-
-function poblarSelect(id, datos, textoDefault) {
-  var select = document.getElementById(id);
-  if (!select) return;
-  select.innerHTML = '<option value="">' + (textoDefault || 'Seleccionar...') + '</option>';
-  if (!datos || datos.length === 0) {
-    select.innerHTML = '<option value="">No hay opciones disponibles</option>';
-    return;
-  }
-  datos.forEach(function(item) {
-    if (item.estado === 'activo') {
-      var option = document.createElement('option');
-      option.value = item.nombre;
-      option.textContent = item.nombre;
-      select.appendChild(option);
-    }
-  });
-}
-
 function cargarDatosFormulario() {
-  var config = obtenerConfiguracion();
-  
-  poblarSelect('centroComercial', config.comerciales || []);
-  poblarSelect('tienda', config.tiendas || []);
-  poblarSelect('departamento', config.departamentos || []);
-  poblarSelect('tipoContratacion', config.tiposContratacion || []);
-  poblarSelect('prioridad', config.prioridades || []);
-  poblarSelect('motivo', config.motivos || []);
+    var data = obtenerDatosConfig();
+    
+    // Cargar centros comerciales
+    var comerciales = obtenerComerciales();
+    poblarSelect('centroComercial', comerciales, 'Seleccionar centro...');
+    
+    // Cargar tiendas (inicialmente vacías, se llenan al seleccionar centro)
+    var tiendas = obtenerTiendas();
+    poblarSelect('tienda', tiendas, 'Seleccionar tienda...', true);
+    
+    // Cargar departamentos
+    var departamentos = data.departamentos || [];
+    poblarSelect('departamento', departamentos, 'Seleccionar departamento...');
+    
+    // Cargar tipos de contratación
+    var tiposContratacion = data.tiposContratacion || [];
+    poblarSelect('tipoContratacion', tiposContratacion, 'Seleccionar tipo...');
+    
+    // Cargar prioridades
+    var prioridades = data.prioridades || [];
+    poblarSelect('prioridad', prioridades, 'Seleccionar prioridad...');
+    
+    // Cargar motivos
+    var motivos = data.motivos || [];
+    poblarSelect('motivo', motivos, 'Seleccionar motivo...');
+    
+    // Cargar reclutadores
+    var reclutadores = obtenerReclutadores();
+    poblarSelect('reclutador', reclutadores, 'Seleccionar reclutador...');
+}
+
+function poblarSelect(id, datos, textoDefault, esTienda) {
+    var select = document.getElementById(id);
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">' + (textoDefault || 'Seleccionar...') + '</option>';
+    if (!datos || datos.length === 0) {
+        select.innerHTML = '<option value="">No hay opciones disponibles</option>';
+        return;
+    }
+    
+    datos.forEach(function(item) {
+        var estado = item.estado !== undefined ? item.estado : 'activo';
+        if (estado === 'activo') {
+            var option = document.createElement('option');
+            if (esTienda) {
+                option.value = item.nombre;
+                option.textContent = item.nombre;
+                option.dataset.comercial = item.comercial || '';
+            } else {
+                option.value = item.nombre;
+                option.textContent = item.nombre;
+            }
+            select.appendChild(option);
+        }
+    });
 }
 
 // ==========================================
-// SINCRONIZACIÓN ENTRE PESTAÑAS
+// FILTRO DINÁMICO: CENTRO COMERCIAL → TIENDAS
 // ==========================================
-window.addEventListener('storage', function(e) {
-  if (e.key === CONFIG_STORE_KEY) {
-    // Recargar los selects automáticamente cuando hay cambios en configuración
-    cargarDatosFormulario();
-  }
-});
+function filtrarTiendasPorComercial() {
+    var comercialSelect = document.getElementById('centroComercial');
+    var tiendaSelect = document.getElementById('tienda');
+    var comercial = comercialSelect.value;
+    
+    if (!comercial) {
+        var tiendas = obtenerTiendas();
+        poblarSelect('tienda', tiendas, 'Seleccionar tienda...', true);
+        return;
+    }
+    
+    var tiendasFiltradas = obtenerTiendasPorComercial(comercial);
+    poblarSelect('tienda', tiendasFiltradas, 'Seleccionar tienda...', true);
+}
 
 // ==========================================
 // WIZARD NAVEGACIÓN
 // ==========================================
-var currentStep = 1;
-var totalSteps = 4;
-
 function showStep(step) {
-  document.querySelectorAll('.step-content').forEach(function(el) {
-    el.classList.remove('active');
-  });
-  var el = document.getElementById('step' + step);
-  if (el) el.classList.add('active');
-  
-  document.querySelectorAll('.wizard-steps .step').forEach(function(el) {
-    var num = parseInt(el.dataset.step);
-    el.classList.remove('active');
-    if (num < step) el.classList.add('completed');
-    if (num === step) el.classList.add('active');
-  });
-  
-  if (step === 4) updateSummary();
-  currentStep = step;
+    document.querySelectorAll('.step-content').forEach(function(el) {
+        el.classList.remove('active');
+    });
+    var el = document.getElementById('step' + step);
+    if (el) el.classList.add('active');
+    
+    document.querySelectorAll('.wizard-steps .step').forEach(function(el) {
+        var num = parseInt(el.dataset.step);
+        el.classList.remove('active');
+        if (num < step) el.classList.add('completed');
+        if (num === step) el.classList.add('active');
+    });
+    
+    if (step === 4) updateSummary();
+    currentStep = step;
 }
 
 function nextStep(step) {
-  showStep(step);
+    showStep(step);
 }
 
 function prevStep(step) {
-  showStep(step);
+    showStep(step);
 }
 
 // ==========================================
 // RESUMEN
 // ==========================================
 function updateSummary() {
-  var centro = document.getElementById('centroComercial').value || '-';
-  var puesto = document.getElementById('nombrePuesto').value || '-';
-  var cantidad = document.getElementById('cantidadPlazas').value || '-';
-  var prioridad = document.getElementById('prioridad').value || '-';
-  var tipo = document.getElementById('tipoContratacion').value || '-';
-  
-  document.getElementById('resCentro').textContent = centro;
-  document.getElementById('resPuesto').textContent = puesto;
-  document.getElementById('resCantidad').textContent = cantidad;
-  document.getElementById('resPrioridad').textContent = prioridad;
-  document.getElementById('resTipo').textContent = tipo;
+    var centro = document.getElementById('centroComercial').value || '-';
+    var tienda = document.getElementById('tienda').value || '-';
+    var departamento = document.getElementById('departamento').value || '-';
+    var puesto = document.getElementById('nombrePuesto').value || '-';
+    var cantidad = document.getElementById('cantidadPlazas').value || '-';
+    var prioridad = document.getElementById('prioridad').value || '-';
+    var tipo = document.getElementById('tipoContratacion').value || '-';
+    var reclutador = document.getElementById('reclutador').value || '-';
+    
+    document.getElementById('resCentro').textContent = centro;
+    document.getElementById('resTienda').textContent = tienda;
+    document.getElementById('resDepartamento').textContent = departamento;
+    document.getElementById('resPuesto').textContent = puesto;
+    document.getElementById('resCantidad').textContent = cantidad;
+    document.getElementById('resPrioridad').textContent = prioridad;
+    document.getElementById('resTipo').textContent = tipo;
+    document.getElementById('resReclutador').textContent = reclutador;
 }
 
 // ==========================================
 // ACCIONES
 // ==========================================
 function saveDraft() {
-  alert('📝 Borrador guardado correctamente');
+    alert('📝 Borrador guardado correctamente');
 }
 
 function submitRequisicion() {
-  var nombrePuesto = document.getElementById('nombrePuesto').value.trim();
-  if (!nombrePuesto) {
-    alert('⚠️ Por favor complete el nombre del puesto');
-    showStep(2);
-    return;
-  }
-  
-  var modal = document.getElementById('successModal');
-  modal.classList.add('show');
-  
-  var reclutadoras = ['María Gómez', 'Ana López', 'Carlos Rodríguez'];
-  var asignada = reclutadoras[Math.floor(Math.random() * reclutadoras.length)];
-  
-  setTimeout(function() {
-    document.getElementById('modalMessage').textContent = '✅ Asignada automáticamente a: ' + asignada;
-  }, 1500);
+    var nombrePuesto = document.getElementById('nombrePuesto').value.trim();
+    if (!nombrePuesto) {
+        alert('⚠️ Por favor complete el nombre del puesto');
+        showStep(2);
+        return;
+    }
+    
+    var centro = document.getElementById('centroComercial').value;
+    if (!centro) {
+        alert('⚠️ Por favor seleccione un centro comercial');
+        showStep(1);
+        return;
+    }
+    
+    // Crear objeto requisicion
+    var requisicion = {
+        id: 'R-' + Date.now(),
+        puesto: nombrePuesto,
+        centro: centro,
+        tienda: document.getElementById('tienda').value,
+        departamento: document.getElementById('departamento').value,
+        gerente: document.getElementById('gerente').value,
+        fecha: document.getElementById('fecha').value,
+        tipoContratacion: document.getElementById('tipoContratacion').value,
+        cantidad: document.getElementById('cantidadPlazas').value,
+        prioridad: document.getElementById('prioridad').value,
+        motivo: document.getElementById('motivo').value,
+        reclutador: document.getElementById('reclutador').value,
+        estado: 'Nueva',
+        fechaCreacion: new Date().toISOString()
+    };
+    
+    // Guardar en localStorage
+    var requisiciones = JSON.parse(localStorage.getItem('requisiciones_data') || '[]');
+    requisiciones.unshift(requisicion);
+    localStorage.setItem('requisiciones_data', JSON.stringify(requisiciones));
+    
+    // Guardar en Supabase
+    if (typeof guardarEnSupabase === 'function') {
+        guardarEnSupabase('requisiciones', requisicion);
+    }
+    
+    // Mostrar modal de éxito
+    var modal = document.getElementById('successModal');
+    modal.classList.add('show');
+    
+    var reclutadorNombre = document.getElementById('reclutador').value || 'No asignado';
+    setTimeout(function() {
+        document.getElementById('modalMessage').textContent = '✅ Asignada a: ' + reclutadorNombre;
+    }, 1500);
 }
 
 function closeModal() {
-  document.getElementById('successModal').classList.remove('show');
-  window.location.href = '/dashboard';
+    document.getElementById('successModal').classList.remove('show');
+    window.location.href = '/requisiciones.html';
 }
-
-// Cerrar modal haciendo clic fuera
-document.addEventListener('DOMContentLoaded', function() {
-  var modal = document.getElementById('successModal');
-  if (modal) {
-    modal.addEventListener('click', function(e) {
-      if (e.target === this) closeModal();
-    });
-  }
-});
 
 // ==========================================
 // INICIALIZAR
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
-  var user = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
-  if (!user.username) {
-    window.location.href = '/login.html';
-    return;
-  }
-  
-  // Cargar datos dinámicos en los selects
-  cargarDatosFormulario();
-  
-  // Fecha por defecto
-  var fechaInput = document.getElementById('fecha');
-  if (fechaInput) {
-    var hoy = new Date().toISOString().split('T')[0];
-    fechaInput.value = hoy;
-  }
-  
-  showStep(1);
+    var user = getCurrentUser();
+    if (!user) {
+        window.location.href = '/login.html';
+        return;
+    }
+    
+    var modal = document.getElementById('successModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+    }
+    
+    // Cargar datos del formulario
+    cargarDatosFormulario();
+    
+    // Evento para filtrar tiendas al cambiar centro comercial
+    var centroSelect = document.getElementById('centroComercial');
+    if (centroSelect) {
+        centroSelect.addEventListener('change', filtrarTiendasPorComercial);
+    }
+    
+    // Fecha por defecto
+    var fechaInput = document.getElementById('fecha');
+    if (fechaInput) {
+        var hoy = new Date().toISOString().split('T')[0];
+        fechaInput.value = hoy;
+    }
+    
+    showStep(1);
 });
+
+// ==========================================
+// SINCRONIZAR CON SUPABASE
+// ==========================================
+window.addEventListener('storage', function(e) {
+    if (e.key === 'siman_config_data') {
+        cargarDatosFormulario();
+    }
+});
+
+// Exponer funciones globalmente
+window.cargarDatosFormulario = cargarDatosFormulario;
+window.filtrarTiendasPorComercial = filtrarTiendasPorComercial;
+window.nextStep = nextStep;
+window.prevStep = prevStep;
+window.submitRequisicion = submitRequisicion;
+window.saveDraft = saveDraft;
+window.closeModal = closeModal;

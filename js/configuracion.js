@@ -24,7 +24,9 @@ function obtenerDatosConfig() {
     
     var inicial = {
         usuarios: [
-            { id: 1, nombre: 'Administrador', email: 'admin@siman.com', password: 'admin123', rol: 'Administrador', centro: 'Central', estado: 'activo' }
+            { id: 1, nombre: 'Administrador', email: 'admin@siman.com', password: 'admin123', rol: 'Administrador', centro: 'Central', estado: 'activo' },
+            { id: 2, nombre: 'María Gómez', email: 'maria.gomez@siman.com', password: '12345678', rol: 'Reclutadora', centro: 'Gran Vía', estado: 'activo' },
+            { id: 3, nombre: 'Ana López', email: 'ana.lopez@siman.com', password: '12345678', rol: 'Reclutadora', centro: 'Multiplaza', estado: 'activo' }
         ],
         roles: [
             { id: 1, nombre: 'Administrador', estado: 'activo' },
@@ -32,13 +34,44 @@ function obtenerDatosConfig() {
             { id: 3, nombre: 'Reclutadora', estado: 'activo' },
             { id: 4, nombre: 'Ejecutivo', estado: 'activo' }
         ],
-        comerciales: [],
-        tiendas: [],
-        departamentos: [],
-        estados: [],
-        prioridades: [],
-        motivos: [],
-        tiposContratacion: [],
+        comerciales: [
+            { id: 1, nombre: 'Gran Vía', estado: 'activo' },
+            { id: 2, nombre: 'Multiplaza', estado: 'activo' },
+            { id: 3, nombre: 'Galerías', estado: 'activo' }
+        ],
+        tiendas: [
+            { id: 1, nombre: 'Electrónica', comercial: 'Gran Vía', estado: 'activo' },
+            { id: 2, nombre: 'Ropa', comercial: 'Gran Vía', estado: 'activo' },
+            { id: 3, nombre: 'Calzado', comercial: 'Multiplaza', estado: 'activo' },
+            { id: 4, nombre: 'Hogar', comercial: 'Multiplaza', estado: 'activo' },
+            { id: 5, nombre: 'Deportes', comercial: 'Galerías', estado: 'activo' }
+        ],
+        departamentos: [
+            { id: 1, nombre: 'Financiero', estado: 'activo' },
+            { id: 2, nombre: 'Marketing', estado: 'activo' },
+            { id: 3, nombre: 'RRHH', estado: 'activo' }
+        ],
+        estados: [
+            { id: 1, nombre: 'Nueva', estado: 'activo' },
+            { id: 2, nombre: 'Revisando', estado: 'activo' },
+            { id: 3, nombre: 'Publicada', estado: 'activo' },
+            { id: 4, nombre: 'Cerrado', estado: 'activo' }
+        ],
+        prioridades: [
+            { id: 1, nombre: 'Alta', estado: 'activo' },
+            { id: 2, nombre: 'Media', estado: 'activo' },
+            { id: 3, nombre: 'Baja', estado: 'activo' }
+        ],
+        motivos: [
+            { id: 1, nombre: 'Nueva posición', estado: 'activo' },
+            { id: 2, nombre: 'Reemplazo', estado: 'activo' },
+            { id: 3, nombre: 'Expansión', estado: 'activo' }
+        ],
+        tiposContratacion: [
+            { id: 1, nombre: 'Directa', estado: 'activo' },
+            { id: 2, nombre: 'Temporal', estado: 'activo' },
+            { id: 3, nombre: 'Prácticas', estado: 'activo' }
+        ],
         asignaciones: [],
         correos: [],
         plantillas: [],
@@ -65,9 +98,15 @@ function guardarDatosConfig(data) {
                 guardarEnSupabase('roles', r);
             });
         }
-        // Limpiar otras tablas en Supabase
-        if (typeof limpiarOtrasTablasSupabase === 'function') {
-            limpiarOtrasTablasSupabase();
+        if (data.comerciales) {
+            data.comerciales.forEach(function(c) {
+                guardarEnSupabase('comerciales', c);
+            });
+        }
+        if (data.tiendas) {
+            data.tiendas.forEach(function(t) {
+                guardarEnSupabase('tiendas', t);
+            });
         }
     }
     
@@ -85,6 +124,49 @@ function guardarDatosConfig(data) {
     if (typeof actualizarContadores === 'function') {
         actualizarContadores();
     }
+}
+
+// ==========================================
+// OBTENER RECLUTADORES DISPONIBLES
+// ==========================================
+function obtenerReclutadores() {
+    var data = obtenerDatosConfig();
+    var usuarios = data.usuarios || [];
+    return usuarios.filter(function(u) {
+        return u.rol === 'Reclutadora' && u.estado === 'activo';
+    });
+}
+
+// ==========================================
+// OBTENER TIENDAS POR CENTRO COMERCIAL
+// ==========================================
+function obtenerTiendasPorComercial(comercial) {
+    var data = obtenerDatosConfig();
+    var tiendas = data.tiendas || [];
+    if (!comercial) return tiendas;
+    return tiendas.filter(function(t) {
+        return t.comercial === comercial && t.estado === 'activo';
+    });
+}
+
+// ==========================================
+// OBTENER CENTROS COMERCIALES ACTIVOS
+// ==========================================
+function obtenerComerciales() {
+    var data = obtenerDatosConfig();
+    return (data.comerciales || []).filter(function(c) {
+        return c.estado === 'activo';
+    });
+}
+
+// ==========================================
+// OBTENER TODAS LAS TIENDAS ACTIVAS
+// ==========================================
+function obtenerTiendas() {
+    var data = obtenerDatosConfig();
+    return (data.tiendas || []).filter(function(t) {
+        return t.estado === 'activo';
+    });
 }
 
 // ==========================================
@@ -570,114 +652,32 @@ function mostrarConfirmacion(titulo, mensaje) {
 }
 
 // ==========================================
-// LIMPIAR DATOS (CONSERVANDO SOLO USUARIOS Y ROLES)
+// LIMPIAR DATOS
 // ==========================================
 function limpiarDatos() {
-    if (!confirm('⚠️ ¿Estás seguro de limpiar TODOS los datos del sistema?\n\nSe ELIMINARÁN:\n- Comerciales\n- Tiendas\n- Departamentos\n- Estados\n- Prioridades\n- Motivos\n- Tipos de contratación\n- Asignaciones automáticas\n- Correos\n- Plantillas\n- Cartas Oferta\n- Requisiciones\n\nSe CONSERVARÁN:\n- Usuarios\n- Roles\n\n⚠️ Esta acción sincronizará los cambios en la nube para todos los dispositivos.')) {
+    if (!confirm('⚠️ ¿Estás seguro de limpiar los datos del sistema?\n\nSe ELIMINARÁN todos los datos excepto el administrador.')) {
         return;
     }
 
     var data = obtenerDatosConfig();
-    
-    // Conservar solo usuarios y roles
-    var usuarios = data.usuarios || [];
-    var roles = data.roles || [];
-    
-    // Asegurar que el administrador esté presente
-    var adminExists = usuarios.some(function(u) { return u.email === 'admin@siman.com'; });
-    if (!adminExists) {
-        usuarios.unshift({
-            id: 1,
-            nombre: 'Administrador',
-            email: 'admin@siman.com',
-            password: 'admin123',
-            rol: 'Administrador',
-            centro: 'Central',
-            estado: 'activo'
-        });
-    }
-    
-    // Crear nuevo objeto solo con usuarios y roles
-    var nuevaData = {
-        usuarios: usuarios,
-        roles: roles,
-        comerciales: [],
-        tiendas: [],
-        departamentos: [],
-        estados: [],
-        prioridades: [],
-        motivos: [],
-        tiposContratacion: [],
-        asignaciones: [],
-        correos: [],
-        plantillas: [],
-        cartasOferta: []
-    };
-    
-    // Guardar localmente
-    localStorage.setItem(CONFIG_STORE_KEY, JSON.stringify(nuevaData));
-    
-    // Limpiar requisiciones
-    localStorage.setItem('requisiciones_data', JSON.stringify([]));
-    
-    // Sincronizar con Supabase
-    if (typeof guardarEnSupabase === 'function') {
-        // Guardar usuarios en Supabase
-        usuarios.forEach(function(u) {
-            guardarEnSupabase('usuarios', u);
-        });
-        
-        // Guardar roles en Supabase
-        roles.forEach(function(r) {
-            guardarEnSupabase('roles', r);
-        });
-        
-        // Limpiar otras tablas en Supabase
-        if (typeof limpiarOtrasTablasSupabase === 'function') {
-            limpiarOtrasTablasSupabase();
-        }
-    }
-    
-    // Refrescar auth
-    if (typeof refreshAuthUsers === 'function') {
-        refreshAuthUsers();
-    }
-    
-    // Actualizar contadores
-    if (typeof actualizarContadores === 'function') {
-        actualizarContadores();
-    }
-    
-    // Mostrar mensaje de éxito
-    if (typeof agregarNotificacion === 'function') {
-        agregarNotificacion('success', '✅ Datos limpiados correctamente. Usuarios y Roles conservados.', '#');
-    } else {
-        alert('✅ Datos limpiados correctamente.\n\nUsuarios y Roles conservados.\nSincronizado con la nube.');
-    }
-    
-    // Recargar la página para actualizar todo
-    setTimeout(function() {
-        location.reload();
-    }, 1500);
-}
+    var admin = data.usuarios.find(function(u) { return u.email === 'admin@siman.com'; });
+    data.usuarios = admin ? [admin] : [];
+    data.roles = [];
+    data.comerciales = [];
+    data.tiendas = [];
+    data.departamentos = [];
+    data.estados = [];
+    data.prioridades = [];
+    data.motivos = [];
+    data.tiposContratacion = [];
+    data.asignaciones = [];
+    data.correos = [];
+    data.plantillas = [];
+    data.cartasOferta = [];
 
-// ==========================================
-// LIMPIAR OTRAS TABLAS EN SUPABASE
-// ==========================================
-function limpiarOtrasTablasSupabase() {
-    var tablas = ['comerciales', 'tiendas', 'departamentos', 'estados', 'prioridades', 
-                  'motivos', 'tiposContratacion', 'asignaciones', 'correos', 'plantillas', 
-                  'cartasOferta', 'requisiciones'];
-    
-    tablas.forEach(function(tabla) {
-        obtenerDeSupabase(tabla).then(function(result) {
-            if (result.success && result.data) {
-                result.data.forEach(function(item) {
-                    eliminarDeSupabase(tabla, item.id);
-                });
-            }
-        });
-    });
+    guardarDatosConfig(data);
+    alert('✅ Datos limpiados correctamente.');
+    location.reload();
 }
 
 // ==========================================
@@ -698,60 +698,22 @@ function exportarDatos() {
 // FUNCIONES DE SINCRONIZACIÓN
 // ==========================================
 function ejecutarSincronizacion() {
-    console.log('🔄 Ejecutando sincronización desde configuracion.js');
-    
     if (typeof window.sincronizarConSupabase === 'function') {
         if (confirm('⚠️ ¿Deseas subir tus datos a la nube?\n\nEsto guardará todos los cambios en la nube.')) {
-            window.sincronizarConSupabase().then(function(resultado) {
-                if (typeof agregarNotificacion === 'function') {
-                    if (resultado && resultado.error) {
-                        agregarNotificacion('danger', '❌ Error al sincronizar: ' + resultado.error, '#');
-                    } else {
-                        agregarNotificacion('success', '✅ Datos sincronizados correctamente', '#');
-                    }
-                }
-                if (tipoActual) {
-                    var data = obtenerDatosConfig();
-                    datosActuales = data[tipoActual] || [];
-                    renderizarTabla();
-                }
-            }).catch(function(error) {
-                if (typeof agregarNotificacion === 'function') {
-                    agregarNotificacion('danger', '❌ Error al sincronizar: ' + error.message, '#');
-                }
-                console.error('Error en sincronización:', error);
-            });
+            window.sincronizarConSupabase();
         }
     } else {
-        console.warn('⚠️ window.sincronizarConSupabase no está definida');
-        alert('⚠️ La función de sincronización no está disponible. Asegúrate de que supabase-client.js esté cargado.');
+        alert('⚠️ La función de sincronización no está disponible.');
     }
 }
 
 function ejecutarCargaNube() {
-    console.log('🔄 Ejecutando carga desde nube desde configuracion.js');
-    
     if (typeof window.initSupabaseData === 'function') {
         if (confirm('⚠️ ¿Deseas cargar los datos desde la nube?\n\nEsto fusionará los datos locales con los de la nube.')) {
-            window.initSupabaseData().then(function() {
-                if (typeof agregarNotificacion === 'function') {
-                    agregarNotificacion('success', '✅ Datos cargados desde la nube correctamente', '#');
-                }
-                if (tipoActual) {
-                    var data = obtenerDatosConfig();
-                    datosActuales = data[tipoActual] || [];
-                    renderizarTabla();
-                }
-            }).catch(function(error) {
-                if (typeof agregarNotificacion === 'function') {
-                    agregarNotificacion('danger', '❌ Error al cargar desde la nube: ' + error.message, '#');
-                }
-                console.error('Error cargando desde nube:', error);
-            });
+            window.initSupabaseData();
         }
     } else {
-        console.warn('⚠️ window.initSupabaseData no está definida');
-        alert('⚠️ La función de carga desde la nube no está disponible. Asegúrate de que supabase-client.js esté cargado.');
+        alert('⚠️ La función de carga desde la nube no está disponible.');
     }
 }
 
@@ -768,4 +730,7 @@ window.editarItem = editarItem;
 window.eliminarItem = eliminarItem;
 window.cerrarModal = cerrarModal;
 window.exportarDatos = exportarDatos;
-window.limpiarOtrasTablasSupabase = limpiarOtrasTablasSupabase;
+window.obtenerReclutadores = obtenerReclutadores;
+window.obtenerTiendasPorComercial = obtenerTiendasPorComercial;
+window.obtenerComerciales = obtenerComerciales;
+window.obtenerTiendas = obtenerTiendas;

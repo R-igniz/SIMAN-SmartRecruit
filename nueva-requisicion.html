@@ -1,307 +1,337 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SIMAN SmartRecruit - Nueva Requisición</title>
-  <link rel="stylesheet" href="css/global.css" />
-  <link rel="stylesheet" href="css/requisicion.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SIMAN SmartRecruit - Nueva Requisición</title>
+    <link rel="stylesheet" href="css/global.css" />
+    <link rel="stylesheet" href="css/requisicion.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
 </head>
 <body>
-  <div id="sidebar-container"></div>
-  
-  <div class="main-content">
-    <div id="topbar-container"></div>
+    <div id="sidebar-container"></div>
     
-    <div class="card">
-      <div class="card-header">
-        <span><i class="fas fa-plus-circle" style="color:var(--primary);"></i> Nueva Requisición</span>
-        <span class="badge badge-blue">Wizard 1/4</span>
-      </div>
-      
-      <!-- Pasos del wizard -->
-      <div class="wizard-steps">
-        <div class="step active" data-step="1">1. General</div>
-        <div class="step" data-step="2">2. Puesto</div>
-        <div class="step" data-step="3">3. Adjuntos</div>
-        <div class="step" data-step="4">4. Resumen</div>
-      </div>
-      
-      <!-- Paso 1: Información General -->
-      <div class="step-content active" id="step1">
-        <div class="form-row">
-          <div class="form-group">
-            <label>Centro Comercial</label>
-            <select id="centroComercial">
-              <option value="">Cargando...</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Tienda</label>
-            <select id="tienda">
-              <option value="">Cargando...</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Departamento</label>
-            <select id="departamento">
-              <option value="">Cargando...</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Gerente solicitante</label>
-            <input type="text" id="gerente" placeholder="Nombre del gerente" />
-          </div>
-        </div>
+    <div class="main-content">
+        <div id="topbar-container"></div>
         
-        <div class="form-row">
-          <div class="form-group">
-            <label>Fecha</label>
-            <input type="date" id="fecha" />
-          </div>
-          <div class="form-group">
-            <label>Tipo de contratación</label>
-            <select id="tipoContratacion">
-              <option value="">Cargando...</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Cantidad de plazas</label>
-            <input type="number" id="cantidadPlazas" value="1" min="1" max="10" />
-          </div>
-          <div class="form-group">
-            <label>Prioridad</label>
-            <select id="prioridad">
-              <option value="">Cargando...</option>
-            </select>
-          </div>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label>Motivo</label>
-            <select id="motivo">
-              <option value="">Cargando...</option>
-            </select>
-          </div>
-        </div>
-        
-        <div class="btn-group">
-          <button class="btn btn-primary" onclick="nextStep(2)">
-            <i class="fas fa-arrow-right"></i> Siguiente
-          </button>
-          <button class="btn btn-outline" onclick="saveDraft()">
-            <i class="fas fa-save"></i> Guardar Borrador
-          </button>
-        </div>
-      </div>
-      
-      <!-- Paso 2: Información del Puesto -->
-      <div class="step-content" id="step2">
-        <div class="form-row">
-          <div class="form-group">
-            <label>Nombre del puesto</label>
-            <input type="text" id="nombrePuesto" placeholder="Ej: Analista Financiero" />
-          </div>
-          <div class="form-group">
-            <label>Salario</label>
-            <input type="text" id="salario" placeholder="$1,200.00" />
-          </div>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label>Descripción</label>
-            <textarea id="descripcion" rows="3" placeholder="Descripción del puesto..."></textarea>
-          </div>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label>Funciones</label>
-            <textarea id="funciones" rows="3" placeholder="Funciones principales..."></textarea>
-          </div>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label>Perfil</label>
-            <textarea id="perfil" rows="2" placeholder="Perfil del candidato ideal..."></textarea>
-          </div>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label>Experiencia requerida</label>
-            <select id="experiencia">
-              <option>Sin experiencia</option>
-              <option>1-2 años</option>
-              <option>3-5 años</option>
-              <option>5+ años</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Estudios</label>
-            <select id="estudios">
-              <option>Bachillerato</option>
-              <option>Técnico</option>
-              <option>Licenciatura</option>
-              <option>Maestría</option>
-              <option>Doctorado</option>
-            </select>
-          </div>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label>Idiomas</label>
-            <input type="text" id="idiomas" placeholder="Español, Inglés..." />
-          </div>
-          <div class="form-group">
-            <label>Competencias</label>
-            <input type="text" id="competencias" placeholder="Liderazgo, Comunicación..." />
-          </div>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label>Horario</label>
-            <input type="text" id="horario" placeholder="Lunes a Viernes 8am-5pm" />
-          </div>
-          <div class="form-group">
-            <label>Jornada</label>
-            <select id="jornada">
-              <option>Completa</option>
-              <option>Media</option>
-              <option>Por turnos</option>
-            </select>
-          </div>
-        </div>
-        
-        <div class="btn-group">
-          <button class="btn btn-outline" onclick="prevStep(1)">
-            <i class="fas fa-arrow-left"></i> Anterior
-          </button>
-          <button class="btn btn-primary" onclick="nextStep(3)">
-            <i class="fas fa-arrow-right"></i> Siguiente
-          </button>
-        </div>
-      </div>
-      
-      <!-- Paso 3: Adjuntos -->
-      <div class="step-content" id="step3">
-        <div class="form-row">
-          <div class="form-group">
-            <label>Perfil del puesto</label>
-            <div class="file-upload">
-              <input type="file" id="perfilPuesto" />
-              <label for="perfilPuesto" class="file-label">
-                <i class="fas fa-cloud-upload-alt"></i> Subir archivo
-              </label>
+        <div class="card">
+            <div class="card-header">
+                <span><i class="fas fa-plus-circle" style="color:var(--primary);"></i> Nueva Requisición</span>
+                <span class="badge badge-blue">Wizard 1/4</span>
             </div>
-          </div>
-          <div class="form-group">
-            <label>Presupuesto</label>
-            <div class="file-upload">
-              <input type="file" id="presupuesto" />
-              <label for="presupuesto" class="file-label">
-                <i class="fas fa-cloud-upload-alt"></i> Subir archivo
-              </label>
+            
+            <!-- Pasos del wizard -->
+            <div class="wizard-steps">
+                <div class="step active" data-step="1">1. General</div>
+                <div class="step" data-step="2">2. Puesto</div>
+                <div class="step" data-step="3">3. Adjuntos</div>
+                <div class="step" data-step="4">4. Resumen</div>
             </div>
-          </div>
+            
+            <!-- ========================================== -->
+            <!-- PASO 1: INFORMACIÓN GENERAL -->
+            <!-- ========================================== -->
+            <div class="step-content active" id="step1">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Centro Comercial</label>
+                        <select id="centroComercial">
+                            <option value="">Seleccionar...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Tienda</label>
+                        <select id="tienda">
+                            <option value="">Seleccionar...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Departamento</label>
+                        <select id="departamento">
+                            <option value="">Seleccionar...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Gerente solicitante</label>
+                        <input type="text" id="gerente" placeholder="Nombre del gerente" />
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Fecha</label>
+                        <input type="date" id="fecha" />
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo de contratación</label>
+                        <select id="tipoContratacion">
+                            <option value="">Seleccionar...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Cantidad de plazas</label>
+                        <input type="number" id="cantidadPlazas" value="1" min="1" max="10" />
+                    </div>
+                    <div class="form-group">
+                        <label>Prioridad</label>
+                        <select id="prioridad">
+                            <option value="">Seleccionar...</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Motivo</label>
+                        <select id="motivo">
+                            <option value="">Seleccionar...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Asignar a Reclutador</label>
+                        <select id="reclutador">
+                            <option value="">Seleccionar reclutador...</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="nextStep(2)">
+                        <i class="fas fa-arrow-right"></i> Siguiente
+                    </button>
+                    <button class="btn btn-outline" onclick="saveDraft()">
+                        <i class="fas fa-save"></i> Guardar Borrador
+                    </button>
+                </div>
+            </div>
+            
+            <!-- ========================================== -->
+            <!-- PASO 2: INFORMACIÓN DEL PUESTO -->
+            <!-- ========================================== -->
+            <div class="step-content" id="step2">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nombre del puesto</label>
+                        <input type="text" id="nombrePuesto" placeholder="Ej: Analista Financiero" />
+                    </div>
+                    <div class="form-group">
+                        <label>Salario</label>
+                        <input type="text" id="salario" placeholder="$1,200.00" />
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <textarea id="descripcion" rows="3" placeholder="Descripción del puesto..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Funciones</label>
+                        <textarea id="funciones" rows="3" placeholder="Funciones principales..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Perfil</label>
+                        <textarea id="perfil" rows="2" placeholder="Perfil del candidato ideal..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Experiencia requerida</label>
+                        <select id="experiencia">
+                            <option>Sin experiencia</option>
+                            <option>1-2 años</option>
+                            <option>3-5 años</option>
+                            <option>5+ años</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Estudios</label>
+                        <select id="estudios">
+                            <option>Bachillerato</option>
+                            <option>Técnico</option>
+                            <option>Licenciatura</option>
+                            <option>Maestría</option>
+                            <option>Doctorado</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Idiomas</label>
+                        <input type="text" id="idiomas" placeholder="Español, Inglés..." />
+                    </div>
+                    <div class="form-group">
+                        <label>Competencias</label>
+                        <input type="text" id="competencias" placeholder="Liderazgo, Comunicación..." />
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Horario</label>
+                        <input type="text" id="horario" placeholder="Lunes a Viernes 8am-5pm" />
+                    </div>
+                    <div class="form-group">
+                        <label>Jornada</label>
+                        <select id="jornada">
+                            <option>Completa</option>
+                            <option>Media</option>
+                            <option>Por turnos</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-outline" onclick="prevStep(1)">
+                        <i class="fas fa-arrow-left"></i> Anterior
+                    </button>
+                    <button class="btn btn-primary" onclick="nextStep(3)">
+                        <i class="fas fa-arrow-right"></i> Siguiente
+                    </button>
+                </div>
+            </div>
+            
+            <!-- ========================================== -->
+            <!-- PASO 3: ADJUNTOS -->
+            <!-- ========================================== -->
+            <div class="step-content" id="step3">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Perfil del puesto</label>
+                        <div class="file-upload">
+                            <input type="file" id="perfilPuesto" />
+                            <label for="perfilPuesto" class="file-label">
+                                <i class="fas fa-cloud-upload-alt"></i> Subir archivo
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Presupuesto</label>
+                        <div class="file-upload">
+                            <input type="file" id="presupuesto" />
+                            <label for="presupuesto" class="file-label">
+                                <i class="fas fa-cloud-upload-alt"></i> Subir archivo
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Autorizaciones</label>
+                        <div class="file-upload">
+                            <input type="file" id="autorizaciones" />
+                            <label for="autorizaciones" class="file-label">
+                                <i class="fas fa-cloud-upload-alt"></i> Subir archivo
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Otros documentos</label>
+                        <div class="file-upload">
+                            <input type="file" id="otros" multiple />
+                            <label for="otros" class="file-label">
+                                <i class="fas fa-cloud-upload-alt"></i> Subir archivos
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-outline" onclick="prevStep(2)">
+                        <i class="fas fa-arrow-left"></i> Anterior
+                    </button>
+                    <button class="btn btn-primary" onclick="nextStep(4)">
+                        <i class="fas fa-arrow-right"></i> Siguiente
+                    </button>
+                </div>
+            </div>
+            
+            <!-- ========================================== -->
+            <!-- PASO 4: RESUMEN -->
+            <!-- ========================================== -->
+            <div class="step-content" id="step4">
+                <div class="summary-card">
+                    <h3><i class="fas fa-file-alt"></i> Resumen de la Requisición</h3>
+                    <div id="summaryContent" class="summary-content">
+                        <div class="summary-item">
+                            <span class="summary-label">Centro Comercial:</span>
+                            <span class="summary-value" id="resCentro">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Tienda:</span>
+                            <span class="summary-value" id="resTienda">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Departamento:</span>
+                            <span class="summary-value" id="resDepartamento">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Puesto:</span>
+                            <span class="summary-value" id="resPuesto">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Cantidad de plazas:</span>
+                            <span class="summary-value" id="resCantidad">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Prioridad:</span>
+                            <span class="summary-value" id="resPrioridad">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Tipo de contratación:</span>
+                            <span class="summary-value" id="resTipo">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Reclutador asignado:</span>
+                            <span class="summary-value" id="resReclutador">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-outline" onclick="prevStep(3)">
+                        <i class="fas fa-arrow-left"></i> Anterior
+                    </button>
+                    <button class="btn btn-primary" onclick="submitRequisicion()">
+                        <i class="fas fa-paper-plane"></i> Enviar
+                    </button>
+                    <button class="btn btn-outline" onclick="saveDraft()">
+                        <i class="fas fa-save"></i> Guardar Borrador
+                    </button>
+                </div>
+            </div>
         </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label>Autorizaciones</label>
-            <div class="file-upload">
-              <input type="file" id="autorizaciones" />
-              <label for="autorizaciones" class="file-label">
-                <i class="fas fa-cloud-upload-alt"></i> Subir archivo
-              </label>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Otros documentos</label>
-            <div class="file-upload">
-              <input type="file" id="otros" multiple />
-              <label for="otros" class="file-label">
-                <i class="fas fa-cloud-upload-alt"></i> Subir archivos
-              </label>
-            </div>
-          </div>
-        </div>
-        
-        <div class="btn-group">
-          <button class="btn btn-outline" onclick="prevStep(2)">
-            <i class="fas fa-arrow-left"></i> Anterior
-          </button>
-          <button class="btn btn-primary" onclick="nextStep(4)">
-            <i class="fas fa-arrow-right"></i> Siguiente
-          </button>
-        </div>
-      </div>
-      
-      <!-- Paso 4: Resumen -->
-      <div class="step-content" id="step4">
-        <div class="summary-card">
-          <h3><i class="fas fa-file-alt"></i> Resumen de la Requisición</h3>
-          <div id="summaryContent" class="summary-content">
-            <div class="summary-item">
-              <span class="summary-label">Centro Comercial:</span>
-              <span class="summary-value" id="resCentro">-</span>
-            </div>
-            <div class="summary-item">
-              <span class="summary-label">Puesto:</span>
-              <span class="summary-value" id="resPuesto">-</span>
-            </div>
-            <div class="summary-item">
-              <span class="summary-label">Cantidad de plazas:</span>
-              <span class="summary-value" id="resCantidad">-</span>
-            </div>
-            <div class="summary-item">
-              <span class="summary-label">Prioridad:</span>
-              <span class="summary-value" id="resPrioridad">-</span>
-            </div>
-            <div class="summary-item">
-              <span class="summary-label">Tipo de contratación:</span>
-              <span class="summary-value" id="resTipo">-</span>
-            </div>
-          </div>
-        </div>
-        
-        <div class="btn-group">
-          <button class="btn btn-outline" onclick="prevStep(3)">
-            <i class="fas fa-arrow-left"></i> Anterior
-          </button>
-          <button class="btn btn-primary" onclick="submitRequisicion()">
-            <i class="fas fa-paper-plane"></i> Enviar
-          </button>
-          <button class="btn btn-outline" onclick="saveDraft()">
-            <i class="fas fa-save"></i> Guardar Borrador
-          </button>
-        </div>
-      </div>
     </div>
-  </div>
-  
-  <!-- Modal de confirmación -->
-  <div class="modal" id="successModal">
-    <div class="modal-content">
-      <div class="modal-icon"><i class="fas fa-check-circle"></i></div>
-      <h2>¡Requisición creada correctamente!</h2>
-      <p id="modalMessage">Asignando automáticamente a la reclutadora correspondiente...</p>
-      <div class="spinner"></div>
-      <button class="btn btn-primary" onclick="closeModal()">Ir al Dashboard</button>
+    
+    <!-- Modal de confirmación -->
+    <div class="modal" id="successModal">
+        <div class="modal-content">
+            <div class="modal-icon"><i class="fas fa-check-circle"></i></div>
+            <h2>¡Requisición creada correctamente!</h2>
+            <p id="modalMessage">Asignando automáticamente a la reclutadora correspondiente...</p>
+            <div class="spinner"></div>
+            <button class="btn btn-primary" onclick="closeModal()">Ir al Dashboard</button>
+        </div>
     </div>
-  </div>
-  
-  <script src="js/auth.js"></script>
-  <script src="js/router.js"></script>
-  <script src="js/sidebar.js"></script>
-  <script src="js/requisicion.js"></script>
-  <script src="js/darkmode.js"></script>
+    
+    <script src="js/auth.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/sidebar.js"></script>
+    <script src="js/darkmode.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/configuracion.js"></script>
+    <script src="js/requisicion.js"></script>
+    <script src="js/darkmode.js"></script>
 </body>
 </html>
