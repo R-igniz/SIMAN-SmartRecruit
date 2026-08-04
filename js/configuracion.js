@@ -651,22 +651,10 @@ function recargarDesdeNube() {
 // SINCRONIZAR CON SUPABASE
 // ==========================================
 function sincronizarConSupabase() {
+    // Esta función ya no se usa aquí, se usa la de supabase-client.js
+    // Si se llama, redirigir a la función global
     if (typeof window.sincronizarConSupabase === 'function') {
-        if (confirm('⚠️ ¿Deseas subir tus datos a la nube?\n\nEsto guardará todos los cambios en la nube.')) {
-            window.sincronizarConSupabase().then(function(resultado) {
-                if (typeof agregarNotificacion === 'function') {
-                    if (resultado && resultado.error) {
-                        agregarNotificacion('danger', '❌ Error al sincronizar: ' + resultado.error, '#');
-                    } else {
-                        agregarNotificacion('success', '✅ Datos sincronizados correctamente', '#');
-                    }
-                }
-            }).catch(function(error) {
-                if (typeof agregarNotificacion === 'function') {
-                    agregarNotificacion('danger', '❌ Error al sincronizar: ' + error.message, '#');
-                }
-            });
-        }
+        window.sincronizarConSupabase();
     } else {
         alert('⚠️ La función de sincronización no está disponible');
     }
