@@ -80,104 +80,21 @@ function obtenerDatosConfig() {
 }
 
 // ==========================================
-// GUARDAR DATOS Y SINCRONIZAR CON SUPABASE
+// GUARDAR DATOS (LOCAL + SUPABASE)
 // ==========================================
 function guardarDatosConfig(data) {
     // Guardar localmente
     localStorage.setItem(CONFIG_STORE_KEY, JSON.stringify(data));
     
-    // Guardar en Supabase de forma asíncrona (sin bloquear)
-    if (typeof guardarEnSupabase === 'function') {
-        // Usuarios
-        if (data.usuarios) {
-            data.usuarios.forEach(function(u) {
-                guardarEnSupabase('usuarios', {
-                    id: u.id,
-                    nombre: u.nombre,
-                    email: u.email,
-                    password: u.password,
-                    rol: u.rol || 'Reclutadora',
-                    centro: u.centro || 'Central',
-                    estado: u.estado || 'activo'
-                }).then(function(result) {
-                    if (!result.success) {
-                        console.warn('Error guardando usuario en Supabase:', u.nombre, result.error);
-                    }
-                });
-            });
-        }
-        // Roles
-        if (data.roles) {
-            data.roles.forEach(function(r) {
-                guardarEnSupabase('roles', r).then(function(result) {
-                    if (!result.success) console.warn('Error guardando rol:', r.nombre, result.error);
-                });
-            });
-        }
-        // Comerciales
-        if (data.comerciales) {
-            data.comerciales.forEach(function(c) {
-                guardarEnSupabase('comerciales', c).then(function(result) {
-                    if (!result.success) console.warn('Error guardando comercial:', c.nombre, result.error);
-                });
-            });
-        }
-        // Tiendas
-        if (data.tiendas) {
-            data.tiendas.forEach(function(t) {
-                guardarEnSupabase('tiendas', t).then(function(result) {
-                    if (!result.success) console.warn('Error guardando tienda:', t.nombre, result.error);
-                });
-            });
-        }
-        // Departamentos
-        if (data.departamentos) {
-            data.departamentos.forEach(function(d) {
-                guardarEnSupabase('departamentos', d).then(function(result) {
-                    if (!result.success) console.warn('Error guardando departamento:', d.nombre, result.error);
-                });
-            });
-        }
-        // Estados
-        if (data.estados) {
-            data.estados.forEach(function(e) {
-                guardarEnSupabase('estados', e).then(function(result) {
-                    if (!result.success) console.warn('Error guardando estado:', e.nombre, result.error);
-                });
-            });
-        }
-        // Prioridades
-        if (data.prioridades) {
-            data.prioridades.forEach(function(p) {
-                guardarEnSupabase('prioridades', p).then(function(result) {
-                    if (!result.success) console.warn('Error guardando prioridad:', p.nombre, result.error);
-                });
-            });
-        }
-        // Motivos
-        if (data.motivos) {
-            data.motivos.forEach(function(m) {
-                guardarEnSupabase('motivos', m).then(function(result) {
-                    if (!result.success) console.warn('Error guardando motivo:', m.nombre, result.error);
-                });
-            });
-        }
-        // Tipos de contratación
-        if (data.tiposContratacion) {
-            data.tiposContratacion.forEach(function(t) {
-                guardarEnSupabase('tiposContratacion', t).then(function(result) {
-                    if (!result.success) console.warn('Error guardando tipo de contratación:', t.nombre, result.error);
-                });
-            });
-        }
-    }
+    // Sincronizar con Supabase
+    sincronizarTodoConSupabase(data);
     
     // Refrescar auth
     if (typeof refreshAuthUsers === 'function') {
         refreshAuthUsers();
     }
     
-    // Disparar evento para otras pestañas
+    // Notificar a otras pestañas
     try {
         window.dispatchEvent(new StorageEvent('storage', {
             key: CONFIG_STORE_KEY,
@@ -185,14 +102,135 @@ function guardarDatosConfig(data) {
         }));
     } catch (e) {}
     
-    // Actualizar contadores
     if (typeof actualizarContadores === 'function') {
         actualizarContadores();
     }
 }
 
 // ==========================================
-// FUNCIONES DE OBTENCIÓN (para otras páginas)
+// SINCRONIZAR TODAS LAS TABLAS CON SUPABASE
+// ==========================================
+function sincronizarTodoConSupabase(data) {
+    if (typeof guardarEnSupabase !== 'function') return;
+    
+    // Usuarios
+    if (data.usuarios) {
+        data.usuarios.forEach(function(u) {
+            guardarEnSupabase('usuarios', {
+                id: u.id,
+                nombre: u.nombre,
+                email: u.email,
+                password: u.password,
+                rol: u.rol || 'Reclutadora',
+                centro: u.centro || 'Central',
+                estado: u.estado || 'activo'
+            }).then(function(result) {
+                if (!result.success) console.warn('Error guardando usuario:', u.nombre, result.error);
+            });
+        });
+    }
+    // Roles
+    if (data.roles) {
+        data.roles.forEach(function(r) {
+            guardarEnSupabase('roles', r).then(function(result) {
+                if (!result.success) console.warn('Error guardando rol:', r.nombre, result.error);
+            });
+        });
+    }
+    // Comerciales
+    if (data.comerciales) {
+        data.comerciales.forEach(function(c) {
+            guardarEnSupabase('comerciales', c).then(function(result) {
+                if (!result.success) console.warn('Error guardando comercial:', c.nombre, result.error);
+            });
+        });
+    }
+    // Tiendas
+    if (data.tiendas) {
+        data.tiendas.forEach(function(t) {
+            guardarEnSupabase('tiendas', t).then(function(result) {
+                if (!result.success) console.warn('Error guardando tienda:', t.nombre, result.error);
+            });
+        });
+    }
+    // Departamentos
+    if (data.departamentos) {
+        data.departamentos.forEach(function(d) {
+            guardarEnSupabase('departamentos', d).then(function(result) {
+                if (!result.success) console.warn('Error guardando departamento:', d.nombre, result.error);
+            });
+        });
+    }
+    // Estados
+    if (data.estados) {
+        data.estados.forEach(function(e) {
+            guardarEnSupabase('estados', e).then(function(result) {
+                if (!result.success) console.warn('Error guardando estado:', e.nombre, result.error);
+            });
+        });
+    }
+    // Prioridades
+    if (data.prioridades) {
+        data.prioridades.forEach(function(p) {
+            guardarEnSupabase('prioridades', p).then(function(result) {
+                if (!result.success) console.warn('Error guardando prioridad:', p.nombre, result.error);
+            });
+        });
+    }
+    // Motivos
+    if (data.motivos) {
+        data.motivos.forEach(function(m) {
+            guardarEnSupabase('motivos', m).then(function(result) {
+                if (!result.success) console.warn('Error guardando motivo:', m.nombre, result.error);
+            });
+        });
+    }
+    // Tipos de contratación
+    if (data.tiposContratacion) {
+        data.tiposContratacion.forEach(function(t) {
+            guardarEnSupabase('tiposContratacion', t).then(function(result) {
+                if (!result.success) console.warn('Error guardando tipo de contratación:', t.nombre, result.error);
+            });
+        });
+    }
+}
+
+// ==========================================
+// ELIMINAR DE SUPABASE
+// ==========================================
+function eliminarDeSupabasePorTipo(tipo, id) {
+    if (typeof eliminarDeSupabase !== 'function') return;
+    
+    // Mapeo de tipos a nombres de tabla en Supabase
+    var tablaMap = {
+        'usuarios': 'usuarios',
+        'roles': 'roles',
+        'comerciales': 'comerciales',
+        'tiendas': 'tiendas',
+        'departamentos': 'departamentos',
+        'estados': 'estados',
+        'prioridades': 'prioridades',
+        'motivos': 'motivos',
+        'tiposContratacion': 'tiposContratacion',
+        'cartasOferta': 'cartasOferta',
+        'asignaciones': 'asignaciones',
+        'correos': 'correos',
+        'plantillas': 'plantillas'
+    };
+    var tabla = tablaMap[tipo];
+    if (tabla) {
+        eliminarDeSupabase(tabla, id).then(function(result) {
+            if (result.success) {
+                console.log('✅ Eliminado de Supabase:', tipo, id);
+            } else {
+                console.warn('Error eliminando de Supabase:', result.error);
+            }
+        });
+    }
+}
+
+// ==========================================
+// FUNCIONES DE OBTENCIÓN
 // ==========================================
 function obtenerReclutadores() {
     var data = obtenerDatosConfig();
@@ -233,7 +271,7 @@ function obtenerComercialesParaSelect() {
 }
 
 // ==========================================
-// INICIALIZAR (Solo administradores)
+// INICIALIZAR
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     var user = getCurrentUser();
@@ -766,19 +804,31 @@ function eliminarItem(id) {
     var item = items.find(function(i) { return i.id === id; });
     if (!item) return;
 
+    // No permitir eliminar admin
     if (tipoActual === 'usuarios' && item.email === 'admin@siman.com') {
         alert('⚠️ No se puede eliminar al usuario administrador por defecto.');
         return;
     }
 
+    // Eliminar localmente
     items = items.filter(function(i) { return i.id !== id; });
     data[tipoActual] = items;
-    guardarDatosConfig(data);
-
+    localStorage.setItem(CONFIG_STORE_KEY, JSON.stringify(data));
+    
+    // ✅ Eliminar de Supabase
+    eliminarDeSupabasePorTipo(tipoActual, id);
+    
+    // Actualizar datos actuales
     datosActuales = items;
     renderizarTabla();
     actualizarContadores();
     cargarSelects();
+    
+    // Refrescar auth
+    if (typeof refreshAuthUsers === 'function') {
+        refreshAuthUsers();
+    }
+    
     mostrarConfirmacion('Eliminado', 'El elemento ha sido eliminado correctamente.');
 }
 
@@ -909,6 +959,14 @@ function ejecutarCargaNube() {
 // ==========================================
 // EXPONER FUNCIONES GLOBALMENTE
 // ==========================================
+window.obtenerDatosConfig = obtenerDatosConfig;
+window.obtenerReclutadores = obtenerReclutadores;
+window.obtenerTiendasPorComercial = obtenerTiendasPorComercial;
+window.obtenerComerciales = obtenerComerciales;
+window.obtenerTiendas = obtenerTiendas;
+window.obtenerComercialesParaSelect = obtenerComercialesParaSelect;
+window.guardarDatosConfig = guardarDatosConfig;
+window.eliminarDeSupabasePorTipo = eliminarDeSupabasePorTipo;
 window.ejecutarSincronizacion = ejecutarSincronizacion;
 window.ejecutarCargaNube = ejecutarCargaNube;
 window.limpiarDatos = limpiarDatos;
@@ -919,8 +977,5 @@ window.editarItem = editarItem;
 window.eliminarItem = eliminarItem;
 window.cerrarModal = cerrarModal;
 window.exportarDatos = exportarDatos;
-window.obtenerReclutadores = obtenerReclutadores;
-window.obtenerTiendasPorComercial = obtenerTiendasPorComercial;
-window.obtenerComerciales = obtenerComerciales;
-window.obtenerTiendas = obtenerTiendas;
-window.obtenerComercialesParaSelect = obtenerComercialesParaSelect;
+
+console.log('✅ Configuración cargada correctamente (con sincronización bidireccional)');
