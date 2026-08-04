@@ -6,10 +6,10 @@ function cargarUsuarios() {
     var tbody = document.getElementById('usuariosBody');
     if (!tbody) return;
     
-    // ✅ Usar window.obtenerDatosConfig (definida en configuracion.js)
+    // Usar la función global de configuracion.js
     var data = typeof window.obtenerDatosConfig === 'function' ? window.obtenerDatosConfig() : null;
     if (!data) {
-        console.error('❌ No se pudo obtener configuración. Asegúrate de que configuracion.js esté cargado.');
+        console.error('❌ No se pudo obtener configuración.');
         tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fas fa-exclamation-triangle"></i> Error al cargar datos</td></tr>';
         return;
     }

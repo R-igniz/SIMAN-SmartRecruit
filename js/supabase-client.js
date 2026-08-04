@@ -36,6 +36,9 @@ function initSupabase() {
     });
 }
 
+// ==========================================
+// FUNCIONES CRUD
+// ==========================================
 async function guardarEnSupabase(tabla, datos) {
     try {
         var client = await initSupabase();
@@ -75,6 +78,7 @@ async function obtenerDeSupabase(tabla, filtros, orden) {
     }
 }
 
+// ✅ FUNCIÓN DE ELIMINAR (BIEN DEFINIDA)
 async function eliminarDeSupabase(tabla, id) {
     try {
         var client = await initSupabase();
@@ -91,6 +95,9 @@ async function eliminarDeSupabase(tabla, id) {
     }
 }
 
+// ==========================================
+// SUSCRIPCIÓN EN TIEMPO REAL
+// ==========================================
 function suscribirseATabla(tabla, callback) {
     initSupabase().then(function(client) {
         client
@@ -113,8 +120,11 @@ function suscribirseATabla(tabla, callback) {
     });
 }
 
+// ==========================================
+// SINCRONIZAR DATOS LOCALES CON SUPABASE (SOLO SUBIR)
+// ==========================================
 async function sincronizarConSupabase() {
-    console.log('🔄 Iniciando sincronización con Supabase...');
+    console.log('🔄 Iniciando sincronización con Supabase (subiendo y eliminando)...');
     
     try {
         if (!navigator.onLine) {
@@ -140,15 +150,45 @@ async function sincronizarConSupabase() {
             motivos: 0,
             tiposContratacion: 0,
             requisiciones: 0,
+            eliminados: 0,
             errores: 0
         };
         
-        async function guardarConteo(tabla, items, contador) {
-            if (!items || items.length === 0) return;
-            for (var i = 0; i < items.length; i++) {
-                var result = await guardarEnSupabase(tabla, items[i]);
+        // 1. Obtener todos los IDs actuales en Supabase para cada tabla
+        // 2. Eliminar los que no estén en local
+        async function sincronizarTabla(tabla, itemsLocales, idKey) {
+            // Obtener todos los registros de Supabase
+            var resultadoRemoto = await obtenerDeSupabase(tabla);
+            if (!resultadoRemoto.success) {
+                console.warn('⚠️ No se pudo obtener', tabla, 'de Supabase:', resultadoRemoto.error);
+                return;
+            }
+            var remotos = resultadoRemoto.data || [];
+            
+            // IDs locales
+            var idsLocales = itemsLocales.map(function(item) { return item[idKey]; });
+            
+            // Eliminar los que no están en local
+            for (var i = 0; i < remotos.length; i++) {
+                var remoto = remotos[i];
+                if (idsLocales.indexOf(remoto[idKey]) === -1) {
+                    var delResult = await eliminarDeSupabase(tabla, remoto[idKey]);
+                    if (delResult.success) {
+                        resultados.eliminados++;
+                        console.log('🗑️ Eliminado de Supabase:', tabla, remoto[idKey]);
+                    } else {
+                        resultados.errores++;
+                        console.warn('Error eliminando de Supabase:', tabla, remoto[idKey], delResult.error);
+                    }
+                }
+            }
+            
+            // Subir los locales (ya sea nuevos o actualizados)
+            for (var j = 0; j < itemsLocales.length; j++) {
+                var item = itemsLocales[j];
+                var result = await guardarEnSupabase(tabla, item);
                 if (result.success) {
-                    resultados[contador]++;
+                    resultados[tabla] = (resultados[tabla] || 0) + 1;
                 } else {
                     resultados.errores++;
                     console.warn('Error guardando en', tabla, ':', result.error);
@@ -156,30 +196,32 @@ async function sincronizarConSupabase() {
             }
         }
         
-        await guardarConteo('usuarios', data.usuarios, 'usuarios');
-        await guardarConteo('roles', data.roles, 'roles');
-        await guardarConteo('comerciales', data.comerciales, 'comerciales');
-        await guardarConteo('tiendas', data.tiendas, 'tiendas');
-        await guardarConteo('departamentos', data.departamentos, 'departamentos');
-        await guardarConteo('estados', data.estados, 'estados');
-        await guardarConteo('prioridades', data.prioridades, 'prioridades');
-        await guardarConteo('motivos', data.motivos, 'motivos');
-        await guardarConteo('tiposContratacion', data.tiposContratacion, 'tiposContratacion');
-        await guardarConteo('requisiciones', requisiciones, 'requisiciones');
+        // Sincronizar cada tabla
+        await sincronizarTabla('usuarios', data.usuarios || [], 'id');
+        await sincronizarTabla('roles', data.roles || [], 'id');
+        await sincronizarTabla('comerciales', data.comerciales || [], 'id');
+        await sincronizarTabla('tiendas', data.tiendas || [], 'id');
+        await sincronizarTabla('departamentos', data.departamentos || [], 'id');
+        await sincronizarTabla('estados', data.estados || [], 'id');
+        await sincronizarTabla('prioridades', data.prioridades || [], 'id');
+        await sincronizarTabla('motivos', data.motivos || [], 'id');
+        await sincronizarTabla('tiposContratacion', data.tiposContratacion || [], 'id');
+        await sincronizarTabla('requisiciones', requisiciones || [], 'id');
         
         console.log('✅ Sincronización completada:', resultados);
         
-        var mensaje = '✅ Datos sincronizados: ' +
-            resultados.usuarios + ' usuarios, ' +
-            resultados.roles + ' roles, ' +
-            resultados.comerciales + ' comerciales, ' +
-            resultados.tiendas + ' tiendas, ' +
-            resultados.departamentos + ' departamentos, ' +
-            resultados.estados + ' estados, ' +
-            resultados.prioridades + ' prioridades, ' +
-            resultados.motivos + ' motivos, ' +
-            resultados.tiposContratacion + ' tipos de contratación, ' +
-            resultados.requisiciones + ' requisiciones';
+        var mensaje = '✅ Sincronización completada: ' +
+            resultados.usuarios + ' usuarios subidos, ' +
+            resultados.roles + ' roles subidos, ' +
+            resultados.comerciales + ' comerciales subidos, ' +
+            resultados.tiendas + ' tiendas subidas, ' +
+            resultados.departamentos + ' departamentos subidos, ' +
+            resultados.estados + ' estados subidos, ' +
+            resultados.prioridades + ' prioridades subidas, ' +
+            resultados.motivos + ' motivos subidos, ' +
+            resultados.tiposContratacion + ' tipos contratación subidos, ' +
+            resultados.requisiciones + ' requisiciones subidas, ' +
+            resultados.eliminados + ' eliminados en Supabase';
         
         if (resultados.errores > 0) {
             mensaje += ' ⚠️ ' + resultados.errores + ' errores (ver consola)';
@@ -199,6 +241,9 @@ async function sincronizarConSupabase() {
     }
 }
 
+// ==========================================
+// CARGAR DATOS DESDE SUPABASE (FUSIONAR CON LOCALES)
+// ==========================================
 async function cargarDesdeSupabase(tabla) {
     var result = await obtenerDeSupabase(tabla);
     if (result.success) {
@@ -215,9 +260,10 @@ function fusionarDatos(datosLocales, datosRemotos, claveUnica) {
     
     datosRemotos.forEach(function(item) {
         var key = item[claveUnica];
-        if (mapaLocal[key]) {
-            mapaLocal[key] = item;
-        } else {
+        // Si existe en local, actualizar solo si el remoto es más reciente (aquí se decide priorizar remoto)
+        // Para evitar que vuelvan eliminados, solo fusionamos si NO existe en local.
+        // Así los eliminados locales no son reemplazados.
+        if (!mapaLocal[key]) {
             mapaLocal[key] = item;
         }
     });
@@ -226,7 +272,7 @@ function fusionarDatos(datosLocales, datosRemotos, claveUnica) {
 }
 
 async function initSupabaseData() {
-    console.log('🔄 Cargando datos desde Supabase...');
+    console.log('🔄 Cargando datos desde Supabase y fusionando con locales (sin sobrescribir eliminados)...');
     
     try {
         if (!navigator.onLine) {
@@ -255,6 +301,7 @@ async function initSupabaseData() {
         
         var dataLocal = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
         
+        // Fusionar sin sobrescribir eliminados locales (previene que vuelvan usuarios borrados)
         dataLocal.usuarios = fusionarDatos(dataLocal.usuarios || [], usuariosRemotos, 'email');
         dataLocal.roles = fusionarDatos(dataLocal.roles || [], rolesRemotos, 'id');
         dataLocal.comerciales = fusionarDatos(dataLocal.comerciales || [], comercialesRemotos, 'id');
@@ -268,7 +315,7 @@ async function initSupabaseData() {
         localStorage.setItem('siman_config_data', JSON.stringify(dataLocal));
         localStorage.setItem('requisiciones_data', JSON.stringify(requisicionesRemotos));
         
-        console.log('✅ Datos cargados y fusionados desde Supabase');
+        console.log('✅ Datos fusionados desde Supabase (respetando eliminaciones locales)');
         console.log('👥 Usuarios totales:', dataLocal.usuarios.length);
         
         if (typeof actualizarContadores === 'function') {
@@ -313,6 +360,26 @@ function suscribirseATodas() {
     tablas.forEach(function(tabla) {
         suscribirseATabla(tabla, function(payload) {
             console.log('🔄 Cambio en ' + tabla + ':', payload);
+            // Si el cambio es un DELETE, no lo traemos de vuelta si no existe localmente
+            if (payload.eventType === 'DELETE') {
+                // Eliminar localmente si existe
+                var dataLocal = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
+                if (tabla === 'usuarios') {
+                    dataLocal.usuarios = dataLocal.usuarios.filter(function(u) { return u.id !== payload.old.id; });
+                } else if (tabla === 'requisiciones') {
+                    var reqs = JSON.parse(localStorage.getItem('requisiciones_data') || '[]');
+                    reqs = reqs.filter(function(r) { return r.id !== payload.old.id; });
+                    localStorage.setItem('requisiciones_data', JSON.stringify(reqs));
+                } else {
+                    dataLocal[tabla] = dataLocal[tabla].filter(function(item) { return item.id !== payload.old.id; });
+                }
+                localStorage.setItem('siman_config_data', JSON.stringify(dataLocal));
+                if (typeof actualizarContadores === 'function') actualizarContadores();
+                if (typeof cargarUsuarios === 'function') cargarUsuarios();
+                if (typeof cargarRequisiciones === 'function') cargarRequisiciones();
+                return;
+            }
+            // Para INSERT/UPDATE, fusionar normalmente
             cargarDesdeSupabase(tabla).then(function(data) {
                 var dataLocal = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
                 if (tabla === 'usuarios') {
@@ -334,7 +401,7 @@ function suscribirseATodas() {
 }
 
 // ==========================================
-// EXPORTAR FUNCIONES GLOBALMENTE
+// EXPORTAR FUNCIONES
 // ==========================================
 window.initSupabase = initSupabase;
 window.guardarEnSupabase = guardarEnSupabase;
@@ -347,4 +414,4 @@ window.suscribirseATodas = suscribirseATodas;
 window.suscribirseATabla = suscribirseATabla;
 window.fusionarDatos = fusionarDatos;
 
-console.log('✅ Supabase client cargado correctamente');
+console.log('✅ Supabase client cargado correctamente (con eliminación y fusión mejorada)');

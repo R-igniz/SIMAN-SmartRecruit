@@ -12,10 +12,8 @@ function cargarSeguimiento() {
         return;
     }
 
-    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso
     if (!tienePermiso('ver_seguimiento')) {
         console.warn('⛔ Acceso denegado: sin permiso ver_seguimiento');
-        alert('⚠️ No tienes permisos para acceder a esta sección.');
         window.location.href = '/dashboard.html';
         return;
     }
@@ -117,9 +115,7 @@ function cargarSeguimiento() {
 }
 
 window.addEventListener('storage', function(e) {
-    if (e.key === 'requisiciones_data' || e.key === 'siman_config_data') {
-        cargarSeguimiento();
-    }
+    if (e.key === 'requisiciones_data' || e.key === 'siman_config_data') cargarSeguimiento();
 });
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -128,23 +124,15 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = '/login.html';
         return;
     }
-
-    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso
     if (!tienePermiso('ver_seguimiento')) {
         console.warn('⛔ Acceso denegado: sin permiso ver_seguimiento');
-        alert('⚠️ No tienes permisos para acceder a esta sección.');
         window.location.href = '/dashboard.html';
         return;
     }
-
     cargarSeguimiento();
-
     if (typeof initSupabase === 'function') {
         initSupabase().then(function() {
-            // Sincronizar datos
-            if (typeof sincronizarRequisiciones === 'function') {
-                sincronizarRequisiciones();
-            }
+            if (typeof sincronizarRequisiciones === 'function') sincronizarRequisiciones();
         });
     }
 });

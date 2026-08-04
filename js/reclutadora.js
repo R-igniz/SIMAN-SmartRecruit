@@ -14,10 +14,9 @@ function cargarRequisicionesReclutadora() {
         return;
     }
 
-    // ✅ VERIFICACIÓN CORRECTA: ver_reclutadora
+    // ✅ VERIFICACIÓN CORRECTA: permiso, no esAdministrador
     if (!tienePermiso('ver_reclutadora')) {
         console.warn('⛔ Acceso denegado: sin permiso ver_reclutadora');
-        alert('⚠️ No tienes permisos para acceder al Panel de Reclutadora.');
         window.location.href = '/dashboard.html';
         return;
     }
@@ -79,18 +78,11 @@ function aplicarFiltros() {
     }
 
     var prioridadBadge = {
-        'Alta': 'badge-red',
-        'Media': 'badge-yellow',
-        'Baja': 'badge-blue'
+        'Alta': 'badge-red', 'Media': 'badge-yellow', 'Baja': 'badge-blue'
     };
-
     var estadoMap = {
-        'Nueva': 'badge-blue',
-        'Revisando': 'badge-yellow',
-        'Publicada': 'badge-blue',
-        'En Proceso': 'badge-yellow',
-        'Entrevistas': 'badge-green',
-        'Urgente': 'badge-red',
+        'Nueva': 'badge-blue', 'Revisando': 'badge-yellow', 'Publicada': 'badge-blue',
+        'En Proceso': 'badge-yellow', 'Entrevistas': 'badge-green', 'Urgente': 'badge-red',
         'Cerrado': 'badge-gray'
     };
 
@@ -106,23 +98,17 @@ function aplicarFiltros() {
             var diff = Math.floor((hoy - creado) / (1000 * 60 * 60 * 24));
             tiempoAbierto = diff + 'd';
         }
-
         var reclutadorNombre = r.reclutador || 'No asignado';
 
         card.innerHTML = `
             <div class="card-header-custom">
                 <div>
                     <div class="card-title">${r.puesto || 'Sin título'}</div>
-                    <div class="card-subtitle">
-                        <i class="fas fa-store"></i> ${r.centro || '-'}
-                        ${r.tienda ? '· ' + r.tienda : ''}
-                    </div>
+                    <div class="card-subtitle"><i class="fas fa-store"></i> ${r.centro || '-'} ${r.tienda ? '· ' + r.tienda : ''}</div>
                 </div>
-                <div style="text-align:right; white-space:nowrap;">
+                <div style="text-align:right;">
                     <span class="badge ${prioridadBadge[r.prioridad] || 'badge-gray'}">${r.prioridad || 'Media'}</span>
-                    <div style="margin-top:4px;">
-                        <span class="badge ${estadoMap[r.estado] || 'badge-gray'}">${r.estado || 'Nueva'}</span>
-                    </div>
+                    <div style="margin-top:4px;"><span class="badge ${estadoMap[r.estado] || 'badge-gray'}">${r.estado || 'Nueva'}</span></div>
                 </div>
             </div>
             <div class="card-meta">
@@ -132,21 +118,15 @@ function aplicarFiltros() {
                 <span><i class="fas fa-user-tie"></i> ${reclutadorNombre}</span>
             </div>
             <div class="card-actions">
-                <button class="btn btn-primary" onclick="navigateTo('/administrar-requisicion.html?id=${r.id}')">
-                    <i class="fas fa-tasks"></i> Administrar
-                </button>
-                <button class="btn btn-outline" onclick="navigateTo('/detalle-requisicion.html?id=${r.id}')">
-                    <i class="fas fa-eye"></i> Ver Detalle
-                </button>
+                <button class="btn btn-primary" onclick="navigateTo('/administrar-requisicion.html?id=${r.id}')"><i class="fas fa-tasks"></i> Administrar</button>
+                <button class="btn btn-outline" onclick="navigateTo('/detalle-requisicion.html?id=${r.id}')"><i class="fas fa-eye"></i> Ver Detalle</button>
             </div>
         `;
         container.appendChild(card);
     });
 
     var totalBadge = document.getElementById('totalRequisiciones');
-    if (totalBadge) {
-        totalBadge.textContent = filtradas.length + ' requisiciones';
-    }
+    if (totalBadge) totalBadge.textContent = filtradas.length + ' requisiciones';
 }
 
 function limpiarFiltros() {
@@ -168,9 +148,7 @@ function sincronizarReclutadora() {
 }
 
 window.addEventListener('storage', function(e) {
-    if (e.key === 'requisiciones_data' || e.key === 'siman_config_data') {
-        cargarRequisicionesReclutadora();
-    }
+    if (e.key === 'requisiciones_data' || e.key === 'siman_config_data') cargarRequisicionesReclutadora();
 });
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -179,21 +157,15 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = '/login.html';
         return;
     }
-
-    // ✅ VERIFICACIÓN CORRECTA: ver_reclutadora
+    // ✅ VERIFICACIÓN CORRECTA
     if (!tienePermiso('ver_reclutadora')) {
         console.warn('⛔ Acceso denegado: sin permiso ver_reclutadora');
-        alert('⚠️ No tienes permisos para acceder al Panel de Reclutadora.');
         window.location.href = '/dashboard.html';
         return;
     }
-
     cargarRequisicionesReclutadora();
-
     if (typeof initSupabase === 'function') {
-        initSupabase().then(function() {
-            sincronizarReclutadora();
-        });
+        initSupabase().then(function() { sincronizarReclutadora(); });
     }
 });
 

@@ -80,13 +80,13 @@ function obtenerDatosConfig() {
 }
 
 // ==========================================
-// GUARDAR DATOS (LOCAL + SUPABASE)
+// GUARDAR DATOS Y SINCRONIZAR CON SUPABASE
 // ==========================================
 function guardarDatosConfig(data) {
     // Guardar localmente
     localStorage.setItem(CONFIG_STORE_KEY, JSON.stringify(data));
     
-    // Sincronizar con Supabase
+    // Sincronizar con Supabase (subir todos los datos)
     sincronizarTodoConSupabase(data);
     
     // Refrescar auth
@@ -810,13 +810,13 @@ function eliminarItem(id) {
         return;
     }
 
-    // Eliminar localmente
+    // ✅ ELIMINAR DE SUPABASE PRIMERO
+    eliminarDeSupabasePorTipo(tipoActual, id);
+
+    // ✅ Eliminar localmente
     items = items.filter(function(i) { return i.id !== id; });
     data[tipoActual] = items;
     localStorage.setItem(CONFIG_STORE_KEY, JSON.stringify(data));
-    
-    // ✅ Eliminar de Supabase
-    eliminarDeSupabasePorTipo(tipoActual, id);
     
     // Actualizar datos actuales
     datosActuales = items;
@@ -933,7 +933,7 @@ function ejecutarSincronizacion() {
 
 function ejecutarCargaNube() {
     if (typeof window.initSupabaseData === 'function') {
-        if (confirm('⚠️ ¿Deseas cargar los datos desde la nube?\n\nEsto fusionará los datos locales con los de la nube.')) {
+        if (confirm('⚠️ ¿Deseas cargar los datos desde la nube?\n\nEsto fusionará los datos locales con los de la nube (sin sobrescribir eliminados).')) {
             window.initSupabaseData().then(function() {
                 if (typeof agregarNotificacion === 'function') {
                     agregarNotificacion('success', '✅ Datos cargados desde la nube correctamente', '#');
