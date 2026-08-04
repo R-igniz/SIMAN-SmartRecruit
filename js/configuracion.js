@@ -110,19 +110,22 @@ document.addEventListener('DOMContentLoaded', function() {
     actualizarContadores();
     cargarSelects();
     
-    if (typeof initSupabase === 'function') {
-        initSupabase().then(function() {
-            console.log('✅ Supabase listo');
-            if (typeof suscribirseATodas === 'function') {
-                suscribirseATodas();
-            }
-            if (typeof initSupabaseData === 'function') {
-                initSupabaseData();
-            }
-        }).catch(function(error) {
-            console.warn('⚠️ Usando modo offline (Supabase no disponible)');
-        });
-    }
+    // Inicializar Supabase después de que todo esté cargado
+    setTimeout(function() {
+        if (typeof initSupabase === 'function') {
+            initSupabase().then(function() {
+                console.log('✅ Supabase listo');
+                if (typeof suscribirseATodas === 'function') {
+                    suscribirseATodas();
+                }
+                if (typeof initSupabaseData === 'function') {
+                    initSupabaseData();
+                }
+            }).catch(function(error) {
+                console.warn('⚠️ Usando modo offline (Supabase no disponible)');
+            });
+        }
+    }, 500);
 });
 
 // ==========================================
@@ -616,9 +619,13 @@ function exportarDatos() {
 }
 
 // ==========================================
-// SINCRONIZAR CON SUPABASE
+// FUNCIONES DE SINCRONIZACIÓN (WRAPPERS)
 // ==========================================
-function sincronizarConSupabase() {
+
+function ejecutarSincronizacion() {
+    console.log('🔄 Ejecutando sincronización desde configuracion.js');
+    
+    // Verificar que la función global exista
     if (typeof window.sincronizarConSupabase === 'function') {
         if (confirm('⚠️ ¿Deseas subir tus datos a la nube?\n\nEsto guardará todos los cambios en la nube.')) {
             window.sincronizarConSupabase().then(function(resultado) {
@@ -642,15 +649,14 @@ function sincronizarConSupabase() {
             });
         }
     } else {
+        console.warn('⚠️ window.sincronizarConSupabase no está definida');
         alert('⚠️ La función de sincronización no está disponible. Asegúrate de que supabase-client.js esté cargado.');
-        console.error('Error: window.sincronizarConSupabase no está definida');
     }
 }
 
-// ==========================================
-// RECARGAR DESDE NUBE
-// ==========================================
-function recargarDesdeNube() {
+function ejecutarCargaNube() {
+    console.log('🔄 Ejecutando carga desde nube desde configuracion.js');
+    
     if (typeof window.initSupabaseData === 'function') {
         if (confirm('⚠️ ¿Deseas cargar los datos desde la nube?\n\nEsto fusionará los datos locales con los de la nube.')) {
             window.initSupabaseData().then(function() {
@@ -670,16 +676,14 @@ function recargarDesdeNube() {
             });
         }
     } else {
+        console.warn('⚠️ window.initSupabaseData no está definida');
         alert('⚠️ La función de carga desde la nube no está disponible. Asegúrate de que supabase-client.js esté cargado.');
-        console.error('Error: window.initSupabaseData no está definida');
     }
 }
 
-// ==========================================
-// EXPONER FUNCIONES GLOBALMENTE
-// ==========================================
-window.recargarDesdeNube = recargarDesdeNube;
-window.sincronizarConSupabase = sincronizarConSupabase;
+// Exponer funciones globalmente
+window.ejecutarSincronizacion = ejecutarSincronizacion;
+window.ejecutarCargaNube = ejecutarCargaNube;
 window.abrirGestion = abrirGestion;
 window.abrirModalAgregar = abrirModalAgregar;
 window.guardarItem = guardarItem;

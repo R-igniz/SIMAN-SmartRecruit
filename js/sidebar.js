@@ -90,7 +90,7 @@ function getSidebarHTML() {
         navHTML += `
             <div class="nav-divider"></div>
             <div style="padding: 8px 12px; display: flex; flex-direction: column; gap: 6px;">
-                <button onclick="sincronizarConSupabase()" style="
+                <button onclick="ejecutarSincronizacion()" style="
                     width: 100%;
                     padding: 10px 12px;
                     border: none;
@@ -108,7 +108,7 @@ function getSidebarHTML() {
                 ">
                     <i class="fas fa-cloud-upload-alt"></i> Subir a nube
                 </button>
-                <button onclick="recargarDesdeNube()" style="
+                <button onclick="ejecutarCargaNube()" style="
                     width: 100%;
                     padding: 10px 12px;
                     border: none;
@@ -246,56 +246,24 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ==========================================
-// FUNCIONES DE SINCRONIZACIÓN
+// EXPONER FUNCIONES GLOBALMENTE
 // ==========================================
 
-function ejecutarSincronizacion() {
-    if (typeof window.sincronizarConSupabase === 'function') {
-        if (confirm('⚠️ ¿Deseas subir tus datos a la nube?\n\nEsto guardará todos los cambios en la nube.')) {
-            window.sincronizarConSupabase().then(function(resultado) {
-                if (typeof agregarNotificacion === 'function') {
-                    if (resultado && resultado.error) {
-                        agregarNotificacion('danger', '❌ Error al sincronizar: ' + resultado.error, '#');
-                    } else {
-                        agregarNotificacion('success', '✅ Datos sincronizados correctamente', '#');
-                    }
-                }
-            }).catch(function(error) {
-                if (typeof agregarNotificacion === 'function') {
-                    agregarNotificacion('danger', '❌ Error al sincronizar: ' + error.message, '#');
-                }
-                console.error('Error en sincronización:', error);
-            });
-        }
-    } else {
-        alert('⚠️ La función de sincronización no está disponible. Asegúrate de que supabase-client.js esté cargado.');
-    }
-}
-
-function ejecutarCargaNube() {
-    if (typeof window.initSupabaseData === 'function') {
-        if (confirm('⚠️ ¿Deseas cargar los datos desde la nube?\n\nEsto fusionará los datos locales con los de la nube.')) {
-            window.initSupabaseData().then(function() {
-                if (typeof agregarNotificacion === 'function') {
-                    agregarNotificacion('success', '✅ Datos cargados desde la nube correctamente', '#');
-                }
-                // Recargar la página para actualizar todo
-                setTimeout(function() {
-                    location.reload();
-                }, 1500);
-            }).catch(function(error) {
-                if (typeof agregarNotificacion === 'function') {
-                    agregarNotificacion('danger', '❌ Error al cargar desde la nube: ' + error.message, '#');
-                }
-                console.error('Error cargando desde nube:', error);
-            });
-        }
-    } else {
-        alert('⚠️ La función de carga desde la nube no está disponible. Asegúrate de que supabase-client.js esté cargado.');
-    }
-}
-
-// Exponer funciones globalmente
-window.ejecutarSincronizacion = ejecutarSincronizacion;
-window.ejecutarCargaNube = ejecutarCargaNube;
 window.initLayout = initLayout;
+window.ejecutarSincronizacion = window.ejecutarSincronizacion || function() {
+    console.log('🔄 Llamando a sincronización desde sidebar');
+    if (typeof window.ejecutarSincronizacion === 'function') {
+        window.ejecutarSincronizacion();
+    } else {
+        alert('⚠️ La función de sincronización no está disponible.');
+    }
+};
+
+window.ejecutarCargaNube = window.ejecutarCargaNube || function() {
+    console.log('🔄 Llamando a carga desde nube desde sidebar');
+    if (typeof window.ejecutarCargaNube === 'function') {
+        window.ejecutarCargaNube();
+    } else {
+        alert('⚠️ La función de carga desde nube no está disponible.');
+    }
+};
