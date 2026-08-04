@@ -57,8 +57,8 @@ async function getUsersFromSupabase() {
         if (typeof obtenerDeSupabase === 'function') {
             var result = await obtenerDeSupabase('usuarios');
             if (result.success && result.data && result.data.length > 0) {
+                console.log('📥 Usuarios desde Supabase:', result.data);
                 return result.data.map(function(u) {
-                    // Asegurar que el rol se asigne correctamente
                     var rol = u.rol || 'Reclutadora';
                     return {
                         username: u.email,
@@ -112,10 +112,10 @@ function getUsersFromStorage() {
 // OBTENER USUARIOS (PRIMERO SUPABASE, LUEGO LOCAL)
 // ==========================================
 async function getUsers() {
-    // Intentar desde Supabase
+    console.log('🔍 Obteniendo usuarios...');
     var supabaseUsers = await getUsersFromSupabase();
     if (supabaseUsers && supabaseUsers.length > 0) {
-        console.log('✅ Usuarios cargados desde Supabase:', supabaseUsers.length);
+        console.log('✅ Usuarios cargados desde Supabase:', supabaseUsers.map(function(u) { return u.username + ' (' + u.role + ')'; }));
         // Guardar en localStorage para caché
         try {
             var data = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
@@ -135,11 +135,9 @@ async function getUsers() {
         return supabaseUsers;
     }
     
-    // Fallback a localStorage
     var localUsers = getUsersFromStorage();
     if (localUsers && localUsers.length > 0) {
-        console.log('📁 Usuarios cargados desde localStorage:', localUsers.length);
-        // Sincronizar con Supabase si es posible
+        console.log('📁 Usuarios cargados desde localStorage:', localUsers.map(function(u) { return u.username + ' (' + u.role + ')'; }));
         if (typeof guardarEnSupabase === 'function') {
             localUsers.forEach(function(u) {
                 guardarEnSupabase('usuarios', {
@@ -156,7 +154,6 @@ async function getUsers() {
         return localUsers;
     }
     
-    // Crear admin por defecto
     console.log('👑 Creando usuario administrador por defecto');
     var adminUser = {
         username: 'admin@siman.com',
@@ -230,7 +227,6 @@ async function login(username, password) {
         
         if (user) {
             console.log('✅ Login exitoso para:', user.username, 'Rol:', user.role);
-            // Guardar en sesión
             sessionStorage.setItem('currentUser', JSON.stringify(user));
             sessionStorage.setItem('isAuthenticated', 'true');
             return user;
@@ -251,7 +247,10 @@ function logout() {
 
 function getCurrentUser() {
     var data = sessionStorage.getItem('currentUser');
-    return data ? JSON.parse(data) : null;
+    if (!data) return null;
+    var user = JSON.parse(data);
+    console.log('👤 Usuario actual:', user.username, 'Rol:', user.role);
+    return user;
 }
 
 function isAuthenticated() {
@@ -292,7 +291,9 @@ function tieneRol(rol) {
 }
 
 function esAdministrador() {
-    return tieneRol('Administrador');
+    var result = tieneRol('Administrador');
+    console.log('🔍 esAdministrador:', result);
+    return result;
 }
 
 function esGerenteRH() {

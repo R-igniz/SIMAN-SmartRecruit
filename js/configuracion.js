@@ -86,9 +86,18 @@ function guardarDatosConfig(data) {
     localStorage.setItem(CONFIG_STORE_KEY, JSON.stringify(data));
     
     if (typeof guardarEnSupabase === 'function') {
+        // Guardar usuarios con rol incluido
         if (data.usuarios) {
             data.usuarios.forEach(function(u) {
-                guardarEnSupabase('usuarios', u);
+                guardarEnSupabase('usuarios', {
+                    id: u.id,
+                    nombre: u.nombre,
+                    email: u.email,
+                    password: u.password,
+                    rol: u.rol || 'Reclutadora',
+                    centro: u.centro || 'Central',
+                    estado: u.estado || 'activo'
+                });
             });
         }
         if (data.roles) {
@@ -150,7 +159,7 @@ function guardarDatosConfig(data) {
 }
 
 // ==========================================
-// OBTENER RECLUTADORES DISPONIBLES
+// FUNCIONES DE OBTENCIÓN DE DATOS (para otras páginas)
 // ==========================================
 function obtenerReclutadores() {
     var data = obtenerDatosConfig();
@@ -160,9 +169,6 @@ function obtenerReclutadores() {
     });
 }
 
-// ==========================================
-// OBTENER TIENDAS POR CENTRO COMERCIAL
-// ==========================================
 function obtenerTiendasPorComercial(comercial) {
     var data = obtenerDatosConfig();
     var tiendas = data.tiendas || [];
@@ -172,9 +178,6 @@ function obtenerTiendasPorComercial(comercial) {
     });
 }
 
-// ==========================================
-// OBTENER CENTROS COMERCIALES ACTIVOS
-// ==========================================
 function obtenerComerciales() {
     var data = obtenerDatosConfig();
     return (data.comerciales || []).filter(function(c) {
@@ -182,9 +185,6 @@ function obtenerComerciales() {
     });
 }
 
-// ==========================================
-// OBTENER TODAS LAS TIENDAS ACTIVAS
-// ==========================================
 function obtenerTiendas() {
     var data = obtenerDatosConfig();
     return (data.tiendas || []).filter(function(t) {
@@ -192,9 +192,6 @@ function obtenerTiendas() {
     });
 }
 
-// ==========================================
-// OBTENER COMERCIALES PARA SELECT DE TIENDAS
-// ==========================================
 function obtenerComercialesParaSelect() {
     var data = obtenerDatosConfig();
     return (data.comerciales || []).filter(function(c) {
@@ -203,7 +200,7 @@ function obtenerComercialesParaSelect() {
 }
 
 // ==========================================
-// INICIALIZAR
+// INICIALIZAR - VERIFICAR ROL ADMIN
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     var user = getCurrentUser();
@@ -211,7 +208,8 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = '/login.html';
         return;
     }
-    if (user.role !== 'Administrador') {
+    // Solo administradores pueden acceder
+    if (!esAdministrador()) {
         alert('⚠️ Acceso denegado. Solo administradores.');
         window.location.href = '/dashboard.html';
         return;
@@ -257,12 +255,11 @@ function actualizarContadores() {
 }
 
 // ==========================================
-// CARGAR SELECTS
+// CARGAR SELECTS (para roles y comerciales)
 // ==========================================
 function cargarSelects() {
     var data = obtenerDatosConfig();
     
-    // Cargar roles en select de usuario
     var selectRol = document.getElementById('usuarioRol');
     if (selectRol) {
         selectRol.innerHTML = '<option value="">Seleccionar rol...</option>';
@@ -276,7 +273,6 @@ function cargarSelects() {
         });
     }
     
-    // Cargar comerciales en select de tiendas
     var selectComercial = document.getElementById('tiendaComercial');
     if (selectComercial) {
         selectComercial.innerHTML = '<option value="">Seleccionar centro...</option>';
@@ -550,6 +546,7 @@ function guardarItem(e) {
     var data = obtenerDatosConfig();
     var items = data[tipo] || [];
 
+    // Validar duplicado por nombre
     var existe = items.some(function(item) {
         return item.nombre.toLowerCase() === nombre.toLowerCase() && item.id != id;
     });
@@ -560,7 +557,7 @@ function guardarItem(e) {
 
     var nuevoItem = { id: id ? parseInt(id) : 0, nombre: nombre, estado: estado };
 
-    // Campo específico para tiendas (asignar a comercial)
+    // Campo específico para tiendas
     if (tipo === 'tiendas') {
         var comercial = document.getElementById('tiendaComercial').value;
         if (!comercial) {
@@ -570,6 +567,7 @@ function guardarItem(e) {
         nuevoItem.comercial = comercial;
     }
 
+    // Campos para usuarios
     if (tipo === 'usuarios') {
         var email = document.getElementById('usuarioEmail').value.trim();
         var password = document.getElementById('usuarioPassword').value;
@@ -580,6 +578,7 @@ function guardarItem(e) {
             return;
         }
         
+        // Validar email único
         var emailExiste = items.some(function(u) {
             return u.email && u.email.toLowerCase() === email.toLowerCase() && u.id != id;
         });
@@ -607,6 +606,7 @@ function guardarItem(e) {
         }
     }
 
+    // Campos para cartas oferta
     if (tipo === 'cartasOferta') {
         var monto = parseFloat(document.getElementById('cartaMonto').value) || 0;
         var archivoInput = document.getElementById('cartaArchivo');
@@ -622,13 +622,13 @@ function guardarItem(e) {
     }
 
     if (id) {
+        // Editar
         var index = items.findIndex(function(i) { return i.id == id; });
         if (index !== -1) {
             nuevoItem.id = parseInt(id);
             if (tipo === 'usuarios' && !document.getElementById('usuarioPassword').value) {
                 nuevoItem.password = items[index].password;
             }
-            // Para tiendas, conservar el comercial si no se selecciona uno nuevo
             if (tipo === 'tiendas' && !document.getElementById('tiendaComercial').value) {
                 nuevoItem.comercial = items[index].comercial || 'Sin asignar';
             }
@@ -640,6 +640,7 @@ function guardarItem(e) {
         guardarDatosConfig(data);
         mostrarConfirmacion('Actualizado', 'El elemento ha sido actualizado correctamente.');
     } else {
+        // Nuevo
         var maxId = 0;
         items.forEach(function(i) { if (i.id > maxId) maxId = i.id; });
         nuevoItem.id = maxId + 1;
@@ -741,6 +742,7 @@ function eliminarItem(id) {
     var item = items.find(function(i) { return i.id === id; });
     if (!item) return;
 
+    // No permitir eliminar al admin
     if (tipoActual === 'usuarios' && item.email === 'admin@siman.com') {
         alert('⚠️ No se puede eliminar al usuario administrador por defecto.');
         return;
@@ -772,7 +774,7 @@ function mostrarConfirmacion(titulo, mensaje) {
 // LIMPIAR DATOS
 // ==========================================
 function limpiarDatos() {
-    if (!confirm('⚠️ ¿Estás seguro de limpiar los datos del sistema?\n\nSe ELIMINARÁN todos los datos excepto el administrador.')) {
+    if (!confirm('⚠️ ¿Estás seguro de limpiar todos los datos del sistema?\n\nSe ELIMINARÁN todos los datos excepto el administrador.')) {
         return;
     }
 

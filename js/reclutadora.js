@@ -14,7 +14,7 @@ function cargarRequisicionesReclutadora() {
         return;
     }
     
-    // Verificar permiso - AHORA PERMITE RECLUTADORA Y GERENTE RH
+    // Verificar permiso
     if (!tienePermiso('ver_reclutadora')) {
         alert('⚠️ No tienes permisos para acceder a esta sección.');
         window.location.href = '/dashboard.html';
@@ -190,7 +190,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    // Verificar permiso - ahora permite a reclutadora y gerente RH
     if (!tienePermiso('ver_reclutadora')) {
         alert('⚠️ No tienes permisos para acceder a esta sección.');
         window.location.href = '/dashboard.html';
