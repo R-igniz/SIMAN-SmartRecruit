@@ -9,7 +9,17 @@ function cargarRequisicionesReclutadora() {
     if (!container) return;
     
     var user = getCurrentUser();
-    if (!user) return;
+    if (!user) {
+        window.location.href = '/login.html';
+        return;
+    }
+    
+    // Verificar permiso (si no es admin ni reclutadora, redirigir)
+    if (!tienePermiso('ver_reclutadora')) {
+        alert('⚠️ No tienes permisos para acceder a esta sección.');
+        window.location.href = '/dashboard.html';
+        return;
+    }
     
     var requisiciones = JSON.parse(localStorage.getItem('requisiciones_data') || '[]');
     var data = obtenerDatosConfig();
@@ -88,8 +98,7 @@ function aplicarFiltros() {
     
     filtradas.forEach(function(r) {
         var card = document.createElement('div');
-        card.className = 'card';
-        card.style.cssText = 'border-left:4px solid ' + (r.prioridad === 'Alta' ? 'var(--danger)' : r.prioridad === 'Media' ? 'var(--warning)' : 'var(--primary)') + ';';
+        card.className = 'requisicion-card';
         
         var fecha = r.fecha ? new Date(r.fecha).toLocaleDateString('es-ES') : 'Sin fecha';
         var tiempoAbierto = 'N/A';
@@ -100,32 +109,40 @@ function aplicarFiltros() {
             tiempoAbierto = diff + 'd';
         }
         
+        // Buscar nombre del reclutador
+        var reclutadorNombre = r.reclutador || 'No asignado';
+        if (r.reclutador && reclutadores.length > 0) {
+            var reclutador = reclutadores.find(function(u) { return u.nombre === r.reclutador; });
+            if (reclutador) reclutadorNombre = reclutador.nombre;
+        }
+        
         card.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div class="card-header-custom">
                 <div>
-                    <div style="font-weight:600; font-size:16px; color:var(--text-secondary);">${r.puesto || 'Sin título'}</div>
-                    <div style="color:var(--text-muted); font-size:13px;">
+                    <div class="card-title">${r.puesto || 'Sin título'}</div>
+                    <div class="card-subtitle">
                         <i class="fas fa-store"></i> ${r.centro || '-'}
                         ${r.tienda ? '· ' + r.tienda : ''}
                     </div>
                 </div>
-                <div style="text-align:right;">
+                <div style="text-align:right; white-space:nowrap;">
                     <span class="badge ${prioridadBadge[r.prioridad] || 'badge-gray'}">${r.prioridad || 'Media'}</span>
                     <div style="margin-top:4px;">
                         <span class="badge ${estadoMap[r.estado] || 'badge-gray'}">${r.estado || 'Nueva'}</span>
                     </div>
                 </div>
             </div>
-            <div style="display:flex; gap:12px; margin-top:8px; font-size:12px; color:var(--text-muted);">
+            <div class="card-meta">
                 <span><i class="far fa-calendar-alt"></i> ${fecha}</span>
                 <span><i class="far fa-clock"></i> ${tiempoAbierto} abierta</span>
                 <span><i class="fas fa-hashtag"></i> ${r.id}</span>
+                <span><i class="fas fa-user-tie"></i> ${reclutadorNombre}</span>
             </div>
-            <div style="margin-top:12px; display:flex; gap:8px;">
-                <button class="btn btn-primary" style="flex:1; justify-content:center; padding:6px 12px; font-size:12px;" onclick="navigateTo('/administrar-requisicion.html?id=${r.id}')">
+            <div class="card-actions">
+                <button class="btn btn-primary" onclick="navigateTo('/administrar-requisicion.html?id=${r.id}')">
                     <i class="fas fa-tasks"></i> Administrar
                 </button>
-                <button class="btn btn-outline" style="flex:1; justify-content:center; padding:6px 12px; font-size:12px;" onclick="navigateTo('/detalle-requisicion.html?id=${r.id}')">
+                <button class="btn btn-outline" onclick="navigateTo('/detalle-requisicion.html?id=${r.id}')">
                     <i class="fas fa-eye"></i> Ver Detalle
                 </button>
             </div>
@@ -148,7 +165,21 @@ function limpiarFiltros() {
 }
 
 // ==========================================
-// SINCRONIZAR
+// SINCRONIZAR CON SUPABASE
+// ==========================================
+function sincronizarReclutadora() {
+    if (typeof obtenerDeSupabase === 'function') {
+        obtenerDeSupabase('requisiciones').then(function(result) {
+            if (result.success && result.data) {
+                localStorage.setItem('requisiciones_data', JSON.stringify(result.data));
+                cargarRequisicionesReclutadora();
+            }
+        });
+    }
+}
+
+// ==========================================
+// ESCUCHAR CAMBIOS
 // ==========================================
 window.addEventListener('storage', function(e) {
     if (e.key === 'requisiciones_data' || e.key === 'siman_config_data') {
@@ -166,17 +197,26 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
+    // Verificar permiso específico
+    if (!tienePermiso('ver_reclutadora')) {
+        alert('⚠️ No tienes permisos para acceder a esta sección.');
+        window.location.href = '/dashboard.html';
+        return;
+    }
+    
     cargarRequisicionesReclutadora();
     
     if (typeof initSupabase === 'function') {
         initSupabase().then(function() {
-            if (typeof sincronizarRequisiciones === 'function') {
-                sincronizarRequisiciones();
-            }
+            sincronizarReclutadora();
         });
     }
 });
 
+// ==========================================
+// EXPONER FUNCIONES GLOBALMENTE
+// ==========================================
 window.cargarRequisicionesReclutadora = cargarRequisicionesReclutadora;
 window.aplicarFiltros = aplicarFiltros;
 window.limpiarFiltros = limpiarFiltros;
+window.sincronizarReclutadora = sincronizarReclutadora;

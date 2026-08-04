@@ -4,62 +4,61 @@
 
 var MENU_CONFIG = {
     'Administrador': [
-        { icon: 'fas fa-chart-pie', label: 'Dashboard', link: '/dashboard.html' },
-        { icon: 'fas fa-plus-circle', label: 'Nueva Requisición', link: '/nueva-requisicion.html' },
-        { icon: 'fas fa-list-ul', label: 'Requisiciones', link: '/requisiciones.html' },
-        { icon: 'fas fa-user-tie', label: 'Reclutamiento', link: '/reclutadora.html' },
-        { icon: 'fas fa-briefcase', label: 'Vacantes', link: '/vacantes.html' },
-        { icon: 'fas fa-tasks', label: 'Seguimiento', link: '/seguimiento.html' },
+        { icon: 'fas fa-chart-pie', label: 'Dashboard', link: '/dashboard.html', permiso: 'ver_dashboard' },
+        { icon: 'fas fa-plus-circle', label: 'Nueva Requisición', link: '/nueva-requisicion.html', permiso: 'crear_requisicion' },
+        { icon: 'fas fa-list-ul', label: 'Requisiciones', link: '/requisiciones.html', permiso: 'ver_requisiciones' },
+        { icon: 'fas fa-user-tie', label: 'Reclutamiento', link: '/reclutadora.html', permiso: 'ver_reclutadora' },
+        { icon: 'fas fa-briefcase', label: 'Vacantes', link: '/vacantes.html', permiso: 'ver_vacantes' },
+        { icon: 'fas fa-tasks', label: 'Seguimiento', link: '/seguimiento.html', permiso: 'ver_seguimiento' },
         { divider: true },
-        { icon: 'fas fa-chart-line', label: 'Reportes', link: '/reportes.html' },
-        { icon: 'fas fa-crown', label: 'Dashboard Ejecutivo', link: '/dashboard-ejecutivo.html' },
+        { icon: 'fas fa-chart-line', label: 'Reportes', link: '/reportes.html', permiso: 'ver_reportes' },
+        { icon: 'fas fa-crown', label: 'Dashboard Ejecutivo', link: '/dashboard-ejecutivo.html', permiso: 'ver_dashboard_ejecutivo' },
         { divider: true },
-        { icon: 'fas fa-users-cog', label: 'Usuarios', link: '/usuarios.html' },
-        { icon: 'fas fa-cog', label: 'Configuración', link: '/configuracion.html' },
-        { icon: 'fas fa-bell', label: 'Notificaciones', link: '/notificaciones.html' },
-        { icon: 'fas fa-user-circle', label: 'Perfil', link: '/perfil.html' },
-        { icon: 'fas fa-robot', label: 'Smart AI', link: '/ia.html' }
+        { icon: 'fas fa-users-cog', label: 'Usuarios', link: '/usuarios.html', permiso: 'ver_usuarios' },
+        { icon: 'fas fa-cog', label: 'Configuración', link: '/configuracion.html', permiso: 'ver_configuracion' },
+        { icon: 'fas fa-bell', label: 'Notificaciones', link: '/notificaciones.html', permiso: 'ver_notificaciones' },
+        { icon: 'fas fa-user-circle', label: 'Perfil', link: '/perfil.html', permiso: null },
+        { icon: 'fas fa-robot', label: 'Smart AI', link: '/ia.html', permiso: 'ver_ia' }
     ],
     'Gerente RH': [
-        { icon: 'fas fa-chart-pie', label: 'Dashboard', link: '/dashboard.html' },
-        { icon: 'fas fa-plus-circle', label: 'Nueva Requisición', link: '/nueva-requisicion.html' },
-        { icon: 'fas fa-list-ul', label: 'Requisiciones', link: '/requisiciones.html' },
-        { icon: 'fas fa-user-tie', label: 'Reclutamiento', link: '/reclutadora.html' },
-        { icon: 'fas fa-briefcase', label: 'Vacantes', link: '/vacantes.html' },
-        { icon: 'fas fa-tasks', label: 'Seguimiento', link: '/seguimiento.html' },
+        { icon: 'fas fa-chart-pie', label: 'Dashboard', link: '/dashboard.html', permiso: 'ver_dashboard' },
+        { icon: 'fas fa-plus-circle', label: 'Nueva Requisición', link: '/nueva-requisicion.html', permiso: 'crear_requisicion' },
+        { icon: 'fas fa-list-ul', label: 'Requisiciones', link: '/requisiciones.html', permiso: 'ver_requisiciones' },
+        { icon: 'fas fa-user-tie', label: 'Reclutamiento', link: '/reclutadora.html', permiso: 'ver_reclutadora' },
+        { icon: 'fas fa-briefcase', label: 'Vacantes', link: '/vacantes.html', permiso: 'ver_vacantes' },
+        { icon: 'fas fa-tasks', label: 'Seguimiento', link: '/seguimiento.html', permiso: 'ver_seguimiento' },
         { divider: true },
-        { icon: 'fas fa-chart-line', label: 'Reportes', link: '/reportes.html' },
+        { icon: 'fas fa-chart-line', label: 'Reportes', link: '/reportes.html', permiso: 'ver_reportes' },
         { divider: true },
-        { icon: 'fas fa-bell', label: 'Notificaciones', link: '/notificaciones.html' },
-        { icon: 'fas fa-user-circle', label: 'Perfil', link: '/perfil.html' },
-        { icon: 'fas fa-robot', label: 'Smart AI', link: '/ia.html' }
+        { icon: 'fas fa-bell', label: 'Notificaciones', link: '/notificaciones.html', permiso: 'ver_notificaciones' },
+        { icon: 'fas fa-user-circle', label: 'Perfil', link: '/perfil.html', permiso: null },
+        { icon: 'fas fa-robot', label: 'Smart AI', link: '/ia.html', permiso: 'ver_ia' }
     ],
     'Reclutadora': [
-        { icon: 'fas fa-chart-pie', label: 'Dashboard', link: '/dashboard.html' },
-        { icon: 'fas fa-list-ul', label: 'Mis Requisiciones', link: '/requisiciones.html' },
-        { icon: 'fas fa-user-tie', label: 'Panel Reclutadora', link: '/reclutadora.html' },
-        { icon: 'fas fa-briefcase', label: 'Vacantes', link: '/vacantes.html' },
-        { icon: 'fas fa-tasks', label: 'Seguimiento', link: '/seguimiento.html' },
+        { icon: 'fas fa-chart-pie', label: 'Dashboard', link: '/dashboard.html', permiso: 'ver_dashboard' },
+        { icon: 'fas fa-list-ul', label: 'Mis Requisiciones', link: '/requisiciones.html', permiso: 'ver_requisiciones' },
+        { icon: 'fas fa-user-tie', label: 'Panel Reclutadora', link: '/reclutadora.html', permiso: 'ver_reclutadora' },
+        { icon: 'fas fa-briefcase', label: 'Vacantes', link: '/vacantes.html', permiso: 'ver_vacantes' },
+        { icon: 'fas fa-tasks', label: 'Seguimiento', link: '/seguimiento.html', permiso: 'ver_seguimiento' },
         { divider: true },
-        { icon: 'fas fa-bell', label: 'Notificaciones', link: '/notificaciones.html' },
-        { icon: 'fas fa-user-circle', label: 'Perfil', link: '/perfil.html' },
-        { icon: 'fas fa-robot', label: 'Smart AI', link: '/ia.html' }
+        { icon: 'fas fa-bell', label: 'Notificaciones', link: '/notificaciones.html', permiso: 'ver_notificaciones' },
+        { icon: 'fas fa-user-circle', label: 'Perfil', link: '/perfil.html', permiso: null },
+        { icon: 'fas fa-robot', label: 'Smart AI', link: '/ia.html', permiso: 'ver_ia' }
     ],
     'Ejecutivo': [
-        { icon: 'fas fa-chart-pie', label: 'Dashboard', link: '/dashboard.html' },
-        { icon: 'fas fa-crown', label: 'Dashboard Ejecutivo', link: '/dashboard-ejecutivo.html' },
-        { icon: 'fas fa-chart-line', label: 'Reportes', link: '/reportes.html' },
+        { icon: 'fas fa-chart-pie', label: 'Dashboard', link: '/dashboard.html', permiso: 'ver_dashboard' },
+        { icon: 'fas fa-crown', label: 'Dashboard Ejecutivo', link: '/dashboard-ejecutivo.html', permiso: 'ver_dashboard_ejecutivo' },
+        { icon: 'fas fa-chart-line', label: 'Reportes', link: '/reportes.html', permiso: 'ver_reportes' },
         { divider: true },
-        { icon: 'fas fa-bell', label: 'Notificaciones', link: '/notificaciones.html' },
-        { icon: 'fas fa-user-circle', label: 'Perfil', link: '/perfil.html' },
-        { icon: 'fas fa-robot', label: 'Smart AI', link: '/ia.html' }
+        { icon: 'fas fa-bell', label: 'Notificaciones', link: '/notificaciones.html', permiso: 'ver_notificaciones' },
+        { icon: 'fas fa-user-circle', label: 'Perfil', link: '/perfil.html', permiso: null },
+        { icon: 'fas fa-robot', label: 'Smart AI', link: '/ia.html', permiso: 'ver_ia' }
     ]
 };
 
 // ==========================================
 // GENERAR SIDEBAR HTML
 // ==========================================
-
 function getSidebarHTML() {
     var user = getCurrentUser();
     if (!user) return '';
@@ -71,6 +70,11 @@ function getSidebarHTML() {
     items.forEach(function(item) {
         if (item.divider) {
             navHTML += '<div class="nav-divider"></div>';
+            return;
+        }
+        
+        // Verificar permiso si existe
+        if (item.permiso && !tienePermiso(item.permiso)) {
             return;
         }
 
@@ -151,7 +155,6 @@ function getSidebarHTML() {
         `;
     }
 
-    // Logout
     navHTML += `
         <div class="nav-divider"></div>
         <a class="nav-item" onclick="logout()" style="color: var(--danger); cursor: pointer;">
@@ -190,7 +193,6 @@ function getSidebarHTML() {
 // ==========================================
 // TOPBAR HTML
 // ==========================================
-
 function getTopbarHTML(user) {
     var name = user ? user.name : 'Usuario';
     var role = user ? user.role : 'Colaborador';
@@ -233,7 +235,6 @@ function getTopbarHTML(user) {
 // ==========================================
 // INICIALIZAR LAYOUT
 // ==========================================
-
 function initLayout() {
     var user = getCurrentUser();
     if (!user) return;
@@ -249,10 +250,6 @@ function initLayout() {
     }
 }
 
-// ==========================================
-// INICIALIZAR EN DOMContentLoaded
-// ==========================================
-
 document.addEventListener('DOMContentLoaded', function() {
     var currentPage = window.location.pathname;
     if (!currentPage.includes('login.html') && currentPage !== '/') {
@@ -263,31 +260,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// ==========================================
-// EXPONER FUNCIONES GLOBALMENTE
-// ==========================================
-
 window.initLayout = initLayout;
 window.ejecutarSincronizacion = window.ejecutarSincronizacion || function() {
-    console.log('🔄 Llamando a sincronización desde sidebar');
-    if (typeof window.ejecutarSincronizacion === 'function') {
-        window.ejecutarSincronizacion();
+    if (typeof window.sincronizarConSupabase === 'function') {
+        window.sincronizarConSupabase();
     } else {
         alert('⚠️ La función de sincronización no está disponible.');
     }
 };
-
 window.ejecutarCargaNube = window.ejecutarCargaNube || function() {
-    console.log('🔄 Llamando a carga desde nube desde sidebar');
-    if (typeof window.ejecutarCargaNube === 'function') {
-        window.ejecutarCargaNube();
+    if (typeof window.initSupabaseData === 'function') {
+        window.initSupabaseData();
     } else {
         alert('⚠️ La función de carga desde nube no está disponible.');
     }
 };
-
 window.limpiarDatos = window.limpiarDatos || function() {
-    console.log('🔄 Llamando a limpieza desde sidebar');
     if (typeof window.limpiarDatos === 'function') {
         window.limpiarDatos();
     } else {

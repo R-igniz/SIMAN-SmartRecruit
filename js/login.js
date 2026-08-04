@@ -1,24 +1,16 @@
-// ==========================================
-// LOGIN - VERSIÓN ASÍNCRONA CON SUPABASE
-// ==========================================
-
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('🔐 Login - Inicializando...');
     
-    // Verificar si ya está autenticado
     if (typeof isAuthenticated === 'function' && isAuthenticated()) {
         console.log('✅ Usuario ya autenticado, redirigiendo...');
         window.location.href = '/dashboard.html';
         return;
     }
     
-    // Inicializar Supabase primero
     if (typeof initSupabase === 'function') {
         try {
             await initSupabase();
             console.log('✅ Supabase inicializado para login');
-            
-            // Cargar usuarios de Supabase a localStorage para caché
             if (typeof getUsers === 'function') {
                 await getUsers();
                 console.log('✅ Usuarios cargados para login');
@@ -47,7 +39,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
 
-        // Mostrar estado de carga
         var submitBtn = form.querySelector('button[type="submit"]');
         var originalText = submitBtn.innerHTML;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
@@ -77,7 +68,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     });
 
-    // Soporte para tecla Enter
     document.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             var active = document.activeElement;
