@@ -8,9 +8,6 @@ var SUPABASE_KEY = 'sb_publishable_FOF12VLnddzD-V52S2h--g_EqZEvQ_s';
 var supabaseInitialized = false;
 var supabaseClient = null;
 
-// ==========================================
-// INICIALIZAR SUPABASE
-// ==========================================
 function initSupabase() {
     return new Promise(function(resolve, reject) {
         if (supabaseInitialized && supabaseClient) {
@@ -39,9 +36,6 @@ function initSupabase() {
     });
 }
 
-// ==========================================
-// FUNCIONES CRUD
-// ==========================================
 async function guardarEnSupabase(tabla, datos) {
     try {
         var client = await initSupabase();
@@ -97,9 +91,6 @@ async function eliminarDeSupabase(tabla, id) {
     }
 }
 
-// ==========================================
-// SUSCRIPCIÓN EN TIEMPO REAL
-// ==========================================
 function suscribirseATabla(tabla, callback) {
     initSupabase().then(function(client) {
         client
@@ -122,9 +113,6 @@ function suscribirseATabla(tabla, callback) {
     });
 }
 
-// ==========================================
-// SINCRONIZAR DATOS LOCALES CON SUPABASE
-// ==========================================
 async function sincronizarConSupabase() {
     console.log('🔄 Iniciando sincronización con Supabase...');
     
@@ -136,7 +124,6 @@ async function sincronizarConSupabase() {
             return { error: 'Sin conexión a Internet' };
         }
         
-        // ✅ Asegurar que Supabase esté inicializado
         await initSupabase();
         
         var data = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
@@ -156,7 +143,6 @@ async function sincronizarConSupabase() {
             errores: 0
         };
         
-        // Función auxiliar
         async function guardarConteo(tabla, items, contador) {
             if (!items || items.length === 0) return;
             for (var i = 0; i < items.length; i++) {
@@ -170,7 +156,6 @@ async function sincronizarConSupabase() {
             }
         }
         
-        // Guardar cada tabla
         await guardarConteo('usuarios', data.usuarios, 'usuarios');
         await guardarConteo('roles', data.roles, 'roles');
         await guardarConteo('comerciales', data.comerciales, 'comerciales');
@@ -214,9 +199,6 @@ async function sincronizarConSupabase() {
     }
 }
 
-// ==========================================
-// CARGAR DATOS DESDE SUPABASE
-// ==========================================
 async function cargarDesdeSupabase(tabla) {
     var result = await obtenerDeSupabase(tabla);
     if (result.success) {
@@ -273,7 +255,6 @@ async function initSupabaseData() {
         
         var dataLocal = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
         
-        // Fusionar cada tipo
         dataLocal.usuarios = fusionarDatos(dataLocal.usuarios || [], usuariosRemotos, 'email');
         dataLocal.roles = fusionarDatos(dataLocal.roles || [], rolesRemotos, 'id');
         dataLocal.comerciales = fusionarDatos(dataLocal.comerciales || [], comercialesRemotos, 'id');
@@ -332,7 +313,6 @@ function suscribirseATodas() {
     tablas.forEach(function(tabla) {
         suscribirseATabla(tabla, function(payload) {
             console.log('🔄 Cambio en ' + tabla + ':', payload);
-            // Recargar datos afectados
             cargarDesdeSupabase(tabla).then(function(data) {
                 var dataLocal = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
                 if (tabla === 'usuarios') {
