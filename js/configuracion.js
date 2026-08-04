@@ -32,11 +32,7 @@ function obtenerDatosConfig() {
             { id: 3, nombre: 'Reclutadora', estado: 'activo' },
             { id: 4, nombre: 'Ejecutivo', estado: 'activo' }
         ],
-        comerciales: [
-            { id: 1, nombre: 'Gran Vía', estado: 'activo' },
-            { id: 2, nombre: 'Multiplaza', estado: 'activo' },
-            { id: 3, nombre: 'Galerías', estado: 'activo' }
-        ],
+        comerciales: [],
         tiendas: [],
         departamentos: [],
         estados: [],
@@ -50,17 +46,6 @@ function obtenerDatosConfig() {
     };
     localStorage.setItem(CONFIG_STORE_KEY, JSON.stringify(inicial));
     return inicial;
-}
-
-// ==========================================
-// NOTIFICACIONES DE RESPALDO
-// ==========================================
-if (typeof agregarNotificacion !== 'function') {
-    function agregarNotificacion(tipo, mensaje, link) {
-        console.log('📢 [' + tipo + '] ' + mensaje);
-        alert(mensaje);
-    }
-    window.agregarNotificacion = agregarNotificacion;
 }
 
 // ==========================================
@@ -80,10 +65,9 @@ function guardarDatosConfig(data) {
                 guardarEnSupabase('roles', r);
             });
         }
-        if (data.comerciales) {
-            data.comerciales.forEach(function(c) {
-                guardarEnSupabase('comerciales', c);
-            });
+        // Limpiar otras tablas en Supabase
+        if (typeof limpiarOtrasTablasSupabase === 'function') {
+            limpiarOtrasTablasSupabase();
         }
     }
     
@@ -121,7 +105,6 @@ document.addEventListener('DOMContentLoaded', function() {
     actualizarContadores();
     cargarSelects();
     
-    // Inicializar Supabase después de que todo esté cargado
     setTimeout(function() {
         if (typeof initSupabase === 'function') {
             initSupabase().then(function() {
@@ -587,32 +570,114 @@ function mostrarConfirmacion(titulo, mensaje) {
 }
 
 // ==========================================
-// LIMPIAR DATOS
+// LIMPIAR DATOS (CONSERVANDO SOLO USUARIOS Y ROLES)
 // ==========================================
 function limpiarDatos() {
-    if (!confirm('⚠️ ¿Estás seguro de limpiar los datos del sistema?\n\nSe ELIMINARÁN todos los datos excepto el administrador.')) {
+    if (!confirm('⚠️ ¿Estás seguro de limpiar TODOS los datos del sistema?\n\nSe ELIMINARÁN:\n- Comerciales\n- Tiendas\n- Departamentos\n- Estados\n- Prioridades\n- Motivos\n- Tipos de contratación\n- Asignaciones automáticas\n- Correos\n- Plantillas\n- Cartas Oferta\n- Requisiciones\n\nSe CONSERVARÁN:\n- Usuarios\n- Roles\n\n⚠️ Esta acción sincronizará los cambios en la nube para todos los dispositivos.')) {
         return;
     }
 
     var data = obtenerDatosConfig();
-    var admin = data.usuarios.find(function(u) { return u.email === 'admin@siman.com'; });
-    data.usuarios = admin ? [admin] : [];
-    data.roles = [];
-    data.comerciales = [];
-    data.tiendas = [];
-    data.departamentos = [];
-    data.estados = [];
-    data.prioridades = [];
-    data.motivos = [];
-    data.tiposContratacion = [];
-    data.asignaciones = [];
-    data.correos = [];
-    data.plantillas = [];
-    data.cartasOferta = [];
+    
+    // Conservar solo usuarios y roles
+    var usuarios = data.usuarios || [];
+    var roles = data.roles || [];
+    
+    // Asegurar que el administrador esté presente
+    var adminExists = usuarios.some(function(u) { return u.email === 'admin@siman.com'; });
+    if (!adminExists) {
+        usuarios.unshift({
+            id: 1,
+            nombre: 'Administrador',
+            email: 'admin@siman.com',
+            password: 'admin123',
+            rol: 'Administrador',
+            centro: 'Central',
+            estado: 'activo'
+        });
+    }
+    
+    // Crear nuevo objeto solo con usuarios y roles
+    var nuevaData = {
+        usuarios: usuarios,
+        roles: roles,
+        comerciales: [],
+        tiendas: [],
+        departamentos: [],
+        estados: [],
+        prioridades: [],
+        motivos: [],
+        tiposContratacion: [],
+        asignaciones: [],
+        correos: [],
+        plantillas: [],
+        cartasOferta: []
+    };
+    
+    // Guardar localmente
+    localStorage.setItem(CONFIG_STORE_KEY, JSON.stringify(nuevaData));
+    
+    // Limpiar requisiciones
+    localStorage.setItem('requisiciones_data', JSON.stringify([]));
+    
+    // Sincronizar con Supabase
+    if (typeof guardarEnSupabase === 'function') {
+        // Guardar usuarios en Supabase
+        usuarios.forEach(function(u) {
+            guardarEnSupabase('usuarios', u);
+        });
+        
+        // Guardar roles en Supabase
+        roles.forEach(function(r) {
+            guardarEnSupabase('roles', r);
+        });
+        
+        // Limpiar otras tablas en Supabase
+        if (typeof limpiarOtrasTablasSupabase === 'function') {
+            limpiarOtrasTablasSupabase();
+        }
+    }
+    
+    // Refrescar auth
+    if (typeof refreshAuthUsers === 'function') {
+        refreshAuthUsers();
+    }
+    
+    // Actualizar contadores
+    if (typeof actualizarContadores === 'function') {
+        actualizarContadores();
+    }
+    
+    // Mostrar mensaje de éxito
+    if (typeof agregarNotificacion === 'function') {
+        agregarNotificacion('success', '✅ Datos limpiados correctamente. Usuarios y Roles conservados.', '#');
+    } else {
+        alert('✅ Datos limpiados correctamente.\n\nUsuarios y Roles conservados.\nSincronizado con la nube.');
+    }
+    
+    // Recargar la página para actualizar todo
+    setTimeout(function() {
+        location.reload();
+    }, 1500);
+}
 
-    guardarDatosConfig(data);
-    alert('✅ Datos limpiados correctamente.');
-    location.reload();
+// ==========================================
+// LIMPIAR OTRAS TABLAS EN SUPABASE
+// ==========================================
+function limpiarOtrasTablasSupabase() {
+    var tablas = ['comerciales', 'tiendas', 'departamentos', 'estados', 'prioridades', 
+                  'motivos', 'tiposContratacion', 'asignaciones', 'correos', 'plantillas', 
+                  'cartasOferta', 'requisiciones'];
+    
+    tablas.forEach(function(tabla) {
+        obtenerDeSupabase(tabla).then(function(result) {
+            if (result.success && result.data) {
+                result.data.forEach(function(item) {
+                    eliminarDeSupabase(tabla, item.id);
+                });
+            }
+        });
+    });
 }
 
 // ==========================================
@@ -630,13 +695,11 @@ function exportarDatos() {
 }
 
 // ==========================================
-// FUNCIONES DE SINCRONIZACIÓN (WRAPPERS)
+// FUNCIONES DE SINCRONIZACIÓN
 // ==========================================
-
 function ejecutarSincronizacion() {
     console.log('🔄 Ejecutando sincronización desde configuracion.js');
     
-    // Verificar que la función global exista
     if (typeof window.sincronizarConSupabase === 'function') {
         if (confirm('⚠️ ¿Deseas subir tus datos a la nube?\n\nEsto guardará todos los cambios en la nube.')) {
             window.sincronizarConSupabase().then(function(resultado) {
@@ -692,9 +755,12 @@ function ejecutarCargaNube() {
     }
 }
 
-// Exponer funciones globalmente
+// ==========================================
+// EXPONER FUNCIONES GLOBALMENTE
+// ==========================================
 window.ejecutarSincronizacion = ejecutarSincronizacion;
 window.ejecutarCargaNube = ejecutarCargaNube;
+window.limpiarDatos = limpiarDatos;
 window.abrirGestion = abrirGestion;
 window.abrirModalAgregar = abrirModalAgregar;
 window.guardarItem = guardarItem;
@@ -702,4 +768,4 @@ window.editarItem = editarItem;
 window.eliminarItem = eliminarItem;
 window.cerrarModal = cerrarModal;
 window.exportarDatos = exportarDatos;
-window.limpiarDatos = limpiarDatos;
+window.limpiarOtrasTablasSupabase = limpiarOtrasTablasSupabase;

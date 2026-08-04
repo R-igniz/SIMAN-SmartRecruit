@@ -126,6 +126,24 @@ function getSidebarHTML() {
                 ">
                     <i class="fas fa-cloud-download-alt"></i> Bajar de nube
                 </button>
+                <button onclick="limpiarDatos()" style="
+                    width: 100%;
+                    padding: 10px 12px;
+                    border: none;
+                    border-radius: 8px;
+                    background: #b33c3c;
+                    color: white;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    font-size: 13px;
+                    font-weight: 500;
+                    transition: all 0.2s;
+                ">
+                    <i class="fas fa-trash-alt"></i> Limpiar Sistema
+                </button>
                 <div style="font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 4px;">
                     ${navigator.onLine ? '🟢 En línea' : '🔴 Sin conexión'}
                 </div>
@@ -265,5 +283,14 @@ window.ejecutarCargaNube = window.ejecutarCargaNube || function() {
         window.ejecutarCargaNube();
     } else {
         alert('⚠️ La función de carga desde nube no está disponible.');
+    }
+};
+
+window.limpiarDatos = window.limpiarDatos || function() {
+    console.log('🔄 Llamando a limpieza desde sidebar');
+    if (typeof window.limpiarDatos === 'function') {
+        window.limpiarDatos();
+    } else {
+        alert('⚠️ La función de limpieza no está disponible.');
     }
 };

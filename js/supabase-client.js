@@ -371,6 +371,38 @@ function suscribirseATodas() {
 }
 
 // ==========================================
+// LIMPIAR OTRAS TABLAS EN SUPABASE
+// ==========================================
+async function limpiarOtrasTablasSupabase() {
+    var tablas = ['comerciales', 'tiendas', 'departamentos', 'estados', 'prioridades', 
+                  'motivos', 'tiposContratacion', 'asignaciones', 'correos', 'plantillas', 
+                  'cartasOferta', 'requisiciones'];
+    
+    var resultados = {
+        eliminados: 0,
+        errores: 0
+    };
+    
+    for (var t = 0; t < tablas.length; t++) {
+        var tabla = tablas[t];
+        var result = await obtenerDeSupabase(tabla);
+        if (result.success && result.data) {
+            for (var i = 0; i < result.data.length; i++) {
+                var deleteResult = await eliminarDeSupabase(tabla, result.data[i].id);
+                if (deleteResult.success) {
+                    resultados.eliminados++;
+                } else {
+                    resultados.errores++;
+                }
+            }
+        }
+    }
+    
+    console.log('✅ Limpieza de Supabase completada:', resultados);
+    return resultados;
+}
+
+// ==========================================
 // EXPONER FUNCIONES GLOBALMENTE
 // ==========================================
 window.initSupabase = initSupabase;
@@ -383,5 +415,6 @@ window.initSupabaseData = initSupabaseData;
 window.suscribirseATodas = suscribirseATodas;
 window.suscribirseATabla = suscribirseATabla;
 window.fusionarDatos = fusionarDatos;
+window.limpiarOtrasTablasSupabase = limpiarOtrasTablasSupabase;
 
 console.log('✅ Supabase client cargado');
