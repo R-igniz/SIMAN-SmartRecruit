@@ -9,7 +9,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <style>
-        /* Estilos adicionales específicos */
         .requisicion-card {
             transition: all 0.2s ease;
             background: var(--bg-card);
@@ -134,7 +133,6 @@
                 <span class="badge badge-blue" id="totalRequisiciones">0 requisiciones</span>
             </div>
             
-            <!-- Filtros -->
             <div class="filter-bar" id="filterBar">
                 <div class="filter-group">
                     <label>Centro Comercial</label>
@@ -174,7 +172,6 @@
                 </div>
             </div>
             
-            <!-- Contenedor de tarjetas -->
             <div id="requisicionesContainer" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:16px; margin-top:16px;">
                 <div class="empty-state">
                     <i class="fas fa-inbox"></i>
@@ -184,6 +181,7 @@
         </div>
     </div>
 
+    <!-- Scripts: auth, router, sidebar, darkmode, notifications, supabase, configuracion, reclutadora -->
     <script src="js/auth.js"></script>
     <script src="js/router.js"></script>
     <script src="js/sidebar.js"></script>

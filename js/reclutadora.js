@@ -4,44 +4,54 @@
 
 var requisicionesFiltradas = [];
 
+// ==========================================
+// CARGAR REQUISICIONES
+// ==========================================
 function cargarRequisicionesReclutadora() {
     var container = document.getElementById('requisicionesContainer');
     if (!container) return;
-    
+
     var user = getCurrentUser();
     if (!user) {
         window.location.href = '/login.html';
         return;
     }
-    
-    // Verificar permiso
+
+    console.log('👤 Cargando reclutadora para:', user.name, 'Rol:', user.role);
+
+    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso, NO esAdministrador
     if (!tienePermiso('ver_reclutadora')) {
+        console.warn('⛔ Acceso denegado: sin permiso ver_reclutadora');
         alert('⚠️ No tienes permisos para acceder a esta sección.');
         window.location.href = '/dashboard.html';
         return;
     }
-    
+
     var requisiciones = JSON.parse(localStorage.getItem('requisiciones_data') || '[]');
     var data = obtenerDatosConfig();
     var reclutadores = data.usuarios ? data.usuarios.filter(function(u) { return u.rol === 'Reclutadora'; }) : [];
-    
+
     // Si el usuario es reclutadora, mostrar solo sus asignadas
     var asignadas = requisiciones;
     if (user.role === 'Reclutadora') {
         asignadas = requisiciones.filter(function(r) {
             return r.reclutador === user.name;
         });
+        console.log('📋 Mostrando solo requisiciones asignadas a:', user.name, 'Cantidad:', asignadas.length);
     }
-    
+
     requisicionesFiltradas = asignadas;
     aplicarFiltros();
     cargarFiltros();
 }
 
+// ==========================================
+// CARGAR FILTROS
+// ==========================================
 function cargarFiltros() {
     var data = obtenerDatosConfig();
     var comerciales = data.comerciales || [];
-    
+
     var selectCentro = document.getElementById('filtroCentro');
     if (selectCentro) {
         selectCentro.innerHTML = '<option value="">Todos</option>';
@@ -56,34 +66,37 @@ function cargarFiltros() {
     }
 }
 
+// ==========================================
+// APLICAR FILTROS
+// ==========================================
 function aplicarFiltros() {
     var container = document.getElementById('requisicionesContainer');
     if (!container) return;
-    
+
     var centro = document.getElementById('filtroCentro').value;
     var estado = document.getElementById('filtroEstado').value;
     var prioridad = document.getElementById('filtroPrioridad').value;
-    
+
     var filtradas = requisicionesFiltradas.filter(function(r) {
         var matchCentro = !centro || r.centro === centro;
         var matchEstado = !estado || r.estado === estado;
         var matchPrioridad = !prioridad || r.prioridad === prioridad;
         return matchCentro && matchEstado && matchPrioridad;
     });
-    
+
     container.innerHTML = '';
-    
+
     if (filtradas.length === 0) {
         container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>No hay requisiciones que coincidan con los filtros</div>';
         return;
     }
-    
+
     var prioridadBadge = {
         'Alta': 'badge-red',
         'Media': 'badge-yellow',
         'Baja': 'badge-blue'
     };
-    
+
     var estadoMap = {
         'Nueva': 'badge-blue',
         'Revisando': 'badge-yellow',
@@ -93,11 +106,11 @@ function aplicarFiltros() {
         'Urgente': 'badge-red',
         'Cerrado': 'badge-gray'
     };
-    
+
     filtradas.forEach(function(r) {
         var card = document.createElement('div');
         card.className = 'requisicion-card';
-        
+
         var fecha = r.fecha ? new Date(r.fecha).toLocaleDateString('es-ES') : 'Sin fecha';
         var tiempoAbierto = 'N/A';
         if (r.fechaCreacion) {
@@ -106,13 +119,10 @@ function aplicarFiltros() {
             var diff = Math.floor((hoy - creado) / (1000 * 60 * 60 * 24));
             tiempoAbierto = diff + 'd';
         }
-        
+
+        // Buscar nombre del reclutador
         var reclutadorNombre = r.reclutador || 'No asignado';
-        if (r.reclutador && reclutadores.length > 0) {
-            var reclutador = reclutadores.find(function(u) { return u.nombre === r.reclutador; });
-            if (reclutador) reclutadorNombre = reclutador.nombre;
-        }
-        
+
         card.innerHTML = `
             <div class="card-header-custom">
                 <div>
@@ -146,13 +156,16 @@ function aplicarFiltros() {
         `;
         container.appendChild(card);
     });
-    
+
     var totalBadge = document.getElementById('totalRequisiciones');
     if (totalBadge) {
         totalBadge.textContent = filtradas.length + ' requisiciones';
     }
 }
 
+// ==========================================
+// LIMPIAR FILTROS
+// ==========================================
 function limpiarFiltros() {
     document.getElementById('filtroCentro').value = '';
     document.getElementById('filtroEstado').value = '';
@@ -161,7 +174,7 @@ function limpiarFiltros() {
 }
 
 // ==========================================
-// SINCRONIZAR
+// SINCRONIZAR CON SUPABASE
 // ==========================================
 function sincronizarReclutadora() {
     if (typeof obtenerDeSupabase === 'function') {
@@ -174,6 +187,9 @@ function sincronizarReclutadora() {
     }
 }
 
+// ==========================================
+// ESCUCHAR CAMBIOS
+// ==========================================
 window.addEventListener('storage', function(e) {
     if (e.key === 'requisiciones_data' || e.key === 'siman_config_data') {
         cargarRequisicionesReclutadora();
@@ -189,15 +205,19 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = '/login.html';
         return;
     }
-    
+
+    console.log('🔐 Inicializando reclutadora para:', user.name, 'Rol:', user.role);
+
+    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso, NO esAdministrador
     if (!tienePermiso('ver_reclutadora')) {
+        console.warn('⛔ Acceso denegado: sin permiso ver_reclutadora');
         alert('⚠️ No tienes permisos para acceder a esta sección.');
         window.location.href = '/dashboard.html';
         return;
     }
-    
+
     cargarRequisicionesReclutadora();
-    
+
     if (typeof initSupabase === 'function') {
         initSupabase().then(function() {
             sincronizarReclutadora();
@@ -205,6 +225,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// ==========================================
+// EXPONER FUNCIONES
+// ==========================================
 window.cargarRequisicionesReclutadora = cargarRequisicionesReclutadora;
 window.aplicarFiltros = aplicarFiltros;
 window.limpiarFiltros = limpiarFiltros;
