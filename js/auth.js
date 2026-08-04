@@ -47,7 +47,7 @@ var DEFAULT_ADMIN = {
 };
 
 // ==========================================
-// OBTENER USUARIOS DESDE SUPABASE
+// OBTENER USUARIOS
 // ==========================================
 async function getUsersFromSupabase() {
     try {
@@ -296,7 +296,7 @@ function esEjecutivo() {
 }
 
 // ==========================================
-// PROTEGER RUTAS POR PERMISO
+// PROTEGER RUTAS (SIN ALERT GENÉRICO)
 // ==========================================
 function protegerRuta(permisoRequerido, redirectUrl) {
     var user = getCurrentUser();
@@ -306,7 +306,10 @@ function protegerRuta(permisoRequerido, redirectUrl) {
     }
     if (permisoRequerido && !tienePermiso(permisoRequerido)) {
         console.warn('🔒 Acceso denegado a', window.location.pathname, 'para rol', user.role);
-        alert('⚠️ No tienes permisos para acceder a esta sección.');
+        // Solo mostrar alert si es Configuración (para no molestar en otras páginas)
+        if (window.location.pathname.includes('configuracion')) {
+            alert('⚠️ No tienes permisos para acceder a Configuración.');
+        }
         window.location.href = redirectUrl || '/dashboard.html';
         return false;
     }
@@ -355,7 +358,10 @@ document.addEventListener('DOMContentLoaded', function() {
     var permiso = permisosPorPagina[currentPage];
     if (permiso && !tienePermiso(permiso)) {
         console.warn('🔒 Acceso denegado a', currentPage, 'para rol', user.role);
-        alert('⚠️ No tienes permisos para acceder a esta sección.');
+        // Solo mostrar alert si es Configuración (para no molestar en otras páginas)
+        if (currentPage.includes('configuracion')) {
+            alert('⚠️ No tienes permisos para acceder a Configuración.');
+        }
         window.location.href = '/dashboard.html';
     }
 });

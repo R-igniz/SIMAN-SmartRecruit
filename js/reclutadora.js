@@ -14,7 +14,7 @@ function cargarRequisicionesReclutadora() {
         return;
     }
 
-    // ✅ VERIFICACIÓN CORRECTA: permisos para RECLUTADORA
+    // ✅ VERIFICACIÓN CORRECTA: ver_reclutadora
     if (!tienePermiso('ver_reclutadora')) {
         console.warn('⛔ Acceso denegado: sin permiso ver_reclutadora');
         alert('⚠️ No tienes permisos para acceder al Panel de Reclutadora.');
