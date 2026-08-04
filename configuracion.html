@@ -58,10 +58,10 @@
             </button>
             
             <!-- Botones de sincronización -->
-            <button class="btn btn-success" onclick="sincronizarConSupabase()" style="background:#2b8c4a; color:white;">
+            <button class="btn btn-success" onclick="ejecutarSincronizacion()" style="background:#2b8c4a; color:white;">
                 <i class="fas fa-cloud-upload-alt"></i> Subir a nube
             </button>
-            <button class="btn btn-primary" onclick="recargarDesdeNube()" style="background:#0056A6; color:white;">
+            <button class="btn btn-primary" onclick="ejecutarCargaNube()" style="background:#0056A6; color:white;">
                 <i class="fas fa-cloud-download-alt"></i> Bajar de nube
             </button>
             
@@ -108,6 +108,17 @@
                         <input type="text" id="gestionNombre" placeholder="Ingrese el nombre" required />
                     </div>
                     
+                    <!-- Campo específico para tiendas (asignar a comercial) -->
+                    <div id="campoComercial" style="display:none;">
+                        <div class="form-group">
+                            <label>Centro Comercial</label>
+                            <select id="tiendaComercial">
+                                <option value="">Seleccionar centro...</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Campos para usuarios -->
                     <div id="camposUsuario" style="display:none;">
                         <div class="form-group">
                             <label>Email</label>
@@ -125,6 +136,7 @@
                         </div>
                     </div>
                     
+                    <!-- Campos para cartas oferta -->
                     <div id="camposCarta" style="display:none;">
                         <div class="form-group">
                             <label>Monto ($)</label>

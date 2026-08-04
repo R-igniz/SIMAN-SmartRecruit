@@ -24,9 +24,7 @@ function obtenerDatosConfig() {
     
     var inicial = {
         usuarios: [
-            { id: 1, nombre: 'Administrador', email: 'admin@siman.com', password: 'admin123', rol: 'Administrador', centro: 'Central', estado: 'activo' },
-            { id: 2, nombre: 'María Gómez', email: 'maria.gomez@siman.com', password: '12345678', rol: 'Reclutadora', centro: 'Gran Vía', estado: 'activo' },
-            { id: 3, nombre: 'Ana López', email: 'ana.lopez@siman.com', password: '12345678', rol: 'Reclutadora', centro: 'Multiplaza', estado: 'activo' }
+            { id: 1, nombre: 'Administrador', email: 'admin@siman.com', password: 'admin123', rol: 'Administrador', centro: 'Central', estado: 'activo' }
         ],
         roles: [
             { id: 1, nombre: 'Administrador', estado: 'activo' },
@@ -108,6 +106,31 @@ function guardarDatosConfig(data) {
                 guardarEnSupabase('tiendas', t);
             });
         }
+        if (data.departamentos) {
+            data.departamentos.forEach(function(d) {
+                guardarEnSupabase('departamentos', d);
+            });
+        }
+        if (data.estados) {
+            data.estados.forEach(function(e) {
+                guardarEnSupabase('estados', e);
+            });
+        }
+        if (data.prioridades) {
+            data.prioridades.forEach(function(p) {
+                guardarEnSupabase('prioridades', p);
+            });
+        }
+        if (data.motivos) {
+            data.motivos.forEach(function(m) {
+                guardarEnSupabase('motivos', m);
+            });
+        }
+        if (data.tiposContratacion) {
+            data.tiposContratacion.forEach(function(t) {
+                guardarEnSupabase('tiposContratacion', t);
+            });
+        }
     }
     
     if (typeof refreshAuthUsers === 'function') {
@@ -170,6 +193,16 @@ function obtenerTiendas() {
 }
 
 // ==========================================
+// OBTENER COMERCIALES PARA SELECT DE TIENDAS
+// ==========================================
+function obtenerComercialesParaSelect() {
+    var data = obtenerDatosConfig();
+    return (data.comerciales || []).filter(function(c) {
+        return c.estado === 'activo';
+    });
+}
+
+// ==========================================
 // INICIALIZAR
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
@@ -228,15 +261,31 @@ function actualizarContadores() {
 // ==========================================
 function cargarSelects() {
     var data = obtenerDatosConfig();
-    var select = document.getElementById('usuarioRol');
-    if (select) {
-        select.innerHTML = '<option value="">Seleccionar rol...</option>';
+    
+    // Cargar roles en select de usuario
+    var selectRol = document.getElementById('usuarioRol');
+    if (selectRol) {
+        selectRol.innerHTML = '<option value="">Seleccionar rol...</option>';
         data.roles.forEach(function(r) {
             if (r.estado === 'activo') {
                 var opt = document.createElement('option');
                 opt.value = r.nombre;
                 opt.textContent = r.nombre;
-                select.appendChild(opt);
+                selectRol.appendChild(opt);
+            }
+        });
+    }
+    
+    // Cargar comerciales en select de tiendas
+    var selectComercial = document.getElementById('tiendaComercial');
+    if (selectComercial) {
+        selectComercial.innerHTML = '<option value="">Seleccionar centro...</option>';
+        data.comerciales.forEach(function(c) {
+            if (c.estado === 'activo') {
+                var opt = document.createElement('option');
+                opt.value = c.nombre;
+                opt.textContent = c.nombre;
+                selectComercial.appendChild(opt);
             }
         });
     }
@@ -297,6 +346,8 @@ function renderizarTabla() {
     var columnas = [];
     if (tipoActual === 'usuarios') {
         columnas = ['ID', 'Nombre', 'Email', 'Rol', 'Estado', 'Acciones'];
+    } else if (tipoActual === 'tiendas') {
+        columnas = ['ID', 'Nombre', 'Centro Comercial', 'Estado', 'Acciones'];
     } else if (tipoActual === 'cartasOferta') {
         columnas = ['ID', 'Nombre', 'Monto ($)', 'Archivo', 'Estado', 'Acciones'];
     } else {
@@ -326,6 +377,14 @@ function renderizarTabla() {
                 '<strong>' + item.nombre + '</strong>',
                 item.email || '-',
                 item.rol || '-',
+                '<span class="badge ' + estadoClass + '">' + item.estado + '</span>',
+                acciones
+            ];
+        } else if (tipoActual === 'tiendas') {
+            celdas = [
+                item.id,
+                '<strong>' + item.nombre + '</strong>',
+                item.comercial || 'Sin asignar',
                 '<span class="badge ' + estadoClass + '">' + item.estado + '</span>',
                 acciones
             ];
@@ -390,15 +449,18 @@ function abrirModalAgregar() {
 
     var camposUsuario = document.getElementById('camposUsuario');
     var camposCarta = document.getElementById('camposCarta');
+    var campoComercial = document.getElementById('campoComercial');
     var campoNombre = document.getElementById('campoNombre');
     var labelNombre = document.getElementById('labelNombre');
     
     if (camposUsuario) camposUsuario.style.display = 'none';
     if (camposCarta) camposCarta.style.display = 'none';
+    if (campoComercial) campoComercial.style.display = 'none';
     if (campoNombre) campoNombre.style.display = 'block';
     if (labelNombre) labelNombre.textContent = 'Nombre';
 
     var titulo = 'Agregar ';
+    
     if (tipoActual === 'usuarios') {
         titulo += 'Usuario';
         if (camposUsuario) {
@@ -406,12 +468,22 @@ function abrirModalAgregar() {
             cargarRolesEnSelect();
             document.getElementById('usuarioPassword').required = true;
         }
+    } else if (tipoActual === 'tiendas') {
+        titulo += 'Tienda';
+        if (campoComercial) {
+            campoComercial.style.display = 'block';
+            cargarComercialesEnSelect();
+        }
+        if (labelNombre) labelNombre.textContent = 'Nombre de la tienda';
     } else if (tipoActual === 'cartasOferta') {
         titulo += 'Carta Oferta';
         if (camposCarta) {
             camposCarta.style.display = 'block';
             if (labelNombre) labelNombre.textContent = 'Nombre de la carta';
         }
+    } else if (tipoActual === 'comerciales') {
+        titulo += 'Centro Comercial';
+        if (labelNombre) labelNombre.textContent = 'Nombre del centro';
     } else if (tipoActual === 'roles') {
         titulo += 'Rol';
     } else {
@@ -437,6 +509,23 @@ function cargarRolesEnSelect() {
             var opt = document.createElement('option');
             opt.value = r.nombre;
             opt.textContent = r.nombre;
+            select.appendChild(opt);
+        }
+    });
+}
+
+function cargarComercialesEnSelect() {
+    var data = obtenerDatosConfig();
+    var comerciales = data.comerciales || [];
+    var select = document.getElementById('tiendaComercial');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">Seleccionar centro...</option>';
+    comerciales.forEach(function(c) {
+        if (c.estado === 'activo') {
+            var opt = document.createElement('option');
+            opt.value = c.nombre;
+            opt.textContent = c.nombre;
             select.appendChild(opt);
         }
     });
@@ -470,6 +559,16 @@ function guardarItem(e) {
     }
 
     var nuevoItem = { id: id ? parseInt(id) : 0, nombre: nombre, estado: estado };
+
+    // Campo específico para tiendas (asignar a comercial)
+    if (tipo === 'tiendas') {
+        var comercial = document.getElementById('tiendaComercial').value;
+        if (!comercial) {
+            alert('⚠️ Por favor seleccione un centro comercial para esta tienda.');
+            return;
+        }
+        nuevoItem.comercial = comercial;
+    }
 
     if (tipo === 'usuarios') {
         var email = document.getElementById('usuarioEmail').value.trim();
@@ -529,6 +628,10 @@ function guardarItem(e) {
             if (tipo === 'usuarios' && !document.getElementById('usuarioPassword').value) {
                 nuevoItem.password = items[index].password;
             }
+            // Para tiendas, conservar el comercial si no se selecciona uno nuevo
+            if (tipo === 'tiendas' && !document.getElementById('tiendaComercial').value) {
+                nuevoItem.comercial = items[index].comercial || 'Sin asignar';
+            }
             items[index] = nuevoItem;
         } else {
             alert('⚠️ Error: elemento no encontrado.');
@@ -567,15 +670,18 @@ function editarItem(id) {
 
     var camposUsuario = document.getElementById('camposUsuario');
     var camposCarta = document.getElementById('camposCarta');
+    var campoComercial = document.getElementById('campoComercial');
     var campoNombre = document.getElementById('campoNombre');
     var labelNombre = document.getElementById('labelNombre');
     
     if (camposUsuario) camposUsuario.style.display = 'none';
     if (camposCarta) camposCarta.style.display = 'none';
+    if (campoComercial) campoComercial.style.display = 'none';
     if (campoNombre) campoNombre.style.display = 'block';
     if (labelNombre) labelNombre.textContent = 'Nombre';
 
     var titulo = 'Editar ';
+    
     if (tipoActual === 'usuarios') {
         titulo += 'Usuario';
         if (camposUsuario) {
@@ -587,6 +693,14 @@ function editarItem(id) {
             cargarRolesEnSelect();
             document.getElementById('usuarioRol').value = item.rol || '';
         }
+    } else if (tipoActual === 'tiendas') {
+        titulo += 'Tienda';
+        if (campoComercial) {
+            campoComercial.style.display = 'block';
+            cargarComercialesEnSelect();
+            document.getElementById('tiendaComercial').value = item.comercial || '';
+        }
+        if (labelNombre) labelNombre.textContent = 'Nombre de la tienda';
     } else if (tipoActual === 'cartasOferta') {
         titulo += 'Carta Oferta';
         if (camposCarta) {
@@ -602,6 +716,9 @@ function editarItem(id) {
                 }
             }
         }
+    } else if (tipoActual === 'comerciales') {
+        titulo += 'Centro Comercial';
+        if (labelNombre) labelNombre.textContent = 'Nombre del centro';
     } else {
         titulo += tipoActual.charAt(0).toUpperCase() + tipoActual.slice(1);
     }
@@ -734,3 +851,4 @@ window.obtenerReclutadores = obtenerReclutadores;
 window.obtenerTiendasPorComercial = obtenerTiendasPorComercial;
 window.obtenerComerciales = obtenerComerciales;
 window.obtenerTiendas = obtenerTiendas;
+window.obtenerComercialesParaSelect = obtenerComercialesParaSelect;
