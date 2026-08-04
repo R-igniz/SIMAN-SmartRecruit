@@ -807,23 +807,77 @@ function exportarDatos() {
 // ==========================================
 // FUNCIONES DE SINCRONIZACIÓN
 // ==========================================
+// ==========================================
+// FUNCIONES DE SINCRONIZACIÓN
+// ==========================================
 function ejecutarSincronizacion() {
     if (typeof window.sincronizarConSupabase === 'function') {
         if (confirm('⚠️ ¿Deseas subir tus datos a la nube?\n\nEsto guardará todos los cambios en la nube.')) {
-            window.sincronizarConSupabase();
+            // Mostrar carga
+            var btn = document.querySelector('.btn-success');
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sincronizando...';
+                btn.disabled = true;
+            }
+            
+            window.sincronizarConSupabase().then(function(resultado) {
+                if (typeof agregarNotificacion === 'function') {
+                    if (resultado && resultado.error) {
+                        agregarNotificacion('danger', '❌ Error al sincronizar: ' + resultado.error, '#');
+                    } else {
+                        agregarNotificacion('success', '✅ Datos sincronizados correctamente', '#');
+                    }
+                }
+                // Recargar la tabla actual
+                if (tipoActual) {
+                    var data = obtenerDatosConfig();
+                    datosActuales = data[tipoActual] || [];
+                    renderizarTabla();
+                }
+                if (btn) {
+                    btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Subir a nube';
+                    btn.disabled = false;
+                }
+            }).catch(function(error) {
+                if (typeof agregarNotificacion === 'function') {
+                    agregarNotificacion('danger', '❌ Error al sincronizar: ' + error.message, '#');
+                }
+                console.error('Error en sincronización:', error);
+                if (btn) {
+                    btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Subir a nube';
+                    btn.disabled = false;
+                }
+            });
         }
     } else {
-        alert('⚠️ La función de sincronización no está disponible.');
+        alert('⚠️ La función de sincronización no está disponible. Asegúrate de que supabase-client.js esté cargado.');
+        console.error('Error: window.sincronizarConSupabase no está definida');
     }
 }
 
 function ejecutarCargaNube() {
     if (typeof window.initSupabaseData === 'function') {
         if (confirm('⚠️ ¿Deseas cargar los datos desde la nube?\n\nEsto fusionará los datos locales con los de la nube.')) {
-            window.initSupabaseData();
+            window.initSupabaseData().then(function() {
+                if (typeof agregarNotificacion === 'function') {
+                    agregarNotificacion('success', '✅ Datos cargados desde la nube correctamente', '#');
+                }
+                // Recargar la tabla actual
+                if (tipoActual) {
+                    var data = obtenerDatosConfig();
+                    datosActuales = data[tipoActual] || [];
+                    renderizarTabla();
+                }
+            }).catch(function(error) {
+                if (typeof agregarNotificacion === 'function') {
+                    agregarNotificacion('danger', '❌ Error al cargar desde la nube: ' + error.message, '#');
+                }
+                console.error('Error cargando desde nube:', error);
+            });
         }
     } else {
-        alert('⚠️ La función de carga desde la nube no está disponible.');
+        alert('⚠️ La función de carga desde la nube no está disponible. Asegúrate de que supabase-client.js esté cargado.');
+        console.error('Error: window.initSupabaseData no está definida');
     }
 }
 
