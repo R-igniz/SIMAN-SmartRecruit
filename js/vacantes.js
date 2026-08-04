@@ -5,29 +5,51 @@
 function cargarVacantes() {
     var container = document.getElementById('vacantesContainer');
     if (!container) return;
-    
+
+    var user = getCurrentUser();
+    if (!user) {
+        window.location.href = '/login.html';
+        return;
+    }
+
+    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso, NO esAdministrador
+    if (!tienePermiso('ver_vacantes')) {
+        console.warn('⛔ Acceso denegado: sin permiso ver_vacantes');
+        alert('⚠️ No tienes permisos para acceder a esta sección.');
+        window.location.href = '/dashboard.html';
+        return;
+    }
+
     var requisiciones = JSON.parse(localStorage.getItem('requisiciones_data') || '[]');
     var data = obtenerDatosConfig();
     var reclutadores = data.usuarios ? data.usuarios.filter(function(u) { return u.rol === 'Reclutadora'; }) : [];
-    
+
     container.innerHTML = '';
-    
-    // Mostrar solo vacantes activas (no cerradas)
-    var activas = requisiciones.filter(function(r) {
+
+    // Si es Reclutadora, mostrar solo las que tiene asignadas
+    var vacantes = requisiciones;
+    if (user.role === 'Reclutadora') {
+        vacantes = requisiciones.filter(function(r) {
+            return r.reclutador === user.name;
+        });
+    }
+
+    // Filtrar solo activas (no cerradas)
+    var activas = vacantes.filter(function(r) {
         return r.estado !== 'Cerrado' && r.estado !== 'Cerrada';
     });
-    
+
     if (activas.length === 0) {
         container.innerHTML = '<div class="empty-state"><i class="fas fa-briefcase"></i>No hay vacantes disponibles</div>';
         return;
     }
-    
+
     var prioridadBadge = {
         'Alta': 'badge-red',
         'Media': 'badge-yellow',
         'Baja': 'badge-blue'
     };
-    
+
     var estadoMap = {
         'Nueva': 'badge-blue',
         'Revisando': 'badge-yellow',
@@ -36,20 +58,20 @@ function cargarVacantes() {
         'Entrevistas': 'badge-green',
         'Urgente': 'badge-red'
     };
-    
+
     activas.forEach(function(r) {
         var reclutadorNombre = r.reclutador || 'No asignado';
         if (r.reclutador && reclutadores.length > 0) {
             var reclutador = reclutadores.find(function(u) { return u.nombre === r.reclutador; });
             if (reclutador) reclutadorNombre = reclutador.nombre;
         }
-        
+
         var card = document.createElement('div');
         card.className = 'card vacante-card';
         card.style.cssText = 'border-left:4px solid ' + (r.prioridad === 'Alta' ? 'var(--danger)' : r.prioridad === 'Media' ? 'var(--warning)' : 'var(--primary)') + ';';
-        
+
         var fecha = r.fecha ? new Date(r.fecha).toLocaleDateString('es-ES') : 'Sin fecha';
-        
+
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                 <div>
@@ -90,8 +112,7 @@ function cargarVacantes() {
         `;
         container.appendChild(card);
     });
-    
-    // Actualizar contador
+
     var totalBadge = document.getElementById('totalVacantes');
     if (totalBadge) {
         totalBadge.textContent = activas.length + ' activas';
@@ -100,6 +121,20 @@ function cargarVacantes() {
 
 // ==========================================
 // SINCRONIZAR
+// ==========================================
+function sincronizarVacantes() {
+    if (typeof obtenerDeSupabase === 'function') {
+        obtenerDeSupabase('requisiciones').then(function(result) {
+            if (result.success && result.data) {
+                localStorage.setItem('requisiciones_data', JSON.stringify(result.data));
+                cargarVacantes();
+            }
+        });
+    }
+}
+
+// ==========================================
+// ESCUCHAR CAMBIOS
 // ==========================================
 window.addEventListener('storage', function(e) {
     if (e.key === 'requisiciones_data' || e.key === 'siman_config_data') {
@@ -116,16 +151,26 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = '/login.html';
         return;
     }
-    
+
+    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso, NO esAdministrador
+    if (!tienePermiso('ver_vacantes')) {
+        console.warn('⛔ Acceso denegado: sin permiso ver_vacantes');
+        alert('⚠️ No tienes permisos para acceder a esta sección.');
+        window.location.href = '/dashboard.html';
+        return;
+    }
+
     cargarVacantes();
-    
+
     if (typeof initSupabase === 'function') {
         initSupabase().then(function() {
-            if (typeof sincronizarRequisiciones === 'function') {
-                sincronizarRequisiciones();
-            }
+            sincronizarVacantes();
         });
     }
 });
 
+// ==========================================
+// EXPONER FUNCIONES GLOBALMENTE
+// ==========================================
 window.cargarVacantes = cargarVacantes;
+window.sincronizarVacantes = sincronizarVacantes;

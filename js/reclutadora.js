@@ -4,9 +4,6 @@
 
 var requisicionesFiltradas = [];
 
-// ==========================================
-// CARGAR REQUISICIONES
-// ==========================================
 function cargarRequisicionesReclutadora() {
     var container = document.getElementById('requisicionesContainer');
     if (!container) return;
@@ -16,8 +13,6 @@ function cargarRequisicionesReclutadora() {
         window.location.href = '/login.html';
         return;
     }
-
-    console.log('👤 Cargando reclutadora para:', user.name, 'Rol:', user.role);
 
     // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso, NO esAdministrador
     if (!tienePermiso('ver_reclutadora')) {
@@ -31,13 +26,12 @@ function cargarRequisicionesReclutadora() {
     var data = obtenerDatosConfig();
     var reclutadores = data.usuarios ? data.usuarios.filter(function(u) { return u.rol === 'Reclutadora'; }) : [];
 
-    // Si el usuario es reclutadora, mostrar solo sus asignadas
+    // Si es reclutadora, mostrar solo sus asignadas
     var asignadas = requisiciones;
     if (user.role === 'Reclutadora') {
         asignadas = requisiciones.filter(function(r) {
             return r.reclutador === user.name;
         });
-        console.log('📋 Mostrando solo requisiciones asignadas a:', user.name, 'Cantidad:', asignadas.length);
     }
 
     requisicionesFiltradas = asignadas;
@@ -45,9 +39,6 @@ function cargarRequisicionesReclutadora() {
     cargarFiltros();
 }
 
-// ==========================================
-// CARGAR FILTROS
-// ==========================================
 function cargarFiltros() {
     var data = obtenerDatosConfig();
     var comerciales = data.comerciales || [];
@@ -66,9 +57,6 @@ function cargarFiltros() {
     }
 }
 
-// ==========================================
-// APLICAR FILTROS
-// ==========================================
 function aplicarFiltros() {
     var container = document.getElementById('requisicionesContainer');
     if (!container) return;
@@ -120,7 +108,6 @@ function aplicarFiltros() {
             tiempoAbierto = diff + 'd';
         }
 
-        // Buscar nombre del reclutador
         var reclutadorNombre = r.reclutador || 'No asignado';
 
         card.innerHTML = `
@@ -163,9 +150,6 @@ function aplicarFiltros() {
     }
 }
 
-// ==========================================
-// LIMPIAR FILTROS
-// ==========================================
 function limpiarFiltros() {
     document.getElementById('filtroCentro').value = '';
     document.getElementById('filtroEstado').value = '';
@@ -173,9 +157,6 @@ function limpiarFiltros() {
     aplicarFiltros();
 }
 
-// ==========================================
-// SINCRONIZAR CON SUPABASE
-// ==========================================
 function sincronizarReclutadora() {
     if (typeof obtenerDeSupabase === 'function') {
         obtenerDeSupabase('requisiciones').then(function(result) {
@@ -187,26 +168,18 @@ function sincronizarReclutadora() {
     }
 }
 
-// ==========================================
-// ESCUCHAR CAMBIOS
-// ==========================================
 window.addEventListener('storage', function(e) {
     if (e.key === 'requisiciones_data' || e.key === 'siman_config_data') {
         cargarRequisicionesReclutadora();
     }
 });
 
-// ==========================================
-// INICIALIZAR
-// ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     var user = getCurrentUser();
     if (!user) {
         window.location.href = '/login.html';
         return;
     }
-
-    console.log('🔐 Inicializando reclutadora para:', user.name, 'Rol:', user.role);
 
     // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso, NO esAdministrador
     if (!tienePermiso('ver_reclutadora')) {
@@ -225,9 +198,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// ==========================================
-// EXPONER FUNCIONES
-// ==========================================
 window.cargarRequisicionesReclutadora = cargarRequisicionesReclutadora;
 window.aplicarFiltros = aplicarFiltros;
 window.limpiarFiltros = limpiarFiltros;
