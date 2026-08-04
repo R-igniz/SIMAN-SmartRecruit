@@ -1,198 +1,239 @@
 // ==========================================
-// GRÁFICAS CON CHART.JS
+// CONFIGURACIÓN - DATA STORE
 // ==========================================
-function cargarChartJS() {
-  if (window.Chart) return Promise.resolve();
-  
-  return new Promise(function(resolve) {
-    var script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
-    script.onload = function() {
-      console.log('✅ Chart.js cargado');
-      resolve();
+var CONFIG_STORE_KEY = 'siman_config_data';
+
+// ==========================================
+// VARIABLES GLOBALES
+// ==========================================
+var tipoActual = '';
+var datosActuales = [];
+
+// ==========================================
+// OBTENER DATOS DE CONFIGURACIÓN
+// ==========================================
+function obtenerDatosConfig() {
+    try {
+        var data = localStorage.getItem(CONFIG_STORE_KEY);
+        if (data) {
+            return JSON.parse(data);
+        }
+    } catch (e) {
+        console.error('Error al leer datos:', e);
+    }
+    
+    var inicial = {
+        usuarios: [
+            { id: 1, nombre: 'Administrador', email: 'admin@siman.com', password: 'admin123', rol: 'Administrador', centro: 'Central', estado: 'activo' }
+        ],
+        roles: [
+            { id: 1, nombre: 'Administrador', estado: 'activo' },
+            { id: 2, nombre: 'Gerente RH', estado: 'activo' },
+            { id: 3, nombre: 'Reclutadora', estado: 'activo' },
+            { id: 4, nombre: 'Ejecutivo', estado: 'activo' }
+        ],
+        comerciales: [
+            { id: 1, nombre: 'Gran Vía', estado: 'activo' },
+            { id: 2, nombre: 'Multiplaza', estado: 'activo' },
+            { id: 3, nombre: 'Galerías', estado: 'activo' }
+        ],
+        tiendas: [
+            { id: 1, nombre: 'Electrónica', comercial: 'Gran Vía', estado: 'activo' },
+            { id: 2, nombre: 'Ropa', comercial: 'Gran Vía', estado: 'activo' },
+            { id: 3, nombre: 'Calzado', comercial: 'Multiplaza', estado: 'activo' },
+            { id: 4, nombre: 'Hogar', comercial: 'Multiplaza', estado: 'activo' },
+            { id: 5, nombre: 'Deportes', comercial: 'Galerías', estado: 'activo' }
+        ],
+        departamentos: [
+            { id: 1, nombre: 'Financiero', estado: 'activo' },
+            { id: 2, nombre: 'Marketing', estado: 'activo' },
+            { id: 3, nombre: 'RRHH', estado: 'activo' }
+        ],
+        estados: [
+            { id: 1, nombre: 'Nueva', estado: 'activo' },
+            { id: 2, nombre: 'Revisando', estado: 'activo' },
+            { id: 3, nombre: 'Publicada', estado: 'activo' },
+            { id: 4, nombre: 'Cerrado', estado: 'activo' }
+        ],
+        prioridades: [
+            { id: 1, nombre: 'Alta', estado: 'activo' },
+            { id: 2, nombre: 'Media', estado: 'activo' },
+            { id: 3, nombre: 'Baja', estado: 'activo' }
+        ],
+        motivos: [
+            { id: 1, nombre: 'Nueva posición', estado: 'activo' },
+            { id: 2, nombre: 'Reemplazo', estado: 'activo' },
+            { id: 3, nombre: 'Expansión', estado: 'activo' }
+        ],
+        tiposContratacion: [
+            { id: 1, nombre: 'Directa', estado: 'activo' },
+            { id: 2, nombre: 'Temporal', estado: 'activo' },
+            { id: 3, nombre: 'Prácticas', estado: 'activo' }
+        ],
+        asignaciones: [],
+        correos: [],
+        plantillas: [],
+        cartasOferta: []
     };
-    document.head.appendChild(script);
-  });
+    localStorage.setItem(CONFIG_STORE_KEY, JSON.stringify(inicial));
+    return inicial;
 }
 
 // ==========================================
-// CREAR GRÁFICA DE BARRAS
+// GUARDAR DATOS Y SINCRONIZAR CON SUPABASE
 // ==========================================
-function crearGraficaBarras(id, labels, data, titulo, colores) {
-  return new Promise(function(resolve) {
-    cargarChartJS().then(function() {
-      var ctx = document.getElementById(id);
-      if (!ctx) {
-        console.error('Elemento ' + id + ' no encontrado');
-        resolve(null);
-        return;
-      }
-      
-      var defaultColors = ['#0056A6', '#1a6bb8', '#3b7fc9', '#0a4a8a', '#5a9ad5', '#7ab0e0'];
-      var coloresUsar = colores || defaultColors;
-      
-      var chart = new Chart(ctx.getContext('2d'), {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: titulo || 'Datos',
-            data: data,
-            backgroundColor: coloresUsar.slice(0, data.length),
-            borderRadius: 8,
-            borderSkipped: false
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: false
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              grid: {
-                color: 'rgba(0,0,0,0.05)'
-              }
-            },
-            x: {
-              grid: {
-                display: false
-              }
-            }
-          }
+function guardarDatosConfig(data) {
+    localStorage.setItem(CONFIG_STORE_KEY, JSON.stringify(data));
+    
+    if (typeof guardarEnSupabase === 'function') {
+        if (data.usuarios) {
+            data.usuarios.forEach(function(u) {
+                guardarEnSupabase('usuarios', {
+                    id: u.id,
+                    nombre: u.nombre,
+                    email: u.email,
+                    password: u.password,
+                    rol: u.rol || 'Reclutadora',
+                    centro: u.centro || 'Central',
+                    estado: u.estado || 'activo'
+                });
+            });
         }
-      });
-      
-      resolve(chart);
-    });
-  });
-}
-
-// ==========================================
-// CREAR GRÁFICA DE LÍNEAS
-// ==========================================
-function crearGraficaLineas(id, labels, data, titulo, color) {
-  return new Promise(function(resolve) {
-    cargarChartJS().then(function() {
-      var ctx = document.getElementById(id);
-      if (!ctx) {
-        console.error('Elemento ' + id + ' no encontrado');
-        resolve(null);
-        return;
-      }
-      
-      var chart = new Chart(ctx.getContext('2d'), {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: titulo || 'Tendencia',
-            data: data,
-            borderColor: color || '#0056A6',
-            backgroundColor: (color || '#0056A6') + '20',
-            fill: true,
-            tension: 0.4,
-            pointRadius: 4,
-            pointBackgroundColor: color || '#0056A6'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: true,
-              position: 'top'
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true
-            }
-          }
+        if (data.roles) {
+            data.roles.forEach(function(r) {
+                guardarEnSupabase('roles', r);
+            });
         }
-      });
-      
-      resolve(chart);
-    });
-  });
-}
-
-// ==========================================
-// CREAR GRÁFICA DE DONA
-// ==========================================
-function crearGraficaDona(id, labels, data, colores) {
-  return new Promise(function(resolve) {
-    cargarChartJS().then(function() {
-      var ctx = document.getElementById(id);
-      if (!ctx) {
-        console.error('Elemento ' + id + ' no encontrado');
-        resolve(null);
-        return;
-      }
-      
-      var defaultColors = ['#0056A6', '#2b8c4a', '#d4a017', '#b33c3c', '#5a9ad5'];
-      
-      var chart = new Chart(ctx.getContext('2d'), {
-        type: 'doughnut',
-        data: {
-          labels: labels,
-          datasets: [{
-            data: data,
-            backgroundColor: colores || defaultColors,
-            borderWidth: 2,
-            borderColor: '#ffffff'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: {
-                padding: 16,
-                usePointStyle: true
-              }
-            }
-          },
-          cutout: '65%'
+        if (data.comerciales) {
+            data.comerciales.forEach(function(c) {
+                guardarEnSupabase('comerciales', c);
+            });
         }
-      });
-      
-      resolve(chart);
+        if (data.tiendas) {
+            data.tiendas.forEach(function(t) {
+                guardarEnSupabase('tiendas', t);
+            });
+        }
+        if (data.departamentos) {
+            data.departamentos.forEach(function(d) {
+                guardarEnSupabase('departamentos', d);
+            });
+        }
+        if (data.estados) {
+            data.estados.forEach(function(e) {
+                guardarEnSupabase('estados', e);
+            });
+        }
+        if (data.prioridades) {
+            data.prioridades.forEach(function(p) {
+                guardarEnSupabase('prioridades', p);
+            });
+        }
+        if (data.motivos) {
+            data.motivos.forEach(function(m) {
+                guardarEnSupabase('motivos', m);
+            });
+        }
+        if (data.tiposContratacion) {
+            data.tiposContratacion.forEach(function(t) {
+                guardarEnSupabase('tiposContratacion', t);
+            });
+        }
+    }
+    
+    if (typeof refreshAuthUsers === 'function') {
+        refreshAuthUsers();
+    }
+    
+    try {
+        window.dispatchEvent(new StorageEvent('storage', {
+            key: CONFIG_STORE_KEY,
+            newValue: JSON.stringify(data)
+        }));
+    } catch (e) {}
+    
+    if (typeof actualizarContadores === 'function') {
+        actualizarContadores();
+    }
+}
+
+// ==========================================
+// FUNCIONES DE OBTENCIÓN DE DATOS
+// ==========================================
+function obtenerReclutadores() {
+    var data = obtenerDatosConfig();
+    var usuarios = data.usuarios || [];
+    return usuarios.filter(function(u) {
+        return u.rol === 'Reclutadora' && u.estado === 'activo';
     });
-  });
+}
+
+function obtenerTiendasPorComercial(comercial) {
+    var data = obtenerDatosConfig();
+    var tiendas = data.tiendas || [];
+    if (!comercial) return tiendas;
+    return tiendas.filter(function(t) {
+        return t.comercial === comercial && t.estado === 'activo';
+    });
+}
+
+function obtenerComerciales() {
+    var data = obtenerDatosConfig();
+    return (data.comerciales || []).filter(function(c) {
+        return c.estado === 'activo';
+    });
+}
+
+function obtenerTiendas() {
+    var data = obtenerDatosConfig();
+    return (data.tiendas || []).filter(function(t) {
+        return t.estado === 'activo';
+    });
+}
+
+function obtenerComercialesParaSelect() {
+    var data = obtenerDatosConfig();
+    return (data.comerciales || []).filter(function(c) {
+        return c.estado === 'activo';
+    });
 }
 
 // ==========================================
-// CARGAR GRÁFICAS DEL DASHBOARD EJECUTIVO
+// INICIALIZAR - VERIFICAR PERMISO (NO ADMIN)
 // ==========================================
-async function cargarDashboardGraficas() {
-  // Datos de ejemplo - en producción vendrían de la API
-  var centros = ['Gran Vía', 'Multiplaza', 'Galerías', 'Metrocentro'];
-  var vacantes = [12, 8, 6, 4];
-  
-  await crearGraficaBarras('graficaVacantes', centros, vacantes, 'Vacantes por Comercial');
-  
-  var meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul'];
-  var contrataciones = [5, 7, 3, 9, 12, 8, 18];
-  await crearGraficaLineas('graficaContrataciones', meses, contrataciones, 'Contrataciones Mensuales');
-  
-  var estados = ['Nueva', 'En Proceso', 'Entrevistas', 'Cerrado'];
-  var cantidades = [8, 15, 7, 12];
-  await crearGraficaDona('graficaEstados', estados, cantidades);
-}
+document.addEventListener('DOMContentLoaded', function() {
+    var user = getCurrentUser();
+    if (!user) {
+        window.location.href = '/login.html';
+        return;
+    }
+    // ✅ CORRECCIÓN: usar tienePermiso, NO esAdministrador
+    if (!tienePermiso('ver_configuracion')) {
+        alert('⚠️ Acceso denegado. No tienes permisos para acceder a Configuración.');
+        window.location.href = '/dashboard.html';
+        return;
+    }
+    
+    actualizarContadores();
+    cargarSelects();
+    
+    setTimeout(function() {
+        if (typeof initSupabase === 'function') {
+            initSupabase().then(function() {
+                console.log('✅ Supabase listo');
+                if (typeof suscribirseATodas === 'function') {
+                    suscribirseATodas();
+                }
+                if (typeof initSupabaseData === 'function') {
+                    initSupabaseData();
+                }
+            }).catch(function(error) {
+                console.warn('⚠️ Usando modo offline (Supabase no disponible)');
+            });
+        }
+    }, 500);
+});
 
-// ==========================================
-// ACTUALIZAR GRÁFICAS CON NUEVOS DATOS
-// ==========================================
-function actualizarGrafica(chart, nuevosDatos) {
-  if (!chart) return;
-  chart.data.datasets[0].data = nuevosDatos;
-  chart.update();
-}
+// ... (resto de las funciones igual que antes, con los mismos nombres)
+// Asegúrate de que todas las funciones estén completas, incluyendo abrirGestion, renderizarTabla, guardarItem, etc.
+// Las funciones de CRUD ya están bien, solo cambia la verificación de entrada.

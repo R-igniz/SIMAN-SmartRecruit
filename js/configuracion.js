@@ -86,7 +86,6 @@ function guardarDatosConfig(data) {
     localStorage.setItem(CONFIG_STORE_KEY, JSON.stringify(data));
     
     if (typeof guardarEnSupabase === 'function') {
-        // Guardar usuarios con rol incluido
         if (data.usuarios) {
             data.usuarios.forEach(function(u) {
                 guardarEnSupabase('usuarios', {
@@ -159,7 +158,7 @@ function guardarDatosConfig(data) {
 }
 
 // ==========================================
-// FUNCIONES DE OBTENCIÓN DE DATOS (para otras páginas)
+// FUNCIONES DE OBTENCIÓN DE DATOS
 // ==========================================
 function obtenerReclutadores() {
     var data = obtenerDatosConfig();
@@ -200,7 +199,7 @@ function obtenerComercialesParaSelect() {
 }
 
 // ==========================================
-// INICIALIZAR - VERIFICAR ROL ADMIN
+// INICIALIZAR - VERIFICAR PERMISO (NO ADMIN)
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     var user = getCurrentUser();
@@ -208,9 +207,9 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = '/login.html';
         return;
     }
-    // Solo administradores pueden acceder
-    if (!esAdministrador()) {
-        alert('⚠️ Acceso denegado. Solo administradores.');
+    // ✅ CORRECCIÓN: usar tienePermiso, NO esAdministrador
+    if (!tienePermiso('ver_configuracion')) {
+        alert('⚠️ Acceso denegado. No tienes permisos para acceder a Configuración.');
         window.location.href = '/dashboard.html';
         return;
     }
@@ -255,7 +254,7 @@ function actualizarContadores() {
 }
 
 // ==========================================
-// CARGAR SELECTS (para roles y comerciales)
+// CARGAR SELECTS
 // ==========================================
 function cargarSelects() {
     var data = obtenerDatosConfig();
@@ -546,7 +545,6 @@ function guardarItem(e) {
     var data = obtenerDatosConfig();
     var items = data[tipo] || [];
 
-    // Validar duplicado por nombre
     var existe = items.some(function(item) {
         return item.nombre.toLowerCase() === nombre.toLowerCase() && item.id != id;
     });
@@ -557,7 +555,6 @@ function guardarItem(e) {
 
     var nuevoItem = { id: id ? parseInt(id) : 0, nombre: nombre, estado: estado };
 
-    // Campo específico para tiendas
     if (tipo === 'tiendas') {
         var comercial = document.getElementById('tiendaComercial').value;
         if (!comercial) {
@@ -567,7 +564,6 @@ function guardarItem(e) {
         nuevoItem.comercial = comercial;
     }
 
-    // Campos para usuarios
     if (tipo === 'usuarios') {
         var email = document.getElementById('usuarioEmail').value.trim();
         var password = document.getElementById('usuarioPassword').value;
@@ -578,7 +574,6 @@ function guardarItem(e) {
             return;
         }
         
-        // Validar email único
         var emailExiste = items.some(function(u) {
             return u.email && u.email.toLowerCase() === email.toLowerCase() && u.id != id;
         });
@@ -606,7 +601,6 @@ function guardarItem(e) {
         }
     }
 
-    // Campos para cartas oferta
     if (tipo === 'cartasOferta') {
         var monto = parseFloat(document.getElementById('cartaMonto').value) || 0;
         var archivoInput = document.getElementById('cartaArchivo');
@@ -622,7 +616,6 @@ function guardarItem(e) {
     }
 
     if (id) {
-        // Editar
         var index = items.findIndex(function(i) { return i.id == id; });
         if (index !== -1) {
             nuevoItem.id = parseInt(id);
@@ -640,7 +633,6 @@ function guardarItem(e) {
         guardarDatosConfig(data);
         mostrarConfirmacion('Actualizado', 'El elemento ha sido actualizado correctamente.');
     } else {
-        // Nuevo
         var maxId = 0;
         items.forEach(function(i) { if (i.id > maxId) maxId = i.id; });
         nuevoItem.id = maxId + 1;
@@ -742,7 +734,6 @@ function eliminarItem(id) {
     var item = items.find(function(i) { return i.id === id; });
     if (!item) return;
 
-    // No permitir eliminar al admin
     if (tipoActual === 'usuarios' && item.email === 'admin@siman.com') {
         alert('⚠️ No se puede eliminar al usuario administrador por defecto.');
         return;

@@ -1,29 +1,16 @@
-document.addEventListener('DOMContentLoaded', function() {
-    var user = getCurrentUser();
-    if (!user) return;
-    
-    cargarUsuarios();
-});
+// ==========================================
+// USUARIOS - LISTA DE USUARIOS
+// ==========================================
 
 function cargarUsuarios() {
     var tbody = document.getElementById('usuariosBody');
     if (!tbody) return;
     
-    var data = localStorage.getItem('siman_config_data');
-    var usuarios = [];
-    
-    if (data) {
-        try {
-            var parsed = JSON.parse(data);
-            usuarios = parsed.usuarios || [];
-        } catch (e) {
-            console.error('Error al cargar usuarios:', e);
-        }
-    }
+    var data = obtenerDatosConfig();
+    var usuarios = data.usuarios || [];
     
     tbody.innerHTML = '';
-    
-    if (!usuarios || usuarios.length === 0) {
+    if (usuarios.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fas fa-inbox"></i>No hay usuarios registrados</td></tr>';
         return;
     }
@@ -50,9 +37,23 @@ function cargarUsuarios() {
     });
 }
 
-// Sincronizar cuando hay cambios en otra pestaña
-window.addEventListener('storage', function(e) {
-    if (e.key === 'siman_config_data') {
-        cargarUsuarios();
+// ==========================================
+// INICIALIZAR
+// ==========================================
+document.addEventListener('DOMContentLoaded', function() {
+    var user = getCurrentUser();
+    if (!user) {
+        window.location.href = '/login.html';
+        return;
     }
+    // ✅ CORRECCIÓN: usar tienePermiso
+    if (!tienePermiso('ver_usuarios')) {
+        alert('⚠️ Acceso denegado. No tienes permisos para ver usuarios.');
+        window.location.href = '/dashboard.html';
+        return;
+    }
+    
+    cargarUsuarios();
 });
+
+window.cargarUsuarios = cargarUsuarios;
