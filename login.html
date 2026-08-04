@@ -48,15 +48,16 @@
                 </div>
 
                 <div class="test-users" style="margin-top:16px; padding:16px; background:var(--bg-body); border-radius:12px; font-size:0.8rem; color:var(--text-muted); line-height:1.8;">
-                    <i class="fas fa-users"></i> Usuario administrador por defecto:
-                    <span style="display:block; font-family:monospace; font-size:0.8rem; color:var(--text-primary);">
-                        <strong>👑 Administrador:</strong> admin@siman.com / admin123
+
                     </span>
                     <span style="display:block; font-size:0.7rem; color:var(--text-muted); margin-top:4px;">
                         ℹ️ Desde Configuración podrás crear más usuarios con diferentes roles
                     </span>
                     <span style="display:block; font-size:0.7rem; color:var(--text-muted); margin-top:4px;">
                         🔄 Los datos se sincronizan automáticamente en la nube (Supabase)
+                    </span>
+                    <span style="display:block; font-size:0.7rem; color:var(--text-muted); margin-top:4px;">
+                        🌐 Puedes iniciar sesión desde cualquier dispositivo con los mismos credenciales
                     </span>
                 </div>
             </div>
@@ -70,8 +71,9 @@
         </div>
     </div>
 
+    <!-- SCRIPTS - ORDEN CORRECTO -->
+    <script src="js/supabase-client.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/login.js"></script>
-    <script src="js/darkmode.js"></script>
 </body>
 </html>
