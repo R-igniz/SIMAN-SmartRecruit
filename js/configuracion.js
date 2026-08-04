@@ -53,13 +53,11 @@ function obtenerDatosConfig() {
 }
 
 // ==========================================
-// GUARDAR DATOS Y SINCRONIZAR
+// GUARDAR DATOS Y SINCRONIZAR CON SUPABASE
 // ==========================================
 function guardarDatosConfig(data) {
-    // Guardar localmente
     localStorage.setItem(CONFIG_STORE_KEY, JSON.stringify(data));
     
-    // Guardar en Supabase
     if (typeof guardarEnSupabase === 'function') {
         if (data.usuarios) {
             data.usuarios.forEach(function(u) {
@@ -78,12 +76,10 @@ function guardarDatosConfig(data) {
         }
     }
     
-    // Refrescar auth
     if (typeof refreshAuthUsers === 'function') {
         refreshAuthUsers();
     }
     
-    // Disparar evento para sincronizar pestañas
     try {
         window.dispatchEvent(new StorageEvent('storage', {
             key: CONFIG_STORE_KEY,
@@ -114,7 +110,6 @@ document.addEventListener('DOMContentLoaded', function() {
     actualizarContadores();
     cargarSelects();
     
-    // Inicializar Supabase en segundo plano
     if (typeof initSupabase === 'function') {
         initSupabase().then(function() {
             console.log('✅ Supabase listo');
@@ -621,16 +616,47 @@ function exportarDatos() {
 }
 
 // ==========================================
+// SINCRONIZAR CON SUPABASE
+// ==========================================
+function sincronizarConSupabase() {
+    if (typeof window.sincronizarConSupabase === 'function') {
+        if (confirm('⚠️ ¿Deseas subir tus datos a la nube?\n\nEsto guardará todos los cambios en la nube.')) {
+            window.sincronizarConSupabase().then(function(resultado) {
+                if (typeof agregarNotificacion === 'function') {
+                    if (resultado && resultado.error) {
+                        agregarNotificacion('danger', '❌ Error al sincronizar: ' + resultado.error, '#');
+                    } else {
+                        agregarNotificacion('success', '✅ Datos sincronizados correctamente', '#');
+                    }
+                }
+                if (tipoActual) {
+                    var data = obtenerDatosConfig();
+                    datosActuales = data[tipoActual] || [];
+                    renderizarTabla();
+                }
+            }).catch(function(error) {
+                if (typeof agregarNotificacion === 'function') {
+                    agregarNotificacion('danger', '❌ Error al sincronizar: ' + error.message, '#');
+                }
+                console.error('Error en sincronización:', error);
+            });
+        }
+    } else {
+        alert('⚠️ La función de sincronización no está disponible. Asegúrate de que supabase-client.js esté cargado.');
+        console.error('Error: window.sincronizarConSupabase no está definida');
+    }
+}
+
+// ==========================================
 // RECARGAR DESDE NUBE
 // ==========================================
 function recargarDesdeNube() {
-    if (typeof initSupabaseData === 'function') {
+    if (typeof window.initSupabaseData === 'function') {
         if (confirm('⚠️ ¿Deseas cargar los datos desde la nube?\n\nEsto fusionará los datos locales con los de la nube.')) {
-            initSupabaseData().then(function() {
+            window.initSupabaseData().then(function() {
                 if (typeof agregarNotificacion === 'function') {
                     agregarNotificacion('success', '✅ Datos cargados desde la nube correctamente', '#');
                 }
-                // Recargar la tabla actual
                 if (tipoActual) {
                     var data = obtenerDatosConfig();
                     datosActuales = data[tipoActual] || [];
@@ -640,27 +666,18 @@ function recargarDesdeNube() {
                 if (typeof agregarNotificacion === 'function') {
                     agregarNotificacion('danger', '❌ Error al cargar desde la nube: ' + error.message, '#');
                 }
+                console.error('Error cargando desde nube:', error);
             });
         }
     } else {
-        alert('⚠️ La función de sincronización no está disponible');
+        alert('⚠️ La función de carga desde la nube no está disponible. Asegúrate de que supabase-client.js esté cargado.');
+        console.error('Error: window.initSupabaseData no está definida');
     }
 }
 
 // ==========================================
-// SINCRONIZAR CON SUPABASE
+// EXPONER FUNCIONES GLOBALMENTE
 // ==========================================
-function sincronizarConSupabase() {
-    // Esta función ya no se usa aquí, se usa la de supabase-client.js
-    // Si se llama, redirigir a la función global
-    if (typeof window.sincronizarConSupabase === 'function') {
-        window.sincronizarConSupabase();
-    } else {
-        alert('⚠️ La función de sincronización no está disponible');
-    }
-}
-
-// Exponer funciones globalmente
 window.recargarDesdeNube = recargarDesdeNube;
 window.sincronizarConSupabase = sincronizarConSupabase;
 window.abrirGestion = abrirGestion;

@@ -108,7 +108,7 @@ function getSidebarHTML() {
                 ">
                     <i class="fas fa-cloud-upload-alt"></i> Subir a nube
                 </button>
-                <button onclick="initSupabaseData()" style="
+                <button onclick="recargarDesdeNube()" style="
                     width: 100%;
                     padding: 10px 12px;
                     border: none;
@@ -133,6 +133,7 @@ function getSidebarHTML() {
         `;
     }
 
+    // Logout
     navHTML += `
         <div class="nav-divider"></div>
         <a class="nav-item" onclick="logout()" style="color: var(--danger); cursor: pointer;">
@@ -245,11 +246,10 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ==========================================
-// FUNCIONES DE SINCRONIZACIÓN (wrapper)
+// FUNCIONES DE SINCRONIZACIÓN
 // ==========================================
 
-// Esta función llama a la función real de supabase-client.js
-function sincronizarConSupabase() {
+function ejecutarSincronizacion() {
     if (typeof window.sincronizarConSupabase === 'function') {
         if (confirm('⚠️ ¿Deseas subir tus datos a la nube?\n\nEsto guardará todos los cambios en la nube.')) {
             window.sincronizarConSupabase().then(function(resultado) {
@@ -264,6 +264,7 @@ function sincronizarConSupabase() {
                 if (typeof agregarNotificacion === 'function') {
                     agregarNotificacion('danger', '❌ Error al sincronizar: ' + error.message, '#');
                 }
+                console.error('Error en sincronización:', error);
             });
         }
     } else {
@@ -271,18 +272,22 @@ function sincronizarConSupabase() {
     }
 }
 
-// Esta función llama a la función real de supabase-client.js
-function initSupabaseData() {
+function ejecutarCargaNube() {
     if (typeof window.initSupabaseData === 'function') {
         if (confirm('⚠️ ¿Deseas cargar los datos desde la nube?\n\nEsto fusionará los datos locales con los de la nube.')) {
             window.initSupabaseData().then(function() {
                 if (typeof agregarNotificacion === 'function') {
                     agregarNotificacion('success', '✅ Datos cargados desde la nube correctamente', '#');
                 }
+                // Recargar la página para actualizar todo
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
             }).catch(function(error) {
                 if (typeof agregarNotificacion === 'function') {
                     agregarNotificacion('danger', '❌ Error al cargar desde la nube: ' + error.message, '#');
                 }
+                console.error('Error cargando desde nube:', error);
             });
         }
     } else {
@@ -291,6 +296,6 @@ function initSupabaseData() {
 }
 
 // Exponer funciones globalmente
-window.sincronizarConSupabase = sincronizarConSupabase;
-window.initSupabaseData = initSupabaseData;
+window.ejecutarSincronizacion = ejecutarSincronizacion;
+window.ejecutarCargaNube = ejecutarCargaNube;
 window.initLayout = initLayout;
