@@ -1,130 +1,6 @@
 // ==========================================
-// SUPABASE CLIENT - CONFIGURACIÓN
+// SINCRONIZAR DATOS LOCALES CON SUPABASE
 // ==========================================
-
-var SUPABASE_URL = 'https://kmqantnfueparuwycgdz.supabase.co';
-var SUPABASE_KEY = 'sb_publishable_FOF12VLnddzD-V52S2h--g_EqZEvQ_s';
-
-var supabaseInitialized = false;
-var supabaseClient = null;
-
-function initSupabase() {
-    return new Promise(function(resolve, reject) {
-        if (supabaseInitialized && supabaseClient) {
-            resolve(supabaseClient);
-            return;
-        }
-
-        var script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-        script.onload = function() {
-            try {
-                var supabase = window.supabase;
-                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                supabaseInitialized = true;
-                console.log('✅ Supabase inicializado correctamente');
-                resolve(supabaseClient);
-            } catch (error) {
-                console.error('❌ Error al inicializar Supabase:', error);
-                reject(error);
-            }
-        };
-        script.onerror = function() {
-            reject(new Error('Error al cargar la librería de Supabase'));
-        };
-        document.head.appendChild(script);
-    });
-}
-
-// ==========================================
-// FUNCIONES CRUD
-// ==========================================
-
-async function guardarEnSupabase(tabla, datos) {
-    try {
-        var client = await initSupabase();
-        var { data, error } = await client
-            .from(tabla)
-            .upsert(datos, { onConflict: 'id' });
-        
-        if (error) throw error;
-        return { success: true, data: data };
-    } catch (error) {
-        console.error('Error guardando en Supabase:', error);
-        return { success: false, error: error.message };
-    }
-}
-
-async function obtenerDeSupabase(tabla, filtros, orden) {
-    try {
-        var client = await initSupabase();
-        var query = client.from(tabla).select('*');
-        
-        if (filtros) {
-            Object.keys(filtros).forEach(function(key) {
-                query = query.eq(key, filtros[key]);
-            });
-        }
-        
-        if (orden) {
-            query = query.order(orden.campo, { ascending: orden.ascendente !== false });
-        }
-        
-        var { data, error } = await query;
-        if (error) throw error;
-        return { success: true, data: data };
-    } catch (error) {
-        console.error('Error obteniendo de Supabase:', error);
-        return { success: false, error: error.message, data: [] };
-    }
-}
-
-async function eliminarDeSupabase(tabla, id) {
-    try {
-        var client = await initSupabase();
-        var { data, error } = await client
-            .from(tabla)
-            .delete()
-            .eq('id', id);
-        
-        if (error) throw error;
-        return { success: true, data: data };
-    } catch (error) {
-        console.error('Error eliminando de Supabase:', error);
-        return { success: false, error: error.message };
-    }
-}
-
-// ==========================================
-// SUSCRIPCIÓN EN TIEMPO REAL
-// ==========================================
-
-function suscribirseATabla(tabla, callback) {
-    initSupabase().then(function(client) {
-        client
-            .channel('tabla_changes_' + tabla)
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: tabla
-                },
-                function(payload) {
-                    console.log('🔄 Cambio detectado en', tabla, ':', payload);
-                    callback(payload);
-                }
-            )
-            .subscribe();
-    }).catch(function(error) {
-        console.error('Error al suscribirse:', error);
-    });
-}
-
-// ==========================================
-// SINCRONIZAR DATOS LOCALES CON SUPABASE (ENVIAR)
-// ==========================================
-
 async function sincronizarConSupabase() {
     console.log('🔄 Iniciando sincronización con Supabase...');
     
@@ -145,52 +21,58 @@ async function sincronizarConSupabase() {
             usuarios: 0,
             roles: 0,
             comerciales: 0,
+            tiendas: 0,
+            departamentos: 0,
+            estados: 0,
+            prioridades: 0,
+            motivos: 0,
+            tiposContratacion: 0,
             requisiciones: 0,
             errores: 0
         };
         
-        if (data.usuarios && data.usuarios.length > 0) {
-            for (var i = 0; i < data.usuarios.length; i++) {
-                var result = await guardarEnSupabase('usuarios', data.usuarios[i]);
+        // Función auxiliar para guardar con conteo
+        async function guardarConteo(tabla, items, contador) {
+            if (!items || items.length === 0) return;
+            for (var i = 0; i < items.length; i++) {
+                var result = await guardarEnSupabase(tabla, items[i]);
                 if (result.success) {
-                    resultados.usuarios++;
+                    resultados[contador]++;
                 } else {
                     resultados.errores++;
+                    console.warn('Error guardando en', tabla, ':', result.error);
                 }
             }
         }
         
-        if (data.roles && data.roles.length > 0) {
-            for (var i = 0; i < data.roles.length; i++) {
-                var result = await guardarEnSupabase('roles', data.roles[i]);
-                if (result.success) resultados.roles++;
-            }
-        }
-        
-        if (data.comerciales && data.comerciales.length > 0) {
-            for (var i = 0; i < data.comerciales.length; i++) {
-                var result = await guardarEnSupabase('comerciales', data.comerciales[i]);
-                if (result.success) resultados.comerciales++;
-            }
-        }
-        
-        if (requisiciones.length > 0) {
-            for (var i = 0; i < requisiciones.length; i++) {
-                var result = await guardarEnSupabase('requisiciones', requisiciones[i]);
-                if (result.success) resultados.requisiciones++;
-            }
-        }
+        // Guardar cada tabla
+        await guardarConteo('usuarios', data.usuarios, 'usuarios');
+        await guardarConteo('roles', data.roles, 'roles');
+        await guardarConteo('comerciales', data.comerciales, 'comerciales');
+        await guardarConteo('tiendas', data.tiendas, 'tiendas');
+        await guardarConteo('departamentos', data.departamentos, 'departamentos');
+        await guardarConteo('estados', data.estados, 'estados');
+        await guardarConteo('prioridades', data.prioridades, 'prioridades');
+        await guardarConteo('motivos', data.motivos, 'motivos');
+        await guardarConteo('tiposContratacion', data.tiposContratacion, 'tiposContratacion');
+        await guardarConteo('requisiciones', requisiciones, 'requisiciones');
         
         console.log('✅ Sincronización completada:', resultados);
         
-        var mensaje = '✅ Datos sincronizados: ' + 
-            resultados.usuarios + ' usuarios, ' + 
-            resultados.roles + ' roles, ' + 
+        var mensaje = '✅ Datos sincronizados: ' +
+            resultados.usuarios + ' usuarios, ' +
+            resultados.roles + ' roles, ' +
             resultados.comerciales + ' comerciales, ' +
+            resultados.tiendas + ' tiendas, ' +
+            resultados.departamentos + ' departamentos, ' +
+            resultados.estados + ' estados, ' +
+            resultados.prioridades + ' prioridades, ' +
+            resultados.motivos + ' motivos, ' +
+            resultados.tiposContratacion + ' tipos de contratación, ' +
             resultados.requisiciones + ' requisiciones';
         
         if (resultados.errores > 0) {
-            mensaje += ' ⚠️ ' + resultados.errores + ' errores';
+            mensaje += ' ⚠️ ' + resultados.errores + ' errores (ver consola)';
         }
         
         if (typeof agregarNotificacion === 'function') {
@@ -206,215 +88,3 @@ async function sincronizarConSupabase() {
         return { error: error.message };
     }
 }
-
-// ==========================================
-// CARGAR DATOS DESDE SUPABASE (RECIBIR)
-// ==========================================
-
-async function cargarDesdeSupabase(tabla) {
-    var result = await obtenerDeSupabase(tabla);
-    if (result.success) {
-        return result.data;
-    }
-    return [];
-}
-
-function fusionarDatos(datosLocales, datosRemotos, claveUnica) {
-    var mapaLocal = {};
-    datosLocales.forEach(function(item) {
-        mapaLocal[item[claveUnica]] = item;
-    });
-    
-    datosRemotos.forEach(function(item) {
-        var key = item[claveUnica];
-        if (mapaLocal[key]) {
-            mapaLocal[key] = item;
-        } else {
-            mapaLocal[key] = item;
-        }
-    });
-    
-    return Object.values(mapaLocal);
-}
-
-async function initSupabaseData() {
-    console.log('🔄 Cargando datos desde Supabase...');
-    
-    try {
-        if (!navigator.onLine) {
-            if (typeof agregarNotificacion === 'function') {
-                agregarNotificacion('warning', '⚠️ Sin conexión a Internet. Usando datos locales.', '#');
-            }
-            return null;
-        }
-        
-        await initSupabase();
-        
-        var [usuariosRemotos, rolesRemotos, comercialesRemotos, requisicionesRemotos] = await Promise.all([
-            cargarDesdeSupabase('usuarios'),
-            cargarDesdeSupabase('roles'),
-            cargarDesdeSupabase('comerciales'),
-            cargarDesdeSupabase('requisiciones')
-        ]);
-        
-        var dataLocal = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
-        
-        var adminLocal = dataLocal.usuarios ? dataLocal.usuarios.find(function(u) { return u.email === 'admin@siman.com'; }) : null;
-        var adminRemoto = usuariosRemotos.find(function(u) { return u.email === 'admin@siman.com'; });
-        
-        if (!adminRemoto && adminLocal) {
-            await guardarEnSupabase('usuarios', adminLocal);
-            usuariosRemotos.push(adminLocal);
-        }
-        
-        if (!adminLocal && adminRemoto) {
-            if (!dataLocal.usuarios) dataLocal.usuarios = [];
-            dataLocal.usuarios.push(adminRemoto);
-        }
-        
-        var usuariosFusionados = fusionarDatos(dataLocal.usuarios || [], usuariosRemotos, 'email');
-        var rolesFusionados = fusionarDatos(dataLocal.roles || [], rolesRemotos, 'id');
-        var comercialesFusionados = fusionarDatos(dataLocal.comerciales || [], comercialesRemotos, 'id');
-        
-        var dataFinal = {
-            usuarios: usuariosFusionados,
-            roles: rolesFusionados,
-            comerciales: comercialesFusionados,
-            tiendas: dataLocal.tiendas || [],
-            departamentos: dataLocal.departamentos || [],
-            estados: dataLocal.estados || [],
-            prioridades: dataLocal.prioridades || [],
-            motivos: dataLocal.motivos || [],
-            tiposContratacion: dataLocal.tiposContratacion || [],
-            asignaciones: dataLocal.asignaciones || [],
-            correos: dataLocal.correos || [],
-            plantillas: dataLocal.plantillas || [],
-            cartasOferta: dataLocal.cartasOferta || []
-        };
-        
-        localStorage.setItem('siman_config_data', JSON.stringify(dataFinal));
-        localStorage.setItem('requisiciones_data', JSON.stringify(requisicionesRemotos));
-        
-        console.log('✅ Datos cargados y fusionados desde Supabase');
-        console.log('👥 Usuarios totales:', usuariosFusionados.length);
-        
-        if (typeof actualizarContadores === 'function') {
-            actualizarContadores();
-        }
-        
-        if (typeof cargarUsuarios === 'function') {
-            cargarUsuarios();
-        }
-        
-        if (typeof cargarRequisiciones === 'function') {
-            cargarRequisiciones();
-        }
-        
-        if (typeof refreshAuthUsers === 'function') {
-            refreshAuthUsers();
-        }
-        
-        if (typeof agregarNotificacion === 'function') {
-            agregarNotificacion('success', 
-                '✅ Datos cargados: ' + usuariosFusionados.length + ' usuarios, ' + 
-                rolesFusionados.length + ' roles, ' + 
-                comercialesFusionados.length + ' comerciales', 
-                '#'
-            );
-        }
-        
-        return dataFinal;
-    } catch (error) {
-        console.error('❌ Error cargando datos:', error);
-        if (typeof agregarNotificacion === 'function') {
-            agregarNotificacion('danger', '❌ Error al cargar datos: ' + error.message, '#');
-        }
-        return null;
-    }
-}
-
-function suscribirseATodas() {
-    var tablas = ['usuarios', 'roles', 'comerciales', 'requisiciones'];
-    
-    tablas.forEach(function(tabla) {
-        suscribirseATabla(tabla, function(payload) {
-            console.log('🔄 Cambio en ' + tabla + ':', payload);
-            
-            cargarDesdeSupabase(tabla).then(function(data) {
-                var dataLocal = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
-                
-                if (tabla === 'usuarios') {
-                    var usuariosLocales = dataLocal.usuarios || [];
-                    var usuariosFusionados = fusionarDatos(usuariosLocales, data, 'email');
-                    dataLocal.usuarios = usuariosFusionados;
-                    localStorage.setItem('siman_config_data', JSON.stringify(dataLocal));
-                    if (typeof cargarUsuarios === 'function') cargarUsuarios();
-                    if (typeof refreshAuthUsers === 'function') refreshAuthUsers();
-                } else if (tabla === 'requisiciones') {
-                    localStorage.setItem('requisiciones_data', JSON.stringify(data));
-                    if (typeof cargarRequisiciones === 'function') cargarRequisiciones();
-                } else {
-                    dataLocal[tabla] = data;
-                    localStorage.setItem('siman_config_data', JSON.stringify(dataLocal));
-                }
-                
-                if (typeof actualizarContadores === 'function') {
-                    actualizarContadores();
-                }
-                
-                if (typeof agregarNotificacion === 'function') {
-                    agregarNotificacion('info', '🔄 Actualización automática: ' + tabla, '#');
-                }
-            });
-        });
-    });
-}
-
-// ==========================================
-// LIMPIAR OTRAS TABLAS EN SUPABASE
-// ==========================================
-async function limpiarOtrasTablasSupabase() {
-    var tablas = ['comerciales', 'tiendas', 'departamentos', 'estados', 'prioridades', 
-                  'motivos', 'tiposContratacion', 'asignaciones', 'correos', 'plantillas', 
-                  'cartasOferta', 'requisiciones'];
-    
-    var resultados = {
-        eliminados: 0,
-        errores: 0
-    };
-    
-    for (var t = 0; t < tablas.length; t++) {
-        var tabla = tablas[t];
-        var result = await obtenerDeSupabase(tabla);
-        if (result.success && result.data) {
-            for (var i = 0; i < result.data.length; i++) {
-                var deleteResult = await eliminarDeSupabase(tabla, result.data[i].id);
-                if (deleteResult.success) {
-                    resultados.eliminados++;
-                } else {
-                    resultados.errores++;
-                }
-            }
-        }
-    }
-    
-    console.log('✅ Limpieza de Supabase completada:', resultados);
-    return resultados;
-}
-
-// ==========================================
-// EXPONER FUNCIONES GLOBALMENTE
-// ==========================================
-window.initSupabase = initSupabase;
-window.guardarEnSupabase = guardarEnSupabase;
-window.obtenerDeSupabase = obtenerDeSupabase;
-window.eliminarDeSupabase = eliminarDeSupabase;
-window.sincronizarConSupabase = sincronizarConSupabase;
-window.cargarDesdeSupabase = cargarDesdeSupabase;
-window.initSupabaseData = initSupabaseData;
-window.suscribirseATodas = suscribirseATodas;
-window.suscribirseATabla = suscribirseATabla;
-window.fusionarDatos = fusionarDatos;
-window.limpiarOtrasTablasSupabase = limpiarOtrasTablasSupabase;
-
-console.log('✅ Supabase client cargado');
