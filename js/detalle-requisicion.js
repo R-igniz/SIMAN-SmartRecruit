@@ -1,21 +1,14 @@
 // ==========================================
 // DETALLE REQUISICIÓN - VISUALIZACIÓN
 // ==========================================
-
 var requisicionId = null;
 var requisicionData = null;
 
-// ==========================================
-// OBTENER ID DE LA URL
-// ==========================================
 function getParametroUrl(param) {
     var urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(param);
 }
 
-// ==========================================
-// CARGAR DATOS DE LA REQUISICIÓN
-// ==========================================
 function cargarRequisicion() {
     requisicionId = getParametroUrl('id');
     if (!requisicionId) {
@@ -23,24 +16,16 @@ function cargarRequisicion() {
         window.location.href = '/requisiciones.html';
         return;
     }
-
     var requisiciones = JSON.parse(localStorage.getItem('requisiciones_data') || '[]');
-    requisicionData = requisiciones.find(function(r) {
-        return r.id === requisicionId;
-    });
-
+    requisicionData = requisiciones.find(function(r) { return r.id === requisicionId; });
     if (!requisicionData) {
         alert('⚠️ Requisición no encontrada.');
         window.location.href = '/requisiciones.html';
         return;
     }
-
     renderizarDetalle();
 }
 
-// ==========================================
-// RENDERIZAR DETALLE
-// ==========================================
 function renderizarDetalle() {
     var r = requisicionData;
     document.getElementById('detId').textContent = r.id;
@@ -59,29 +44,19 @@ function renderizarDetalle() {
     document.getElementById('detFechaCreacion').textContent = r.fechaCreacion ? new Date(r.fechaCreacion).toLocaleString() : '-';
 }
 
-// ==========================================
-// INICIALIZAR
-// ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     var user = getCurrentUser();
     if (!user) {
         window.location.href = '/login.html';
         return;
     }
-
-    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso
-    // El detalle puede ser visto por todos los que tengan permiso de ver requisiciones
+    // ✅ VERIFICACIÓN CORRECTA: ver_requisiciones es suficiente para ver detalle
     if (!tienePermiso('ver_requisiciones')) {
         console.warn('⛔ Acceso denegado: sin permiso ver_requisiciones');
-        alert('⚠️ No tienes permisos para ver los detalles de requisiciones.');
         window.location.href = '/dashboard.html';
         return;
     }
-
     cargarRequisicion();
 });
 
-// ==========================================
-// EXPONER FUNCIONES GLOBALMENTE
-// ==========================================
 window.cargarRequisicion = cargarRequisicion;
