@@ -1,5 +1,5 @@
 // ==========================================
-// AUTH - ROLES Y PERMISOS (SIN ALERTAS)
+// AUTH - ROLES Y PERMISOS (CON NORMALIZACIÓN Y LOGS)
 // ==========================================
 
 var ROLES = {
@@ -47,7 +47,32 @@ var DEFAULT_ADMIN = {
 };
 
 // ==========================================
-// OBTENER USUARIOS
+// NORMALIZAR ROL (primera mayúscula, resto minúscula)
+// ==========================================
+function normalizarRol(rol) {
+    if (!rol) return 'Reclutadora';
+    var limpio = rol.trim();
+    // Si ya es válido, devolverlo
+    if (PERMISOS[limpio]) return limpio;
+    // Intentar normalizar: primera letra mayúscula, resto minúscula
+    var normalizado = limpio.charAt(0).toUpperCase() + limpio.slice(1).toLowerCase();
+    if (PERMISOS[normalizado]) return normalizado;
+    // Si aún no es válido, mapear variantes comunes
+    var mapa = {
+        'administrador': 'Administrador',
+        'gerente rh': 'Gerente RH',
+        'reclutadora': 'Reclutadora',
+        'ejecutivo': 'Ejecutivo'
+    };
+    var encontrado = mapa[limpio.toLowerCase()];
+    if (encontrado) return encontrado;
+    // Por defecto, asignar Reclutadora
+    console.warn('⚠️ Rol desconocido:', rol, 'asignando Reclutadora');
+    return 'Reclutadora';
+}
+
+// ==========================================
+// OBTENER USUARIOS CON NORMALIZACIÓN
 // ==========================================
 async function getUsersFromSupabase() {
     try {
@@ -58,7 +83,7 @@ async function getUsersFromSupabase() {
             var result = await obtenerDeSupabase('usuarios');
             if (result.success && result.data && result.data.length > 0) {
                 return result.data.map(function(u) {
-                    var rol = u.rol || 'Reclutadora';
+                    var rol = normalizarRol(u.rol || 'Reclutadora');
                     return {
                         username: u.email,
                         password: u.password,
@@ -86,11 +111,12 @@ function getUsersFromStorage() {
             var usuarios = parsed.usuarios || [];
             if (usuarios.length > 0) {
                 return usuarios.map(function(u) {
+                    var rol = normalizarRol(u.rol || 'Reclutadora');
                     return {
                         username: u.email,
                         password: u.password,
                         name: u.nombre,
-                        role: u.rol || 'Reclutadora',
+                        role: rol,
                         store: u.centro || 'Central',
                         id: u.id,
                         estado: u.estado
@@ -259,7 +285,7 @@ function refreshAuthUsers() {
 }
 
 // ==========================================
-// VERIFICAR PERMISOS
+// VERIFICAR PERMISOS CON LOGS
 // ==========================================
 function tienePermiso(permiso) {
     var user = getCurrentUser();
@@ -294,7 +320,6 @@ function protegerRuta(permisoRequerido, redirectUrl) {
     }
     if (permisoRequerido && !tienePermiso(permisoRequerido)) {
         console.warn('🔒 Acceso denegado a', window.location.pathname, 'para rol', user.role);
-        // ✅ SIN ALERTA, SOLO REDIRECCIÓN SILENCIOSA
         window.location.href = redirectUrl || '/dashboard.html';
         return false;
     }
@@ -302,7 +327,7 @@ function protegerRuta(permisoRequerido, redirectUrl) {
 }
 
 // ==========================================
-// PROTEGER PÁGINAS AL CARGAR (SIN ALERTAS)
+// PROTEGER PÁGINAS AL CARGAR (CON LOGS)
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     var currentPage = window.location.pathname;
@@ -343,10 +368,12 @@ document.addEventListener('DOMContentLoaded', function() {
     var permiso = permisosPorPagina[currentPage];
     if (permiso && !tienePermiso(permiso)) {
         console.warn('🔒 Acceso denegado a', currentPage, 'para rol', user.role);
-        // ✅ SIN ALERTA, SOLO REDIRECCIÓN SILENCIOSA
+        // Redirigir sin alerta
         window.location.href = '/dashboard.html';
         return;
     }
+    
+    console.log('✅ Acceso permitido a', currentPage);
 });
 
 // ==========================================
@@ -365,5 +392,6 @@ window.protegerRuta = protegerRuta;
 window.getUsers = getUsers;
 window.PERMISOS = PERMISOS;
 window.ROLES = ROLES;
+window.normalizarRol = normalizarRol;
 
-console.log('✅ Auth cargado correctamente (sin alertas)');
+console.log('✅ Auth cargado correctamente (con normalización y logs)');
