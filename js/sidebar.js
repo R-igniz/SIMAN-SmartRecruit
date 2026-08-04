@@ -73,7 +73,7 @@ function getSidebarHTML() {
             return;
         }
         
-        // Verificar permiso si existe
+        // ✅ Verificar permiso antes de mostrar el item
         if (item.permiso && !tienePermiso(item.permiso)) {
             return;
         }
@@ -94,61 +94,13 @@ function getSidebarHTML() {
         navHTML += `
             <div class="nav-divider"></div>
             <div style="padding: 8px 12px; display: flex; flex-direction: column; gap: 6px;">
-                <button onclick="ejecutarSincronizacion()" style="
-                    width: 100%;
-                    padding: 10px 12px;
-                    border: none;
-                    border-radius: 8px;
-                    background: var(--primary);
-                    color: white;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 8px;
-                    font-size: 13px;
-                    font-weight: 500;
-                    transition: all 0.2s;
-                ">
+                <button onclick="ejecutarSincronizacion()" style="width:100%; padding:10px 12px; border:none; border-radius:8px; background:var(--primary); color:white; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; font-size:13px; font-weight:500; transition:all 0.2s;">
                     <i class="fas fa-cloud-upload-alt"></i> Subir a nube
                 </button>
-                <button onclick="ejecutarCargaNube()" style="
-                    width: 100%;
-                    padding: 10px 12px;
-                    border: none;
-                    border-radius: 8px;
-                    background: #2b8c4a;
-                    color: white;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 8px;
-                    font-size: 13px;
-                    font-weight: 500;
-                    transition: all 0.2s;
-                ">
+                <button onclick="ejecutarCargaNube()" style="width:100%; padding:10px 12px; border:none; border-radius:8px; background:#2b8c4a; color:white; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; font-size:13px; font-weight:500; transition:all 0.2s;">
                     <i class="fas fa-cloud-download-alt"></i> Bajar de nube
                 </button>
-                <button onclick="limpiarDatos()" style="
-                    width: 100%;
-                    padding: 10px 12px;
-                    border: none;
-                    border-radius: 8px;
-                    background: #b33c3c;
-                    color: white;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 8px;
-                    font-size: 13px;
-                    font-weight: 500;
-                    transition: all 0.2s;
-                ">
-                    <i class="fas fa-trash-alt"></i> Limpiar Sistema
-                </button>
-                <div style="font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 4px;">
+                <div style="font-size:10px; color:var(--text-muted); text-align:center; margin-top:4px;">
                     ${navigator.onLine ? '🟢 En línea' : '🔴 Sin conexión'}
                 </div>
             </div>
