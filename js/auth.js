@@ -296,7 +296,7 @@ function esEjecutivo() {
 }
 
 // ==========================================
-// PROTEGER RUTAS (SIN ALERT GENÉRICO)
+// PROTEGER RUTAS (con alerta solo en Configuración)
 // ==========================================
 function protegerRuta(permisoRequerido, redirectUrl) {
     var user = getCurrentUser();
@@ -306,7 +306,7 @@ function protegerRuta(permisoRequerido, redirectUrl) {
     }
     if (permisoRequerido && !tienePermiso(permisoRequerido)) {
         console.warn('🔒 Acceso denegado a', window.location.pathname, 'para rol', user.role);
-        // Solo mostrar alert si es Configuración (para no molestar en otras páginas)
+        // ✅ SOLO MOSTRAR ALERT SI ES CONFIGURACIÓN
         if (window.location.pathname.includes('configuracion')) {
             alert('⚠️ No tienes permisos para acceder a Configuración.');
         }
@@ -356,13 +356,18 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     var permiso = permisosPorPagina[currentPage];
-    if (permiso && !tienePermiso(permiso)) {
-        console.warn('🔒 Acceso denegado a', currentPage, 'para rol', user.role);
-        // Solo mostrar alert si es Configuración (para no molestar en otras páginas)
-        if (currentPage.includes('configuracion')) {
-            alert('⚠️ No tienes permisos para acceder a Configuración.');
+    if (permiso) {
+        if (!tienePermiso(permiso)) {
+            console.warn('🔒 Acceso denegado a', currentPage, 'para rol', user.role);
+            // ✅ SOLO MOSTRAR ALERT SI ES CONFIGURACIÓN
+            if (currentPage.includes('configuracion')) {
+                alert('⚠️ No tienes permisos para acceder a Configuración.');
+            }
+            window.location.href = '/dashboard.html';
         }
-        window.location.href = '/dashboard.html';
+    } else {
+        // Si la página no está en el mapa, permitir acceso (asumimos que es pública o ya verificada)
+        console.log('✅ Página sin restricción de permisos:', currentPage);
     }
 });
 
