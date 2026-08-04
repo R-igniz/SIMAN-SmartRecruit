@@ -12,10 +12,10 @@ function cargarVacantes() {
         return;
     }
 
-    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso
+    // ✅ VERIFICACIÓN CORRECTA: permisos para VACANTES
     if (!tienePermiso('ver_vacantes')) {
         console.warn('⛔ Acceso denegado: sin permiso ver_vacantes');
-        alert('⚠️ No tienes permisos para acceder a esta sección.');
+        alert('⚠️ No tienes permisos para acceder a Vacantes.');
         window.location.href = '/dashboard.html';
         return;
     }
@@ -141,10 +141,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso
+    // ✅ VERIFICACIÓN CORRECTA: ver_vacantes
     if (!tienePermiso('ver_vacantes')) {
         console.warn('⛔ Acceso denegado: sin permiso ver_vacantes');
-        alert('⚠️ No tienes permisos para acceder a esta sección.');
+        alert('⚠️ No tienes permisos para acceder a Vacantes.');
         window.location.href = '/dashboard.html';
         return;
     }

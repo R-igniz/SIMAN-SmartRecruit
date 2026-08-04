@@ -14,10 +14,10 @@ function cargarRequisicionesReclutadora() {
         return;
     }
 
-    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso
+    // ✅ VERIFICACIÓN CORRECTA: permisos para RECLUTADORA
     if (!tienePermiso('ver_reclutadora')) {
         console.warn('⛔ Acceso denegado: sin permiso ver_reclutadora');
-        alert('⚠️ No tienes permisos para acceder a esta sección.');
+        alert('⚠️ No tienes permisos para acceder al Panel de Reclutadora.');
         window.location.href = '/dashboard.html';
         return;
     }
@@ -180,10 +180,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso
+    // ✅ VERIFICACIÓN CORRECTA: ver_reclutadora
     if (!tienePermiso('ver_reclutadora')) {
         console.warn('⛔ Acceso denegado: sin permiso ver_reclutadora');
-        alert('⚠️ No tienes permisos para acceder a esta sección.');
+        alert('⚠️ No tienes permisos para acceder al Panel de Reclutadora.');
         window.location.href = '/dashboard.html';
         return;
     }

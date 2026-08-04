@@ -14,10 +14,10 @@ function cargarRequisiciones() {
         return;
     }
 
-    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso
+    // ✅ VERIFICACIÓN CORRECTA: permisos para REQUISICIONES
     if (!tienePermiso('ver_requisiciones')) {
         console.warn('⛔ Acceso denegado: sin permiso ver_requisiciones');
-        alert('⚠️ No tienes permisos para acceder a esta sección.');
+        alert('⚠️ No tienes permisos para acceder a Mis Requisiciones.');
         window.location.href = '/dashboard.html';
         return;
     }
@@ -110,10 +110,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso
+    // ✅ VERIFICACIÓN CORRECTA: ver_requisiciones
     if (!tienePermiso('ver_requisiciones')) {
         console.warn('⛔ Acceso denegado: sin permiso ver_requisiciones');
-        alert('⚠️ No tienes permisos para acceder a esta sección.');
+        alert('⚠️ No tienes permisos para acceder a Mis Requisiciones.');
         window.location.href = '/dashboard.html';
         return;
     }
