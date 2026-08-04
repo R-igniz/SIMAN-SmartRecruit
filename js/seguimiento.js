@@ -5,48 +5,75 @@
 function cargarSeguimiento() {
     var container = document.getElementById('seguimientoContainer');
     if (!container) return;
-    
+
+    var user = getCurrentUser();
+    if (!user) {
+        window.location.href = '/login.html';
+        return;
+    }
+
+    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso
+    if (!tienePermiso('ver_seguimiento')) {
+        console.warn('⛔ Acceso denegado: sin permiso ver_seguimiento');
+        alert('⚠️ No tienes permisos para acceder a esta sección.');
+        window.location.href = '/dashboard.html';
+        return;
+    }
+
     var requisiciones = JSON.parse(localStorage.getItem('requisiciones_data') || '[]');
     var data = obtenerDatosConfig();
     var reclutadores = data.usuarios ? data.usuarios.filter(function(u) { return u.rol === 'Reclutadora'; }) : [];
-    
+
     container.innerHTML = '';
-    
+
     if (requisiciones.length === 0) {
         container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>No hay procesos activos</div>';
         return;
     }
-    
+
     var activas = requisiciones.filter(function(r) {
-        return r.estado !== 'Cerrado';
+        return r.estado !== 'Cerrado' && r.estado !== 'Cerrada';
     });
-    
+
     if (activas.length === 0) {
         container.innerHTML = '<div class="empty-state"><i class="fas fa-check-circle" style="color:var(--success);"></i>Todos los procesos están cerrados</div>';
         return;
     }
-    
+
+    // Si es Reclutadora, mostrar solo las que tiene asignadas
+    var mostrar = activas;
+    if (user.role === 'Reclutadora') {
+        mostrar = activas.filter(function(r) {
+            return r.reclutador === user.name;
+        });
+    }
+
+    if (mostrar.length === 0) {
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>No hay procesos asignados a ti</div>';
+        return;
+    }
+
     var prioridadColor = {
         'Alta': 'var(--danger)',
         'Media': 'var(--warning)',
         'Baja': 'var(--success)'
     };
-    
-    activas.forEach(function(r) {
+
+    mostrar.forEach(function(r) {
         var card = document.createElement('div');
         card.className = 'card';
         card.style.cssText = 'border-left:4px solid ' + (prioridadColor[r.prioridad] || 'var(--primary)') + '; margin-bottom:12px;';
-        
+
         var estados = ['Nueva', 'Revisando', 'Publicada', 'En Proceso', 'Entrevistas', 'Oferta'];
         var index = estados.indexOf(r.estado);
         var progreso = index >= 0 ? Math.round((index / (estados.length - 1)) * 100) : 20;
-        
+
         var reclutadorNombre = r.reclutador || 'No asignado';
         if (r.reclutador && reclutadores.length > 0) {
             var reclutador = reclutadores.find(function(u) { return u.nombre === r.reclutador; });
             if (reclutador) reclutadorNombre = reclutador.nombre;
         }
-        
+
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                 <div>
@@ -79,7 +106,7 @@ function cargarSeguimiento() {
                     <span style="font-size:12px; color:var(--text-muted);">
                         <i class="far fa-calendar-alt"></i> ${r.fecha || 'Sin fecha'}
                     </span>
-                    <button class="btn btn-outline" style="padding:4px 12px; font-size:12px; margin-left:auto;" onclick="navigateTo('/administrar-requisicion.html')">
+                    <button class="btn btn-outline" style="padding:4px 12px; font-size:12px; margin-left:auto;" onclick="navigateTo('/administrar-requisicion.html?id=${r.id}')">
                         <i class="fas fa-arrow-right"></i> Gestionar
                     </button>
                 </div>
@@ -97,8 +124,29 @@ window.addEventListener('storage', function(e) {
 
 document.addEventListener('DOMContentLoaded', function() {
     var user = getCurrentUser();
-    if (!user) return;
+    if (!user) {
+        window.location.href = '/login.html';
+        return;
+    }
+
+    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso
+    if (!tienePermiso('ver_seguimiento')) {
+        console.warn('⛔ Acceso denegado: sin permiso ver_seguimiento');
+        alert('⚠️ No tienes permisos para acceder a esta sección.');
+        window.location.href = '/dashboard.html';
+        return;
+    }
+
     cargarSeguimiento();
+
+    if (typeof initSupabase === 'function') {
+        initSupabase().then(function() {
+            // Sincronizar datos
+            if (typeof sincronizarRequisiciones === 'function') {
+                sincronizarRequisiciones();
+            }
+        });
+    }
 });
 
 window.cargarSeguimiento = cargarSeguimiento;

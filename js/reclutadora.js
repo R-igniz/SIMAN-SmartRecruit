@@ -14,7 +14,7 @@ function cargarRequisicionesReclutadora() {
         return;
     }
 
-    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso, NO esAdministrador
+    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso
     if (!tienePermiso('ver_reclutadora')) {
         console.warn('⛔ Acceso denegado: sin permiso ver_reclutadora');
         alert('⚠️ No tienes permisos para acceder a esta sección.');
@@ -26,7 +26,6 @@ function cargarRequisicionesReclutadora() {
     var data = obtenerDatosConfig();
     var reclutadores = data.usuarios ? data.usuarios.filter(function(u) { return u.rol === 'Reclutadora'; }) : [];
 
-    // Si es reclutadora, mostrar solo sus asignadas
     var asignadas = requisiciones;
     if (user.role === 'Reclutadora') {
         asignadas = requisiciones.filter(function(r) {
@@ -181,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso, NO esAdministrador
+    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso
     if (!tienePermiso('ver_reclutadora')) {
         console.warn('⛔ Acceso denegado: sin permiso ver_reclutadora');
         alert('⚠️ No tienes permisos para acceder a esta sección.');

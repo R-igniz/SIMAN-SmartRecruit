@@ -57,7 +57,6 @@ async function getUsersFromSupabase() {
         if (typeof obtenerDeSupabase === 'function') {
             var result = await obtenerDeSupabase('usuarios');
             if (result.success && result.data && result.data.length > 0) {
-                console.log('📥 Usuarios desde Supabase:', result.data);
                 return result.data.map(function(u) {
                     var rol = u.rol || 'Reclutadora';
                     return {
@@ -79,9 +78,6 @@ async function getUsersFromSupabase() {
     }
 }
 
-// ==========================================
-// OBTENER USUARIOS DESDE LOCALSTORAGE
-// ==========================================
 function getUsersFromStorage() {
     try {
         var data = localStorage.getItem('siman_config_data');
@@ -108,15 +104,11 @@ function getUsersFromStorage() {
     return null;
 }
 
-// ==========================================
-// OBTENER USUARIOS (PRIMERO SUPABASE, LUEGO LOCAL)
-// ==========================================
 async function getUsers() {
     console.log('🔍 Obteniendo usuarios...');
     var supabaseUsers = await getUsersFromSupabase();
     if (supabaseUsers && supabaseUsers.length > 0) {
         console.log('✅ Usuarios cargados desde Supabase:', supabaseUsers.map(function(u) { return u.username + ' (' + u.role + ')'; }));
-        // Guardar en localStorage para caché
         try {
             var data = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
             data.usuarios = supabaseUsers.map(function(u) {
@@ -212,9 +204,6 @@ async function getUsers() {
     return [adminUser];
 }
 
-// ==========================================
-// SESSION MANAGEMENT
-// ==========================================
 async function login(username, password) {
     console.log('🔐 Intentando login con:', username);
     try {
@@ -270,7 +259,7 @@ function refreshAuthUsers() {
 }
 
 // ==========================================
-// VERIFICAR PERMISOS
+// VERIFICAR PERMISOS Y ROLES
 // ==========================================
 function tienePermiso(permiso) {
     var user = getCurrentUser();
@@ -291,9 +280,7 @@ function tieneRol(rol) {
 }
 
 function esAdministrador() {
-    var result = tieneRol('Administrador');
-    console.log('🔍 esAdministrador:', result);
-    return result;
+    return tieneRol('Administrador');
 }
 
 function esGerenteRH() {
@@ -309,7 +296,7 @@ function esEjecutivo() {
 }
 
 // ==========================================
-// PROTEGER RUTAS
+// PROTEGER RUTAS POR PERMISO
 // ==========================================
 function protegerRuta(permisoRequerido, redirectUrl) {
     var user = getCurrentUser();
@@ -327,7 +314,7 @@ function protegerRuta(permisoRequerido, redirectUrl) {
 }
 
 // ==========================================
-// PROTEGER PÁGINAS AL CARGAR
+// PROTEGER PÁGINAS AL CARGAR (AUTOMÁTICO)
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     var currentPage = window.location.pathname;
@@ -374,7 +361,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ==========================================
-// EXPONER FUNCIONES
+// EXPONER FUNCIONES GLOBALMENTE
 // ==========================================
 window.login = login;
 window.logout = logout;

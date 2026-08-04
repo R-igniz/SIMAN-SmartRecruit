@@ -14,7 +14,7 @@ function cargarRequisiciones() {
         return;
     }
 
-    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso, NO esAdministrador
+    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso
     if (!tienePermiso('ver_requisiciones')) {
         console.warn('⛔ Acceso denegado: sin permiso ver_requisiciones');
         alert('⚠️ No tienes permisos para acceder a esta sección.');
@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso, NO esAdministrador
+    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso
     if (!tienePermiso('ver_requisiciones')) {
         console.warn('⛔ Acceso denegado: sin permiso ver_requisiciones');
         alert('⚠️ No tienes permisos para acceder a esta sección.');

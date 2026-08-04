@@ -12,7 +12,7 @@ function cargarVacantes() {
         return;
     }
 
-    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso, NO esAdministrador
+    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso
     if (!tienePermiso('ver_vacantes')) {
         console.warn('⛔ Acceso denegado: sin permiso ver_vacantes');
         alert('⚠️ No tienes permisos para acceder a esta sección.');
@@ -26,7 +26,6 @@ function cargarVacantes() {
 
     container.innerHTML = '';
 
-    // Si es Reclutadora, mostrar solo las que tiene asignadas
     var vacantes = requisiciones;
     if (user.role === 'Reclutadora') {
         vacantes = requisiciones.filter(function(r) {
@@ -34,7 +33,6 @@ function cargarVacantes() {
         });
     }
 
-    // Filtrar solo activas (no cerradas)
     var activas = vacantes.filter(function(r) {
         return r.estado !== 'Cerrado' && r.estado !== 'Cerrada';
     });
@@ -119,9 +117,6 @@ function cargarVacantes() {
     }
 }
 
-// ==========================================
-// SINCRONIZAR
-// ==========================================
 function sincronizarVacantes() {
     if (typeof obtenerDeSupabase === 'function') {
         obtenerDeSupabase('requisiciones').then(function(result) {
@@ -133,18 +128,12 @@ function sincronizarVacantes() {
     }
 }
 
-// ==========================================
-// ESCUCHAR CAMBIOS
-// ==========================================
 window.addEventListener('storage', function(e) {
     if (e.key === 'requisiciones_data' || e.key === 'siman_config_data') {
         cargarVacantes();
     }
 });
 
-// ==========================================
-// INICIALIZAR
-// ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     var user = getCurrentUser();
     if (!user) {
@@ -152,7 +141,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso, NO esAdministrador
+    // ✅ VERIFICACIÓN CORRECTA: usa tienePermiso
     if (!tienePermiso('ver_vacantes')) {
         console.warn('⛔ Acceso denegado: sin permiso ver_vacantes');
         alert('⚠️ No tienes permisos para acceder a esta sección.');
@@ -169,8 +158,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// ==========================================
-// EXPONER FUNCIONES GLOBALMENTE
-// ==========================================
 window.cargarVacantes = cargarVacantes;
 window.sincronizarVacantes = sincronizarVacantes;
