@@ -129,7 +129,6 @@ async function sincronizarConSupabase() {
     console.log('🔄 Iniciando sincronización con Supabase...');
     
     try {
-        // Verificar conexión a Internet
         if (!navigator.onLine) {
             if (typeof agregarNotificacion === 'function') {
                 agregarNotificacion('danger', '❌ Sin conexión a Internet. No se puede sincronizar.', '#');
@@ -137,7 +136,6 @@ async function sincronizarConSupabase() {
             return { error: 'Sin conexión a Internet' };
         }
         
-        // Inicializar Supabase
         await initSupabase();
         
         var data = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
@@ -151,7 +149,6 @@ async function sincronizarConSupabase() {
             errores: 0
         };
         
-        // Sincronizar usuarios
         if (data.usuarios && data.usuarios.length > 0) {
             for (var i = 0; i < data.usuarios.length; i++) {
                 var result = await guardarEnSupabase('usuarios', data.usuarios[i]);
@@ -159,12 +156,10 @@ async function sincronizarConSupabase() {
                     resultados.usuarios++;
                 } else {
                     resultados.errores++;
-                    console.warn('Error guardando usuario:', data.usuarios[i].nombre, result.error);
                 }
             }
         }
         
-        // Sincronizar roles
         if (data.roles && data.roles.length > 0) {
             for (var i = 0; i < data.roles.length; i++) {
                 var result = await guardarEnSupabase('roles', data.roles[i]);
@@ -172,7 +167,6 @@ async function sincronizarConSupabase() {
             }
         }
         
-        // Sincronizar comerciales
         if (data.comerciales && data.comerciales.length > 0) {
             for (var i = 0; i < data.comerciales.length; i++) {
                 var result = await guardarEnSupabase('comerciales', data.comerciales[i]);
@@ -180,7 +174,6 @@ async function sincronizarConSupabase() {
             }
         }
         
-        // Sincronizar requisiciones
         if (requisiciones.length > 0) {
             for (var i = 0; i < requisiciones.length; i++) {
                 var result = await guardarEnSupabase('requisiciones', requisiciones[i]);
@@ -215,7 +208,7 @@ async function sincronizarConSupabase() {
 }
 
 // ==========================================
-// CARGAR DATOS DESDE SUPABASE (RECIBIR) - FUSIONAR
+// CARGAR DATOS DESDE SUPABASE (RECIBIR)
 // ==========================================
 
 async function cargarDesdeSupabase(tabla) {
@@ -244,15 +237,10 @@ function fusionarDatos(datosLocales, datosRemotos, claveUnica) {
     return Object.values(mapaLocal);
 }
 
-// ==========================================
-// INICIALIZAR DATOS DESDE SUPABASE (FUSIONANDO)
-// ==========================================
-
-async function initSupabaseData(forceLoad) {
+async function initSupabaseData() {
     console.log('🔄 Cargando datos desde Supabase...');
     
     try {
-        // Verificar conexión
         if (!navigator.onLine) {
             if (typeof agregarNotificacion === 'function') {
                 agregarNotificacion('warning', '⚠️ Sin conexión a Internet. Usando datos locales.', '#');
@@ -271,7 +259,6 @@ async function initSupabaseData(forceLoad) {
         
         var dataLocal = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
         
-        // Asegurar admin
         var adminLocal = dataLocal.usuarios ? dataLocal.usuarios.find(function(u) { return u.email === 'admin@siman.com'; }) : null;
         var adminRemoto = usuariosRemotos.find(function(u) { return u.email === 'admin@siman.com'; });
         
@@ -285,7 +272,6 @@ async function initSupabaseData(forceLoad) {
             dataLocal.usuarios.push(adminRemoto);
         }
         
-        // Fusionar
         var usuariosFusionados = fusionarDatos(dataLocal.usuarios || [], usuariosRemotos, 'email');
         var rolesFusionados = fusionarDatos(dataLocal.roles || [], rolesRemotos, 'id');
         var comercialesFusionados = fusionarDatos(dataLocal.comerciales || [], comercialesRemotos, 'id');
@@ -312,7 +298,6 @@ async function initSupabaseData(forceLoad) {
         console.log('✅ Datos cargados y fusionados desde Supabase');
         console.log('👥 Usuarios totales:', usuariosFusionados.length);
         
-        // Actualizar interfaces
         if (typeof actualizarContadores === 'function') {
             actualizarContadores();
         }
@@ -347,10 +332,6 @@ async function initSupabaseData(forceLoad) {
         return null;
     }
 }
-
-// ==========================================
-// SUSCRIBIRSE A TODAS LAS TABLAS
-// ==========================================
 
 function suscribirseATodas() {
     var tablas = ['usuarios', 'roles', 'comerciales', 'requisiciones'];
@@ -390,9 +371,8 @@ function suscribirseATodas() {
 }
 
 // ==========================================
-// EXPORTAR FUNCIONES GLOBALMENTE
+// EXPONER FUNCIONES GLOBALMENTE
 // ==========================================
-
 window.initSupabase = initSupabase;
 window.guardarEnSupabase = guardarEnSupabase;
 window.obtenerDeSupabase = obtenerDeSupabase;
@@ -404,4 +384,4 @@ window.suscribirseATodas = suscribirseATodas;
 window.suscribirseATabla = suscribirseATabla;
 window.fusionarDatos = fusionarDatos;
 
-console.log('✅ Supabase client cargado - Funciones disponibles: sincronizarConSupabase, initSupabaseData');
+console.log('✅ Supabase client cargado');

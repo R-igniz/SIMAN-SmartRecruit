@@ -53,6 +53,17 @@ function obtenerDatosConfig() {
 }
 
 // ==========================================
+// NOTIFICACIONES DE RESPALDO
+// ==========================================
+if (typeof agregarNotificacion !== 'function') {
+    function agregarNotificacion(tipo, mensaje, link) {
+        console.log('📢 [' + tipo + '] ' + mensaje);
+        alert(mensaje);
+    }
+    window.agregarNotificacion = agregarNotificacion;
+}
+
+// ==========================================
 // GUARDAR DATOS Y SINCRONIZAR CON SUPABASE
 // ==========================================
 function guardarDatosConfig(data) {
