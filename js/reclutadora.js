@@ -14,7 +14,7 @@ function cargarRequisicionesReclutadora() {
         return;
     }
     
-    // Verificar permiso (si no es admin ni reclutadora, redirigir)
+    // Verificar permiso - AHORA PERMITE RECLUTADORA Y GERENTE RH
     if (!tienePermiso('ver_reclutadora')) {
         alert('⚠️ No tienes permisos para acceder a esta sección.');
         window.location.href = '/dashboard.html';
@@ -35,8 +35,6 @@ function cargarRequisicionesReclutadora() {
     
     requisicionesFiltradas = asignadas;
     aplicarFiltros();
-    
-    // Cargar filtros
     cargarFiltros();
 }
 
@@ -109,7 +107,6 @@ function aplicarFiltros() {
             tiempoAbierto = diff + 'd';
         }
         
-        // Buscar nombre del reclutador
         var reclutadorNombre = r.reclutador || 'No asignado';
         if (r.reclutador && reclutadores.length > 0) {
             var reclutador = reclutadores.find(function(u) { return u.nombre === r.reclutador; });
@@ -150,7 +147,6 @@ function aplicarFiltros() {
         container.appendChild(card);
     });
     
-    // Actualizar contador
     var totalBadge = document.getElementById('totalRequisiciones');
     if (totalBadge) {
         totalBadge.textContent = filtradas.length + ' requisiciones';
@@ -165,7 +161,7 @@ function limpiarFiltros() {
 }
 
 // ==========================================
-// SINCRONIZAR CON SUPABASE
+// SINCRONIZAR
 // ==========================================
 function sincronizarReclutadora() {
     if (typeof obtenerDeSupabase === 'function') {
@@ -178,9 +174,6 @@ function sincronizarReclutadora() {
     }
 }
 
-// ==========================================
-// ESCUCHAR CAMBIOS
-// ==========================================
 window.addEventListener('storage', function(e) {
     if (e.key === 'requisiciones_data' || e.key === 'siman_config_data') {
         cargarRequisicionesReclutadora();
@@ -197,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    // Verificar permiso específico
+    // Verificar permiso - ahora permite a reclutadora y gerente RH
     if (!tienePermiso('ver_reclutadora')) {
         alert('⚠️ No tienes permisos para acceder a esta sección.');
         window.location.href = '/dashboard.html';
@@ -213,9 +206,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// ==========================================
-// EXPONER FUNCIONES GLOBALMENTE
-// ==========================================
 window.cargarRequisicionesReclutadora = cargarRequisicionesReclutadora;
 window.aplicarFiltros = aplicarFiltros;
 window.limpiarFiltros = limpiarFiltros;

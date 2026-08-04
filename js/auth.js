@@ -2,7 +2,6 @@
 // AUTH - ROLES Y PERMISOS
 // ==========================================
 
-// Definición de roles
 var ROLES = {
     ADMINISTRADOR: 'Administrador',
     GERENTE_RH: 'Gerente RH',
@@ -10,72 +9,33 @@ var ROLES = {
     EJECUTIVO: 'Ejecutivo'
 };
 
-// ==========================================
-// PERMISOS POR ROL
-// ==========================================
 var PERMISOS = {
     'Administrador': [
-        'ver_dashboard',
-        'ver_configuracion',
-        'ver_usuarios',
-        'crear_usuario',
-        'editar_usuario',
-        'eliminar_usuario',
-        'ver_roles',
-        'crear_rol',
-        'editar_rol',
-        'eliminar_rol',
-        'ver_reportes',
-        'ver_dashboard_ejecutivo',
-        'ver_notificaciones',
-        'ver_ia',
-        'crear_requisicion',
-        'ver_requisiciones',
-        'editar_requisicion',
-        'eliminar_requisicion',
-        'ver_reclutadora',
-        'administrar_requisicion',
-        'ver_vacantes',
-        'ver_seguimiento'
+        'ver_dashboard', 'ver_configuracion', 'ver_usuarios', 'crear_usuario',
+        'editar_usuario', 'eliminar_usuario', 'ver_roles', 'crear_rol',
+        'editar_rol', 'eliminar_rol', 'ver_reportes', 'ver_dashboard_ejecutivo',
+        'ver_notificaciones', 'ver_ia', 'crear_requisicion', 'ver_requisiciones',
+        'editar_requisicion', 'eliminar_requisicion', 'ver_reclutadora',
+        'administrar_requisicion', 'ver_vacantes', 'ver_seguimiento'
     ],
     'Gerente RH': [
-        'ver_dashboard',
-        'crear_requisicion',
-        'ver_requisiciones',
-        'editar_requisicion',
-        'ver_reportes',
-        'ver_notificaciones',
-        'ver_ia',
-        'ver_reclutadora',
-        'administrar_requisicion',
-        'ver_vacantes',
+        'ver_dashboard', 'crear_requisicion', 'ver_requisiciones',
+        'editar_requisicion', 'ver_reportes', 'ver_notificaciones', 'ver_ia',
+        'ver_reclutadora', 'administrar_requisicion', 'ver_vacantes',
         'ver_seguimiento'
     ],
     'Reclutadora': [
-        'ver_dashboard',
-        'ver_requisiciones',
-        'ver_reclutadora',
-        'administrar_requisicion',
-        'ver_notificaciones',
-        'ver_ia',
-        'ver_vacantes',
-        'ver_seguimiento'
+        'ver_dashboard', 'ver_requisiciones', 'ver_reclutadora',
+        'administrar_requisicion', 'ver_notificaciones', 'ver_ia',
+        'ver_vacantes', 'ver_seguimiento'
     ],
     'Ejecutivo': [
-        'ver_dashboard',
-        'ver_dashboard_ejecutivo',
-        'ver_reportes',
-        'ver_requisiciones',
-        'ver_notificaciones',
-        'ver_ia',
-        'ver_vacantes',
-        'ver_seguimiento'
+        'ver_dashboard', 'ver_dashboard_ejecutivo', 'ver_reportes',
+        'ver_requisiciones', 'ver_notificaciones', 'ver_ia',
+        'ver_vacantes', 'ver_seguimiento'
     ]
 };
 
-// ==========================================
-// USUARIO ADMIN POR DEFECTO
-// ==========================================
 var DEFAULT_ADMIN = {
     id: 1,
     nombre: 'Administrador',
@@ -98,11 +58,13 @@ async function getUsersFromSupabase() {
             var result = await obtenerDeSupabase('usuarios');
             if (result.success && result.data && result.data.length > 0) {
                 return result.data.map(function(u) {
+                    // Asegurar que el rol se asigne correctamente
+                    var rol = u.rol || 'Reclutadora';
                     return {
                         username: u.email,
                         password: u.password,
                         name: u.nombre,
-                        role: u.rol || 'Reclutadora',
+                        role: rol,
                         store: u.centro || 'Central',
                         id: u.id,
                         estado: u.estado
@@ -150,9 +112,11 @@ function getUsersFromStorage() {
 // OBTENER USUARIOS (PRIMERO SUPABASE, LUEGO LOCAL)
 // ==========================================
 async function getUsers() {
+    // Intentar desde Supabase
     var supabaseUsers = await getUsersFromSupabase();
     if (supabaseUsers && supabaseUsers.length > 0) {
         console.log('✅ Usuarios cargados desde Supabase:', supabaseUsers.length);
+        // Guardar en localStorage para caché
         try {
             var data = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
             data.usuarios = supabaseUsers.map(function(u) {
@@ -171,9 +135,11 @@ async function getUsers() {
         return supabaseUsers;
     }
     
+    // Fallback a localStorage
     var localUsers = getUsersFromStorage();
     if (localUsers && localUsers.length > 0) {
         console.log('📁 Usuarios cargados desde localStorage:', localUsers.length);
+        // Sincronizar con Supabase si es posible
         if (typeof guardarEnSupabase === 'function') {
             localUsers.forEach(function(u) {
                 guardarEnSupabase('usuarios', {
@@ -190,6 +156,7 @@ async function getUsers() {
         return localUsers;
     }
     
+    // Crear admin por defecto
     console.log('👑 Creando usuario administrador por defecto');
     var adminUser = {
         username: 'admin@siman.com',
@@ -255,11 +222,15 @@ async function login(username, password) {
     console.log('🔐 Intentando login con:', username);
     try {
         var users = await getUsers();
+        console.log('👥 Usuarios disponibles:', users.map(function(u) { return u.username + ' (' + u.role + ')'; }));
+        
         var user = users.find(function(u) {
             return u.username === username && u.password === password && u.estado !== 'inactivo';
         });
+        
         if (user) {
-            console.log('✅ Login exitoso para:', user.username);
+            console.log('✅ Login exitoso para:', user.username, 'Rol:', user.role);
+            // Guardar en sesión
             sessionStorage.setItem('currentUser', JSON.stringify(user));
             sessionStorage.setItem('isAuthenticated', 'true');
             return user;
@@ -300,13 +271,18 @@ function refreshAuthUsers() {
 }
 
 // ==========================================
-// VERIFICAR PERMISOS Y ROLES
+// VERIFICAR PERMISOS
 // ==========================================
 function tienePermiso(permiso) {
     var user = getCurrentUser();
-    if (!user) return false;
+    if (!user) {
+        console.warn('⚠️ No hay usuario autenticado para verificar permiso:', permiso);
+        return false;
+    }
     var permisos = PERMISOS[user.role] || [];
-    return permisos.indexOf(permiso) !== -1;
+    var tiene = permisos.indexOf(permiso) !== -1;
+    console.log('🔍 Verificando permiso:', permiso, 'para rol:', user.role, '=>', tiene);
+    return tiene;
 }
 
 function tieneRol(rol) {
@@ -332,7 +308,7 @@ function esEjecutivo() {
 }
 
 // ==========================================
-// PROTEGER RUTAS POR PERMISO
+// PROTEGER RUTAS
 // ==========================================
 function protegerRuta(permisoRequerido, redirectUrl) {
     var user = getCurrentUser();
@@ -341,6 +317,8 @@ function protegerRuta(permisoRequerido, redirectUrl) {
         return false;
     }
     if (permisoRequerido && !tienePermiso(permisoRequerido)) {
+        console.warn('🔒 Acceso denegado a', window.location.pathname, 'para rol', user.role);
+        alert('⚠️ No tienes permisos para acceder a esta sección.');
         window.location.href = redirectUrl || '/dashboard.html';
         return false;
     }
@@ -357,7 +335,8 @@ document.addEventListener('DOMContentLoaded', function() {
     var user = requireAuth();
     if (!user) return;
     
-    // Mapeo de páginas a permisos requeridos
+    console.log('🔐 Página:', currentPage, 'Usuario:', user.username, 'Rol:', user.role);
+    
     var permisosPorPagina = {
         '/configuracion': 'ver_configuracion',
         '/configuracion.html': 'ver_configuracion',
@@ -388,12 +367,13 @@ document.addEventListener('DOMContentLoaded', function() {
     var permiso = permisosPorPagina[currentPage];
     if (permiso && !tienePermiso(permiso)) {
         console.warn('🔒 Acceso denegado a', currentPage, 'para rol', user.role);
+        alert('⚠️ No tienes permisos para acceder a esta sección.');
         window.location.href = '/dashboard.html';
     }
 });
 
 // ==========================================
-// EXPONER FUNCIONES GLOBALMENTE
+// EXPONER FUNCIONES
 // ==========================================
 window.login = login;
 window.logout = logout;
