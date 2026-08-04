@@ -207,9 +207,8 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = '/login.html';
         return;
     }
-    // ✅ CORRECCIÓN: usar tienePermiso, NO esAdministrador
     if (!tienePermiso('ver_configuracion')) {
-        alert('⚠️ Acceso denegado. No tienes permisos para acceder a Configuración.');
+        // ✅ SIN ALERTA, SOLO REDIRECCIÓN
         window.location.href = '/dashboard.html';
         return;
     }
@@ -804,9 +803,7 @@ function exportarDatos() {
     URL.revokeObjectURL(url);
 }
 
-// ==========================================
-// FUNCIONES DE SINCRONIZACIÓN
-// ==========================================
+
 // ==========================================
 // FUNCIONES DE SINCRONIZACIÓN
 // ==========================================

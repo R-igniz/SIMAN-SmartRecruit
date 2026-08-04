@@ -1,5 +1,5 @@
 // ==========================================
-// AUTH - ROLES Y PERMISOS
+// AUTH - ROLES Y PERMISOS (SIN ALERTAS)
 // ==========================================
 
 var ROLES = {
@@ -259,7 +259,7 @@ function refreshAuthUsers() {
 }
 
 // ==========================================
-// VERIFICAR PERMISOS Y ROLES
+// VERIFICAR PERMISOS
 // ==========================================
 function tienePermiso(permiso) {
     var user = getCurrentUser();
@@ -283,20 +283,8 @@ function esAdministrador() {
     return tieneRol('Administrador');
 }
 
-function esGerenteRH() {
-    return tieneRol('Gerente RH');
-}
-
-function esReclutadora() {
-    return tieneRol('Reclutadora');
-}
-
-function esEjecutivo() {
-    return tieneRol('Ejecutivo');
-}
-
 // ==========================================
-// PROTEGER RUTAS (con alerta solo en Configuración)
+// PROTEGER RUTAS (SIN ALERTAS)
 // ==========================================
 function protegerRuta(permisoRequerido, redirectUrl) {
     var user = getCurrentUser();
@@ -306,10 +294,7 @@ function protegerRuta(permisoRequerido, redirectUrl) {
     }
     if (permisoRequerido && !tienePermiso(permisoRequerido)) {
         console.warn('🔒 Acceso denegado a', window.location.pathname, 'para rol', user.role);
-        // ✅ SOLO MOSTRAR ALERT SI ES CONFIGURACIÓN
-        if (window.location.pathname.includes('configuracion')) {
-            alert('⚠️ No tienes permisos para acceder a Configuración.');
-        }
+        // ✅ SIN ALERTA, SOLO REDIRECCIÓN SILENCIOSA
         window.location.href = redirectUrl || '/dashboard.html';
         return false;
     }
@@ -317,7 +302,7 @@ function protegerRuta(permisoRequerido, redirectUrl) {
 }
 
 // ==========================================
-// PROTEGER PÁGINAS AL CARGAR (AUTOMÁTICO)
+// PROTEGER PÁGINAS AL CARGAR (SIN ALERTAS)
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     var currentPage = window.location.pathname;
@@ -356,23 +341,16 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     var permiso = permisosPorPagina[currentPage];
-    if (permiso) {
-        if (!tienePermiso(permiso)) {
-            console.warn('🔒 Acceso denegado a', currentPage, 'para rol', user.role);
-            // ✅ SOLO MOSTRAR ALERT SI ES CONFIGURACIÓN
-            if (currentPage.includes('configuracion')) {
-                alert('⚠️ No tienes permisos para acceder a Configuración.');
-            }
-            window.location.href = '/dashboard.html';
-        }
-    } else {
-        // Si la página no está en el mapa, permitir acceso (asumimos que es pública o ya verificada)
-        console.log('✅ Página sin restricción de permisos:', currentPage);
+    if (permiso && !tienePermiso(permiso)) {
+        console.warn('🔒 Acceso denegado a', currentPage, 'para rol', user.role);
+        // ✅ SIN ALERTA, SOLO REDIRECCIÓN SILENCIOSA
+        window.location.href = '/dashboard.html';
+        return;
     }
 });
 
 // ==========================================
-// EXPONER FUNCIONES GLOBALMENTE
+// EXPONER FUNCIONES
 // ==========================================
 window.login = login;
 window.logout = logout;
@@ -383,12 +361,9 @@ window.refreshAuthUsers = refreshAuthUsers;
 window.tienePermiso = tienePermiso;
 window.tieneRol = tieneRol;
 window.esAdministrador = esAdministrador;
-window.esGerenteRH = esGerenteRH;
-window.esReclutadora = esReclutadora;
-window.esEjecutivo = esEjecutivo;
 window.protegerRuta = protegerRuta;
 window.getUsers = getUsers;
 window.PERMISOS = PERMISOS;
 window.ROLES = ROLES;
 
-console.log('✅ Auth cargado correctamente');
+console.log('✅ Auth cargado correctamente (sin alertas)');
