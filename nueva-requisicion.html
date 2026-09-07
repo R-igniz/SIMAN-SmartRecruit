@@ -1,335 +1,274 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SIMAN SmartRecruit - Nueva Requisición</title>
-    <link rel="stylesheet" href="css/global.css" />
-    <link rel="stylesheet" href="css/requisicion.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-</head>
-<body>
-    <div id="sidebar-container"></div>
-    
-    <div class="main-content">
-        <div id="topbar-container"></div>
-        
-        <div class="card">
-            <div class="card-header">
-                <span><i class="fas fa-plus-circle" style="color:var(--primary);"></i> Nueva Requisición</span>
-                <span class="badge badge-blue">Wizard 1/4</span>
-            </div>
-            
-            <!-- Pasos del wizard -->
-            <div class="wizard-steps">
-                <div class="step active" data-step="1">1. General</div>
-                <div class="step" data-step="2">2. Puesto</div>
-                <div class="step" data-step="3">3. Adjuntos</div>
-                <div class="step" data-step="4">4. Resumen</div>
-            </div>
-            
-            <!-- ========================================== -->
-            <!-- PASO 1: INFORMACIÓN GENERAL -->
-            <!-- ========================================== -->
-            <div class="step-content active" id="step1">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Centro Comercial</label>
-                        <select id="centroComercial">
-                            <option value="">Seleccionar...</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Tienda</label>
-                        <select id="tienda">
-                            <option value="">Seleccionar...</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Departamento</label>
-                        <select id="departamento">
-                            <option value="">Seleccionar...</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Gerente solicitante</label>
-                        <input type="text" id="gerente" placeholder="Nombre del gerente" />
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Fecha</label>
-                        <input type="date" id="fecha" />
-                    </div>
-                    <div class="form-group">
-                        <label>Tipo de contratación</label>
-                        <select id="tipoContratacion">
-                            <option value="">Seleccionar...</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Cantidad de plazas</label>
-                        <input type="number" id="cantidadPlazas" value="1" min="1" max="10" />
-                    </div>
-                    <div class="form-group">
-                        <label>Prioridad</label>
-                        <select id="prioridad">
-                            <option value="">Seleccionar...</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Motivo</label>
-                        <select id="motivo">
-                            <option value="">Seleccionar...</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Asignar a Reclutador</label>
-                        <select id="reclutador">
-                            <option value="">Seleccionar reclutador...</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="btn-group">
-                    <button class="btn btn-primary" onclick="nextStep(2)">
-                        <i class="fas fa-arrow-right"></i> Siguiente
-                    </button>
-                    <button class="btn btn-outline" onclick="saveDraft()">
-                        <i class="fas fa-save"></i> Guardar Borrador
-                    </button>
-                </div>
-            </div>
-            
-            <!-- ========================================== -->
-            <!-- PASO 2: INFORMACIÓN DEL PUESTO -->
-            <!-- ========================================== -->
-            <div class="step-content" id="step2">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Nombre del puesto</label>
-                        <input type="text" id="nombrePuesto" placeholder="Ej: Analista Financiero" />
-                    </div>
-                    <div class="form-group">
-                        <label>Salario</label>
-                        <input type="text" id="salario" placeholder="$1,200.00" />
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Descripción</label>
-                        <textarea id="descripcion" rows="3" placeholder="Descripción del puesto..."></textarea>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Funciones</label>
-                        <textarea id="funciones" rows="3" placeholder="Funciones principales..."></textarea>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Perfil</label>
-                        <textarea id="perfil" rows="2" placeholder="Perfil del candidato ideal..."></textarea>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Experiencia requerida</label>
-                        <select id="experiencia">
-                            <option>Sin experiencia</option>
-                            <option>1-2 años</option>
-                            <option>3-5 años</option>
-                            <option>5+ años</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Estudios</label>
-                        <select id="estudios">
-                            <option>Bachillerato</option>
-                            <option>Técnico</option>
-                            <option>Licenciatura</option>
-                            <option>Maestría</option>
-                            <option>Doctorado</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Idiomas</label>
-                        <input type="text" id="idiomas" placeholder="Español, Inglés..." />
-                    </div>
-                    <div class="form-group">
-                        <label>Competencias</label>
-                        <input type="text" id="competencias" placeholder="Liderazgo, Comunicación..." />
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Horario</label>
-                        <input type="text" id="horario" placeholder="Lunes a Viernes 8am-5pm" />
-                    </div>
-                    <div class="form-group">
-                        <label>Jornada</label>
-                        <select id="jornada">
-                            <option>Completa</option>
-                            <option>Media</option>
-                            <option>Por turnos</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="btn-group">
-                    <button class="btn btn-outline" onclick="prevStep(1)">
-                        <i class="fas fa-arrow-left"></i> Anterior
-                    </button>
-                    <button class="btn btn-primary" onclick="nextStep(3)">
-                        <i class="fas fa-arrow-right"></i> Siguiente
-                    </button>
-                </div>
-            </div>
-            
-            <!-- ========================================== -->
-            <!-- PASO 3: ADJUNTOS -->
-            <!-- ========================================== -->
-            <div class="step-content" id="step3">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Perfil del puesto</label>
-                        <div class="file-upload">
-                            <input type="file" id="perfilPuesto" />
-                            <label for="perfilPuesto" class="file-label">
-                                <i class="fas fa-cloud-upload-alt"></i> Subir archivo
-                            </label>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Presupuesto</label>
-                        <div class="file-upload">
-                            <input type="file" id="presupuesto" />
-                            <label for="presupuesto" class="file-label">
-                                <i class="fas fa-cloud-upload-alt"></i> Subir archivo
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Autorizaciones</label>
-                        <div class="file-upload">
-                            <input type="file" id="autorizaciones" />
-                            <label for="autorizaciones" class="file-label">
-                                <i class="fas fa-cloud-upload-alt"></i> Subir archivo
-                            </label>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Otros documentos</label>
-                        <div class="file-upload">
-                            <input type="file" id="otros" multiple />
-                            <label for="otros" class="file-label">
-                                <i class="fas fa-cloud-upload-alt"></i> Subir archivos
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="btn-group">
-                    <button class="btn btn-outline" onclick="prevStep(2)">
-                        <i class="fas fa-arrow-left"></i> Anterior
-                    </button>
-                    <button class="btn btn-primary" onclick="nextStep(4)">
-                        <i class="fas fa-arrow-right"></i> Siguiente
-                    </button>
-                </div>
-            </div>
-            
-            <!-- ========================================== -->
-            <!-- PASO 4: RESUMEN -->
-            <!-- ========================================== -->
-            <div class="step-content" id="step4">
-                <div class="summary-card">
-                    <h3><i class="fas fa-file-alt"></i> Resumen de la Requisición</h3>
-                    <div id="summaryContent" class="summary-content">
-                        <div class="summary-item">
-                            <span class="summary-label">Centro Comercial:</span>
-                            <span class="summary-value" id="resCentro">-</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Tienda:</span>
-                            <span class="summary-value" id="resTienda">-</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Departamento:</span>
-                            <span class="summary-value" id="resDepartamento">-</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Puesto:</span>
-                            <span class="summary-value" id="resPuesto">-</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Cantidad de plazas:</span>
-                            <span class="summary-value" id="resCantidad">-</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Prioridad:</span>
-                            <span class="summary-value" id="resPrioridad">-</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Tipo de contratación:</span>
-                            <span class="summary-value" id="resTipo">-</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Reclutador asignado:</span>
-                            <span class="summary-value" id="resReclutador">-</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="btn-group">
-                    <button class="btn btn-outline" onclick="prevStep(3)">
-                        <i class="fas fa-arrow-left"></i> Anterior
-                    </button>
-                    <button class="btn btn-primary" onclick="submitRequisicion()">
-                        <i class="fas fa-paper-plane"></i> Enviar
-                    </button>
-                    <button class="btn btn-outline" onclick="saveDraft()">
-                        <i class="fas fa-save"></i> Guardar Borrador
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Modal de confirmación -->
-    <div class="modal" id="successModal">
-        <div class="modal-content">
-            <div class="modal-icon"><i class="fas fa-check-circle"></i></div>
-            <h2>¡Requisición creada correctamente!</h2>
-            <p id="modalMessage">Asignando automáticamente a la reclutadora correspondiente...</p>
-            <div class="spinner"></div>
-            <button class="btn btn-primary" onclick="closeModal()">Ir al Dashboard</button>
-        </div>
-    </div>
-    
-    <script src="js/auth.js"></script>
-    <script src="js/router.js"></script>
-    <script src="js/sidebar.js"></script>
-    <script src="js/darkmode.js"></script>
-    <script src="js/notifications.js"></script>
-    <script src="js/supabase-client.js"></script>
-    <script src="js/configuracion.js"></script>
-</body>
-</html>
+// ==========================================
+// NUEVA REQUISICIÓN - WIZARD Y FILTROS
+// ==========================================
+var currentStep = 1;
+var totalSteps = 4;
+
+// ==========================================
+// CARGA DE DATOS DESDE CONFIGURACIÓN
+// ==========================================
+function cargarDatosFormulario() {
+    console.log('🔄 Cargando datos del formulario...');
+    var data = obtenerDatosConfig();
+    console.log('📦 Datos de configuración:', data);
+
+    // Centros comerciales
+    var comerciales = obtenerComerciales();
+    console.log('🏢 Comerciales:', comerciales);
+    poblarSelect('centroComercial', comerciales, 'Seleccionar centro...');
+
+    // Tiendas
+    var tiendas = obtenerTiendas();
+    console.log('🛒 Tiendas:', tiendas);
+    poblarSelect('tienda', tiendas, 'Seleccionar tienda...', true);
+
+    // Departamentos
+    var departamentos = data.departamentos || [];
+    poblarSelect('departamento', departamentos, 'Seleccionar departamento...');
+
+    // Tipos de contratación
+    var tiposContratacion = data.tiposContratacion || [];
+    poblarSelect('tipoContratacion', tiposContratacion, 'Seleccionar tipo...');
+
+    // Prioridades
+    var prioridades = data.prioridades || [];
+    poblarSelect('prioridad', prioridades, 'Seleccionar prioridad...');
+
+    // Motivos
+    var motivos = data.motivos || [];
+    poblarSelect('motivo', motivos, 'Seleccionar motivo...');
+
+    // Reclutadores
+    var reclutadores = obtenerReclutadores();
+    console.log('👩‍💼 Reclutadores:', reclutadores);
+    poblarSelect('reclutador', reclutadores, 'Seleccionar reclutador...');
+}
+
+function poblarSelect(id, datos, textoDefault, esTienda) {
+    var select = document.getElementById(id);
+    if (!select) {
+        console.warn('⚠️ Select no encontrado:', id);
+        return;
+    }
+    select.innerHTML = '<option value="">' + (textoDefault || 'Seleccionar...') + '</option>';
+    if (!datos || datos.length === 0) {
+        select.innerHTML = '<option value="">No hay opciones disponibles</option>';
+        return;
+    }
+    datos.forEach(function(item) {
+        var estado = item.estado !== undefined ? item.estado : 'activo';
+        if (estado === 'activo') {
+            var option = document.createElement('option');
+            if (esTienda) {
+                option.value = item.nombre;
+                option.textContent = item.nombre;
+                option.dataset.comercial = item.comercial || '';
+            } else {
+                option.value = item.nombre;
+                option.textContent = item.nombre;
+            }
+            select.appendChild(option);
+        }
+    });
+}
+
+// ==========================================
+// FILTRO DINÁMICO
+// ==========================================
+function filtrarTiendasPorComercial() {
+    var comercialSelect = document.getElementById('centroComercial');
+    var tiendaSelect = document.getElementById('tienda');
+    var comercial = comercialSelect.value;
+
+    if (!comercial) {
+        var tiendas = obtenerTiendas();
+        poblarSelect('tienda', tiendas, 'Seleccionar tienda...', true);
+        return;
+    }
+    var tiendasFiltradas = obtenerTiendasPorComercial(comercial);
+    poblarSelect('tienda', tiendasFiltradas, 'Seleccionar tienda...', true);
+}
+
+// ==========================================
+// WIZARD NAVEGACIÓN
+// ==========================================
+function showStep(step) {
+    document.querySelectorAll('.step-content').forEach(function(el) { el.classList.remove('active'); });
+    var el = document.getElementById('step' + step);
+    if (el) el.classList.add('active');
+    document.querySelectorAll('.wizard-steps .step').forEach(function(el) {
+        var num = parseInt(el.dataset.step);
+        el.classList.remove('active');
+        if (num < step) el.classList.add('completed');
+        if (num === step) el.classList.add('active');
+    });
+    if (step === 4) updateSummary();
+    currentStep = step;
+}
+function nextStep(step) { showStep(step); }
+function prevStep(step) { showStep(step); }
+
+// ==========================================
+// RESUMEN
+// ==========================================
+function updateSummary() {
+    var centro = document.getElementById('centroComercial').value || '-';
+    var tienda = document.getElementById('tienda').value || '-';
+    var departamento = document.getElementById('departamento').value || '-';
+    var puesto = document.getElementById('nombrePuesto').value || '-';
+    var cantidad = document.getElementById('cantidadPlazas').value || '-';
+    var prioridad = document.getElementById('prioridad').value || '-';
+    var tipo = document.getElementById('tipoContratacion').value || '-';
+    var reclutador = document.getElementById('reclutador').value || '-';
+    document.getElementById('resCentro').textContent = centro;
+    document.getElementById('resTienda').textContent = tienda;
+    document.getElementById('resDepartamento').textContent = departamento;
+    document.getElementById('resPuesto').textContent = puesto;
+    document.getElementById('resCantidad').textContent = cantidad;
+    document.getElementById('resPrioridad').textContent = prioridad;
+    document.getElementById('resTipo').textContent = tipo;
+    document.getElementById('resReclutador').textContent = reclutador;
+}
+
+// ==========================================
+// GUARDAR
+// ==========================================
+function saveDraft() {
+    alert('📝 Borrador guardado correctamente');
+}
+
+function submitRequisicion() {
+    console.log('🚀 Enviando requisición...');
+    var nombrePuesto = document.getElementById('nombrePuesto').value.trim();
+    if (!nombrePuesto) {
+        alert('⚠️ Por favor complete el nombre del puesto');
+        showStep(2);
+        return;
+    }
+    var centro = document.getElementById('centroComercial').value;
+    if (!centro) {
+        alert('⚠️ Por favor seleccione un centro comercial');
+        showStep(1);
+        return;
+    }
+
+    var requisicion = {
+        id: 'R-' + Date.now(),
+        puesto: nombrePuesto,
+        centro: centro,
+        tienda: document.getElementById('tienda').value,
+        departamento: document.getElementById('departamento').value,
+        gerente: document.getElementById('gerente').value,
+        fecha: document.getElementById('fecha').value,
+        tipoContratacion: document.getElementById('tipoContratacion').value,
+        cantidad: parseInt(document.getElementById('cantidadPlazas').value) || 1,
+        prioridad: document.getElementById('prioridad').value,
+        motivo: document.getElementById('motivo').value,
+        reclutador: document.getElementById('reclutador').value,
+        estado: 'Nueva',
+        fechaCreacion: new Date().toISOString()
+    };
+    console.log('📝 Requisición a guardar:', requisicion);
+
+    // 1. Guardar localmente
+    var requisiciones = JSON.parse(localStorage.getItem('requisiciones_data') || '[]');
+    requisiciones.unshift(requisicion);
+    localStorage.setItem('requisiciones_data', JSON.stringify(requisiciones));
+    console.log('💾 Guardado en localStorage');
+
+    // 2. Guardar en Supabase (con verificación)
+    if (typeof guardarEnSupabase === 'function') {
+        console.log('☁️ Guardando en Supabase...');
+        guardarEnSupabase('requisiciones', requisicion)
+            .then(function(result) {
+                if (result.success) {
+                    console.log('✅ Requisición guardada en Supabase:', result.data);
+                    if (typeof agregarNotificacion === 'function') {
+                        agregarNotificacion('success', '✅ Requisición guardada en la nube', '#');
+                    }
+                } else {
+                    console.error('❌ Error al guardar en Supabase:', result.error);
+                    if (typeof agregarNotificacion === 'function') {
+                        agregarNotificacion('danger', '❌ Error en la nube: ' + result.error, '#');
+                    }
+                }
+            })
+            .catch(function(error) {
+                console.error('❌ Error en la promesa:', error);
+                if (typeof agregarNotificacion === 'function') {
+                    agregarNotificacion('danger', '❌ Error: ' + error.message, '#');
+                }
+            });
+    } else {
+        console.warn('⚠️ guardarEnSupabase NO está definida. No se guardó en la nube.');
+        if (typeof agregarNotificacion === 'function') {
+            agregarNotificacion('warning', '⚠️ No se pudo conectar con la nube. Datos locales guardados.', '#');
+        }
+    }
+
+    // Mostrar modal de éxito
+    var modal = document.getElementById('successModal');
+    modal.classList.add('show');
+    var reclutadorNombre = document.getElementById('reclutador').value || 'No asignado';
+    setTimeout(function() {
+        document.getElementById('modalMessage').textContent = '✅ Asignada a: ' + reclutadorNombre;
+    }, 1500);
+}
+
+function closeModal() {
+    document.getElementById('successModal').classList.remove('show');
+    window.location.href = '/requisiciones.html';
+}
+
+// ==========================================
+// INICIALIZAR
+// ==========================================
+document.addEventListener('DOMContentLoaded', function() {
+    var user = getCurrentUser();
+    if (!user) {
+        window.location.href = '/login.html';
+        return;
+    }
+    if (!tienePermiso('crear_requisicion')) {
+        console.warn('⛔ Acceso denegado: sin permiso crear_requisicion');
+        window.location.href = '/dashboard.html';
+        return;
+    }
+
+    cargarDatosFormulario();
+
+    var centroSelect = document.getElementById('centroComercial');
+    if (centroSelect) {
+        centroSelect.addEventListener('change', filtrarTiendasPorComercial);
+    }
+
+    var fechaInput = document.getElementById('fecha');
+    if (fechaInput) {
+        var hoy = new Date().toISOString().split('T')[0];
+        fechaInput.value = hoy;
+    }
+
+    var modal = document.getElementById('successModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+    }
+
+    showStep(1);
+    console.log('✅ Nueva requisición inicializada');
+});
+
+window.addEventListener('storage', function(e) {
+    if (e.key === 'siman_config_data') {
+        cargarDatosFormulario();
+    }
+});
+
+window.cargarDatosFormulario = cargarDatosFormulario;
+window.filtrarTiendasPorComercial = filtrarTiendasPorComercial;
+window.nextStep = nextStep;
+window.prevStep = prevStep;
+window.submitRequisicion = submitRequisicion;
+window.saveDraft = saveDraft;
+window.closeModal = closeModal;
