@@ -109,7 +109,7 @@ function suscribirseATabla(tabla, callback) {
 }
 
 // ==========================================
-// SINCRONIZAR DATOS LOCALES CON SUPABASE (NO ELIMINA USUARIOS ESENCIALES)
+// SINCRONIZAR DATOS LOCALES CON SUPABASE (SUBIENDO Y ELIMINANDO)
 // ==========================================
 async function sincronizarConSupabase() {
     console.log('🔄 Iniciando sincronización con Supabase...');
@@ -324,8 +324,7 @@ async function initSupabaseData() {
 }
 
 function suscribirseATodas() {
-    var tablas = ['usuarios', 'roles', 'comerciales', 'tiendas', 'departamentos', 
-                  'estados', 'prioridades', 'motivos', 'tiposContratacion', 'requisiciones'];
+    var tablas = ['usuarios', 'roles', 'comerciales', 'tiendas', 'departamentos', 'estados', 'prioridades', 'motivos', 'tiposContratacion', 'requisiciones'];
     tablas.forEach(function(tabla) {
         suscribirseATabla(tabla, function(payload) {
             console.log('🔄 Cambio en ' + tabla + ':', payload);

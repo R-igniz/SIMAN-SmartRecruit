@@ -47,17 +47,14 @@ var DEFAULT_ADMIN = {
 };
 
 // ==========================================
-// NORMALIZAR ROL (primera mayúscula, resto minúscula)
+// NORMALIZAR ROL
 // ==========================================
 function normalizarRol(rol) {
     if (!rol) return 'Reclutadora';
     var limpio = rol.trim();
-    // Si ya es válido, devolverlo
     if (PERMISOS[limpio]) return limpio;
-    // Intentar normalizar: primera letra mayúscula, resto minúscula
     var normalizado = limpio.charAt(0).toUpperCase() + limpio.slice(1).toLowerCase();
     if (PERMISOS[normalizado]) return normalizado;
-    // Si aún no es válido, mapear variantes comunes
     var mapa = {
         'administrador': 'Administrador',
         'gerente rh': 'Gerente RH',
@@ -66,7 +63,6 @@ function normalizarRol(rol) {
     };
     var encontrado = mapa[limpio.toLowerCase()];
     if (encontrado) return encontrado;
-    // Por defecto, asignar Reclutadora
     console.warn('⚠️ Rol desconocido:', rol, 'asignando Reclutadora');
     return 'Reclutadora';
 }
@@ -76,9 +72,7 @@ function normalizarRol(rol) {
 // ==========================================
 async function getUsersFromSupabase() {
     try {
-        if (typeof initSupabase === 'function') {
-            await initSupabase();
-        }
+        if (typeof initSupabase === 'function') await initSupabase();
         if (typeof obtenerDeSupabase === 'function') {
             var result = await obtenerDeSupabase('usuarios');
             if (result.success && result.data && result.data.length > 0) {
@@ -152,7 +146,6 @@ async function getUsers() {
         } catch (e) {}
         return supabaseUsers;
     }
-    
     var localUsers = getUsersFromStorage();
     if (localUsers && localUsers.length > 0) {
         console.log('📁 Usuarios cargados desde localStorage:', localUsers.map(function(u) { return u.username + ' (' + u.role + ')'; }));
@@ -171,7 +164,6 @@ async function getUsers() {
         }
         return localUsers;
     }
-    
     console.log('👑 Creando usuario administrador por defecto');
     var adminUser = {
         username: 'admin@siman.com',
@@ -182,7 +174,6 @@ async function getUsers() {
         id: 1,
         estado: 'activo'
     };
-    
     if (typeof guardarEnSupabase === 'function') {
         guardarEnSupabase('usuarios', {
             id: 1,
@@ -194,7 +185,6 @@ async function getUsers() {
             estado: 'activo'
         });
     }
-    
     try {
         var data = {
             usuarios: [{
@@ -226,7 +216,6 @@ async function getUsers() {
         };
         localStorage.setItem('siman_config_data', JSON.stringify(data));
     } catch (e) {}
-    
     return [adminUser];
 }
 
@@ -235,11 +224,9 @@ async function login(username, password) {
     try {
         var users = await getUsers();
         console.log('👥 Usuarios disponibles:', users.map(function(u) { return u.username + ' (' + u.role + ')'; }));
-        
         var user = users.find(function(u) {
             return u.username === username && u.password === password && u.estado !== 'inactivo';
         });
-        
         if (user) {
             console.log('✅ Login exitoso para:', user.username, 'Rol:', user.role);
             sessionStorage.setItem('currentUser', JSON.stringify(user));
@@ -284,9 +271,6 @@ function refreshAuthUsers() {
     return getUsers();
 }
 
-// ==========================================
-// VERIFICAR PERMISOS CON LOGS
-// ==========================================
 function tienePermiso(permiso) {
     var user = getCurrentUser();
     if (!user) {
@@ -309,9 +293,6 @@ function esAdministrador() {
     return tieneRol('Administrador');
 }
 
-// ==========================================
-// PROTEGER RUTAS (SIN ALERTAS)
-// ==========================================
 function protegerRuta(permisoRequerido, redirectUrl) {
     var user = getCurrentUser();
     if (!user) {
@@ -326,18 +307,12 @@ function protegerRuta(permisoRequerido, redirectUrl) {
     return true;
 }
 
-// ==========================================
-// PROTEGER PÁGINAS AL CARGAR (CON LOGS)
-// ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     var currentPage = window.location.pathname;
     if (currentPage.includes('login.html') || currentPage === '/') return;
-    
     var user = requireAuth();
     if (!user) return;
-    
     console.log('🔐 Página:', currentPage, 'Usuario:', user.username, 'Rol:', user.role);
-    
     var permisosPorPagina = {
         '/configuracion': 'ver_configuracion',
         '/configuracion.html': 'ver_configuracion',
@@ -364,21 +339,15 @@ document.addEventListener('DOMContentLoaded', function() {
         '/notificaciones': 'ver_notificaciones',
         '/notificaciones.html': 'ver_notificaciones'
     };
-    
     var permiso = permisosPorPagina[currentPage];
     if (permiso && !tienePermiso(permiso)) {
         console.warn('🔒 Acceso denegado a', currentPage, 'para rol', user.role);
-        // Redirigir sin alerta
         window.location.href = '/dashboard.html';
         return;
     }
-    
     console.log('✅ Acceso permitido a', currentPage);
 });
 
-// ==========================================
-// EXPONER FUNCIONES
-// ==========================================
 window.login = login;
 window.logout = logout;
 window.getCurrentUser = getCurrentUser;
@@ -394,4 +363,4 @@ window.PERMISOS = PERMISOS;
 window.ROLES = ROLES;
 window.normalizarRol = normalizarRol;
 
-console.log('✅ Auth cargado correctamente (con normalización y logs)');
+console.log('✅ Auth cargado correctamente');
