@@ -4,27 +4,52 @@
 var currentStep = 1;
 var totalSteps = 4;
 
+// ==========================================
+// CARGA DE DATOS DESDE CONFIGURACIÓN
+// ==========================================
 function cargarDatosFormulario() {
+    console.log('🔄 Cargando datos del formulario...');
     var data = obtenerDatosConfig();
+    console.log('📦 Datos de configuración:', data);
+
+    // Centros comerciales
     var comerciales = obtenerComerciales();
+    console.log('🏢 Comerciales:', comerciales);
     poblarSelect('centroComercial', comerciales, 'Seleccionar centro...');
+
+    // Tiendas
     var tiendas = obtenerTiendas();
+    console.log('🛒 Tiendas:', tiendas);
     poblarSelect('tienda', tiendas, 'Seleccionar tienda...', true);
+
+    // Departamentos
     var departamentos = data.departamentos || [];
     poblarSelect('departamento', departamentos, 'Seleccionar departamento...');
+
+    // Tipos de contratación
     var tiposContratacion = data.tiposContratacion || [];
     poblarSelect('tipoContratacion', tiposContratacion, 'Seleccionar tipo...');
+
+    // Prioridades
     var prioridades = data.prioridades || [];
     poblarSelect('prioridad', prioridades, 'Seleccionar prioridad...');
+
+    // Motivos
     var motivos = data.motivos || [];
     poblarSelect('motivo', motivos, 'Seleccionar motivo...');
+
+    // Reclutadores
     var reclutadores = obtenerReclutadores();
+    console.log('👩‍💼 Reclutadores:', reclutadores);
     poblarSelect('reclutador', reclutadores, 'Seleccionar reclutador...');
 }
 
 function poblarSelect(id, datos, textoDefault, esTienda) {
     var select = document.getElementById(id);
-    if (!select) return;
+    if (!select) {
+        console.warn('⚠️ Select no encontrado:', id);
+        return;
+    }
     select.innerHTML = '<option value="">' + (textoDefault || 'Seleccionar...') + '</option>';
     if (!datos || datos.length === 0) {
         select.innerHTML = '<option value="">No hay opciones disponibles</option>';
@@ -47,10 +72,14 @@ function poblarSelect(id, datos, textoDefault, esTienda) {
     });
 }
 
+// ==========================================
+// FILTRO DINÁMICO
+// ==========================================
 function filtrarTiendasPorComercial() {
     var comercialSelect = document.getElementById('centroComercial');
     var tiendaSelect = document.getElementById('tienda');
     var comercial = comercialSelect.value;
+
     if (!comercial) {
         var tiendas = obtenerTiendas();
         poblarSelect('tienda', tiendas, 'Seleccionar tienda...', true);
@@ -60,6 +89,9 @@ function filtrarTiendasPorComercial() {
     poblarSelect('tienda', tiendasFiltradas, 'Seleccionar tienda...', true);
 }
 
+// ==========================================
+// WIZARD NAVEGACIÓN
+// ==========================================
 function showStep(step) {
     document.querySelectorAll('.step-content').forEach(function(el) { el.classList.remove('active'); });
     var el = document.getElementById('step' + step);
@@ -73,10 +105,12 @@ function showStep(step) {
     if (step === 4) updateSummary();
     currentStep = step;
 }
-
 function nextStep(step) { showStep(step); }
 function prevStep(step) { showStep(step); }
 
+// ==========================================
+// RESUMEN
+// ==========================================
 function updateSummary() {
     var centro = document.getElementById('centroComercial').value || '-';
     var tienda = document.getElementById('tienda').value || '-';
@@ -96,13 +130,28 @@ function updateSummary() {
     document.getElementById('resReclutador').textContent = reclutador;
 }
 
-function saveDraft() { alert('📝 Borrador guardado correctamente'); }
+// ==========================================
+// GUARDAR
+// ==========================================
+function saveDraft() {
+    alert('📝 Borrador guardado correctamente');
+}
 
 function submitRequisicion() {
+    console.log('🚀 Enviando requisición...');
     var nombrePuesto = document.getElementById('nombrePuesto').value.trim();
-    if (!nombrePuesto) { alert('⚠️ Por favor complete el nombre del puesto'); showStep(2); return; }
+    if (!nombrePuesto) {
+        alert('⚠️ Por favor complete el nombre del puesto');
+        showStep(2);
+        return;
+    }
     var centro = document.getElementById('centroComercial').value;
-    if (!centro) { alert('⚠️ Por favor seleccione un centro comercial'); showStep(1); return; }
+    if (!centro) {
+        alert('⚠️ Por favor seleccione un centro comercial');
+        showStep(1);
+        return;
+    }
+
     var requisicion = {
         id: 'R-' + Date.now(),
         puesto: nombrePuesto,
@@ -112,19 +161,52 @@ function submitRequisicion() {
         gerente: document.getElementById('gerente').value,
         fecha: document.getElementById('fecha').value,
         tipoContratacion: document.getElementById('tipoContratacion').value,
-        cantidad: document.getElementById('cantidadPlazas').value,
+        cantidad: parseInt(document.getElementById('cantidadPlazas').value) || 1,
         prioridad: document.getElementById('prioridad').value,
         motivo: document.getElementById('motivo').value,
         reclutador: document.getElementById('reclutador').value,
         estado: 'Nueva',
         fechaCreacion: new Date().toISOString()
     };
+    console.log('📝 Requisición a guardar:', requisicion);
+
+    // 1. Guardar localmente
     var requisiciones = JSON.parse(localStorage.getItem('requisiciones_data') || '[]');
     requisiciones.unshift(requisicion);
     localStorage.setItem('requisiciones_data', JSON.stringify(requisiciones));
+    console.log('💾 Guardado en localStorage');
+
+    // 2. Guardar en Supabase (con verificación)
     if (typeof guardarEnSupabase === 'function') {
-        guardarEnSupabase('requisiciones', requisicion);
+        console.log('☁️ Guardando en Supabase...');
+        guardarEnSupabase('requisiciones', requisicion)
+            .then(function(result) {
+                if (result.success) {
+                    console.log('✅ Requisición guardada en Supabase:', result.data);
+                    if (typeof agregarNotificacion === 'function') {
+                        agregarNotificacion('success', '✅ Requisición guardada en la nube', '#');
+                    }
+                } else {
+                    console.error('❌ Error al guardar en Supabase:', result.error);
+                    if (typeof agregarNotificacion === 'function') {
+                        agregarNotificacion('danger', '❌ Error en la nube: ' + result.error, '#');
+                    }
+                }
+            })
+            .catch(function(error) {
+                console.error('❌ Error en la promesa:', error);
+                if (typeof agregarNotificacion === 'function') {
+                    agregarNotificacion('danger', '❌ Error: ' + error.message, '#');
+                }
+            });
+    } else {
+        console.warn('⚠️ guardarEnSupabase NO está definida. No se guardó en la nube.');
+        if (typeof agregarNotificacion === 'function') {
+            agregarNotificacion('warning', '⚠️ No se pudo conectar con la nube. Datos locales guardados.', '#');
+        }
     }
+
+    // Mostrar modal de éxito
     var modal = document.getElementById('successModal');
     modal.classList.add('show');
     var reclutadorNombre = document.getElementById('reclutador').value || 'No asignado';
@@ -138,37 +220,49 @@ function closeModal() {
     window.location.href = '/requisiciones.html';
 }
 
+// ==========================================
+// INICIALIZAR
+// ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     var user = getCurrentUser();
     if (!user) {
         window.location.href = '/login.html';
         return;
     }
-    // ✅ VERIFICACIÓN CORRECTA
     if (!tienePermiso('crear_requisicion')) {
         console.warn('⛔ Acceso denegado: sin permiso crear_requisicion');
         window.location.href = '/dashboard.html';
         return;
     }
-    var modal = document.getElementById('successModal');
-    if (modal) {
-        modal.addEventListener('click', function(e) { if (e.target === this) closeModal(); });
-    }
+
     cargarDatosFormulario();
+
     var centroSelect = document.getElementById('centroComercial');
     if (centroSelect) {
         centroSelect.addEventListener('change', filtrarTiendasPorComercial);
     }
+
     var fechaInput = document.getElementById('fecha');
     if (fechaInput) {
         var hoy = new Date().toISOString().split('T')[0];
         fechaInput.value = hoy;
     }
+
+    var modal = document.getElementById('successModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+    }
+
     showStep(1);
+    console.log('✅ Nueva requisición inicializada');
 });
 
 window.addEventListener('storage', function(e) {
-    if (e.key === 'siman_config_data') cargarDatosFormulario();
+    if (e.key === 'siman_config_data') {
+        cargarDatosFormulario();
+    }
 });
 
 window.cargarDatosFormulario = cargarDatosFormulario;

@@ -36,6 +36,9 @@ function initSupabase() {
     });
 }
 
+// ==========================================
+// CRUD - Guardar
+// ==========================================
 async function guardarEnSupabase(tabla, datos) {
     try {
         var client = await initSupabase();
@@ -50,6 +53,9 @@ async function guardarEnSupabase(tabla, datos) {
     }
 }
 
+// ==========================================
+// CRUD - Obtener
+// ==========================================
 async function obtenerDeSupabase(tabla, filtros, orden) {
     try {
         var client = await initSupabase();
@@ -71,6 +77,9 @@ async function obtenerDeSupabase(tabla, filtros, orden) {
     }
 }
 
+// ==========================================
+// CRUD - Eliminar
+// ==========================================
 async function eliminarDeSupabase(tabla, id) {
     try {
         var client = await initSupabase();
@@ -86,6 +95,9 @@ async function eliminarDeSupabase(tabla, id) {
     }
 }
 
+// ==========================================
+// SUSCRIPCIÓN EN TIEMPO REAL
+// ==========================================
 function suscribirseATabla(tabla, callback) {
     initSupabase().then(function(client) {
         client
@@ -127,7 +139,6 @@ async function sincronizarConSupabase() {
         var data = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
         var requisiciones = JSON.parse(localStorage.getItem('requisiciones_data') || '[]');
         
-        // Usuarios esenciales que no deben eliminarse nunca
         var usuariosEsenciales = ['admin@siman.com', 'felix_robles@siman.com'];
         
         var resultados = {
@@ -152,17 +163,12 @@ async function sincronizarConSupabase() {
                 return;
             }
             var remotos = resultadoRemoto.data || [];
-            
-            // IDs locales
             var idsLocales = itemsLocales.map(function(item) { return item[idKey]; });
             
-            // Eliminar los que no están en local (excepto si están en noEliminar)
             for (var i = 0; i < remotos.length; i++) {
                 var remoto = remotos[i];
                 var email = remoto.email;
-                // Si es tabla usuarios y el email está en la lista de esenciales, no eliminar
                 if (tabla === 'usuarios' && noEliminar && noEliminar.indexOf(email) !== -1) {
-                    console.log('🛡️ Usuario esencial no eliminado:', email);
                     continue;
                 }
                 if (idsLocales.indexOf(remoto[idKey]) === -1) {
@@ -177,7 +183,6 @@ async function sincronizarConSupabase() {
                 }
             }
             
-            // Subir los locales (nuevos o actualizados)
             for (var j = 0; j < itemsLocales.length; j++) {
                 var item = itemsLocales[j];
                 var result = await guardarEnSupabase(tabla, item);
@@ -324,7 +329,8 @@ async function initSupabaseData() {
 }
 
 function suscribirseATodas() {
-    var tablas = ['usuarios', 'roles', 'comerciales', 'tiendas', 'departamentos', 'estados', 'prioridades', 'motivos', 'tiposContratacion', 'requisiciones'];
+    var tablas = ['usuarios', 'roles', 'comerciales', 'tiendas', 'departamentos', 
+                  'estados', 'prioridades', 'motivos', 'tiposContratacion', 'requisiciones'];
     tablas.forEach(function(tabla) {
         suscribirseATabla(tabla, function(payload) {
             console.log('🔄 Cambio en ' + tabla + ':', payload);
@@ -348,6 +354,9 @@ function suscribirseATodas() {
     });
 }
 
+// ==========================================
+// EXPORTAR FUNCIONES GLOBALMENTE
+// ==========================================
 window.initSupabase = initSupabase;
 window.guardarEnSupabase = guardarEnSupabase;
 window.obtenerDeSupabase = obtenerDeSupabase;
