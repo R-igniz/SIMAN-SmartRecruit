@@ -88,7 +88,6 @@ function guardarDatosConfig(data) {
     sincronizarTodoConSupabase(data);
     if (typeof refreshAuthUsers === 'function') refreshAuthUsers();
     
-    // ✅ Eliminar error de listener envolviendo en try-catch
     try {
         window.dispatchEvent(new StorageEvent('storage', {
             key: CONFIG_STORE_KEY,
@@ -215,7 +214,7 @@ function obtenerComercialesParaSelect() {
 }
 
 // ==========================================
-// INICIALIZAR (solo administradores)
+// INICIALIZAR
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     var user = getCurrentUser();
@@ -228,7 +227,18 @@ document.addEventListener('DOMContentLoaded', function() {
             initSupabase().then(function() {
                 console.log('✅ Supabase listo');
                 if (typeof suscribirseATodas === 'function') suscribirseATodas();
-                if (typeof initSupabaseData === 'function') initSupabaseData();
+                if (typeof initSupabaseData === 'function') {
+                    initSupabaseData().then(function() {
+                        // Disparar evento después de cargar datos
+                        var data = obtenerDatosConfig();
+                        if (data && typeof window.dispatchEvent === 'function') {
+                            try {
+                                window.dispatchEvent(new CustomEvent('datosConfiguracionListos', { detail: data }));
+                                console.log('📢 Evento "datosConfiguracionListos" disparado desde configuracion.js');
+                            } catch (e) {}
+                        }
+                    });
+                }
             }).catch(function(error) {
                 console.warn('⚠️ Usando modo offline (Supabase no disponible)');
             });
@@ -279,9 +289,6 @@ function cargarSelects() {
     }
 }
 
-// ==========================================
-// ABRIR GESTIÓN
-// ==========================================
 function abrirGestion(tipo) {
     tipoActual = tipo;
     var data = obtenerDatosConfig();
@@ -728,6 +735,9 @@ function ejecutarCargaNube() {
     }
 }
 
+// ==========================================
+// EXPONER FUNCIONES
+// ==========================================
 window.obtenerDatosConfig = obtenerDatosConfig;
 window.obtenerReclutadores = obtenerReclutadores;
 window.obtenerTiendasPorComercial = obtenerTiendasPorComercial;
@@ -746,3 +756,5 @@ window.editarItem = editarItem;
 window.eliminarItem = eliminarItem;
 window.cerrarModal = cerrarModal;
 window.exportarDatos = exportarDatos;
+
+console.log('✅ Configuración cargada correctamente');
