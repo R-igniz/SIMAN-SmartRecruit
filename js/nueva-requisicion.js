@@ -1,12 +1,15 @@
 // ==========================================
 // NUEVA REQUISICIÓN - WIZARD Y FILTROS
 // ==========================================
+console.log('🚀🚀🚀 nueva-requisicion.js se está ejecutando 🚀🚀🚀');
+
 var currentStep = 1;
 var totalSteps = 4;
 var datosCargados = false;
+var intervaloIntento = null;
 
 // ==========================================
-// CARGA DE DATOS (CON LOGS)
+// CARGA DE DATOS
 // ==========================================
 function cargarDatosFormulario() {
     console.log('🔄 cargarDatosFormulario() ejecutado');
@@ -60,6 +63,10 @@ function cargarDatosFormulario() {
     poblarSelect('reclutador', reclutadores, 'Seleccionar reclutador...');
     
     console.log('✅ Datos cargados correctamente');
+    if (intervaloIntento) {
+        clearInterval(intervaloIntento);
+        intervaloIntento = null;
+    }
 }
 
 function poblarSelect(id, datos, textoDefault, esTienda) {
@@ -230,10 +237,64 @@ function closeModal() {
 }
 
 // ==========================================
-// INICIALIZAR CON CARGA ROBUSTA
+// INICIALIZACIÓN ROBUSTA
+// ==========================================
+function iniciarNuevaRequisicion() {
+    console.log('🚀 iniciarNuevaRequisicion() llamada');
+    
+    // Verificar si los datos ya están disponibles
+    var data = obtenerDatosConfig();
+    if (data && data.comerciales && data.comerciales.length > 0) {
+        console.log('📦 Datos ya disponibles, cargando...');
+        datosCargados = true;
+        cargarDatosFormulario();
+        return;
+    }
+    
+    console.log('⏳ Datos no disponibles, esperando...');
+    
+    // Intentar cargar desde Supabase directamente
+    if (typeof initSupabaseData === 'function') {
+        console.log('🔄 Intentando cargar desde Supabase...');
+        initSupabaseData().then(function(result) {
+            if (result) {
+                console.log('✅ Datos cargados desde Supabase');
+                datosCargados = true;
+                cargarDatosFormulario();
+            } else {
+                console.warn('⚠️ No se cargaron datos desde Supabase');
+            }
+        }).catch(function(err) {
+            console.error('❌ Error cargando desde Supabase:', err);
+        });
+    }
+    
+    // Reintentar cada 300ms hasta que los datos estén listos
+    if (intervaloIntento) clearInterval(intervaloIntento);
+    var intentos = 0;
+    intervaloIntento = setInterval(function() {
+        intentos++;
+        var data = obtenerDatosConfig();
+        if (data && data.comerciales && data.comerciales.length > 0) {
+            clearInterval(intervaloIntento);
+            intervaloIntento = null;
+            datosCargados = true;
+            cargarDatosFormulario();
+            console.log('✅ Datos disponibles después de', intentos, 'intentos');
+        } else if (intentos > 30) {
+            clearInterval(intervaloIntento);
+            intervaloIntento = null;
+            console.warn('⚠️ No se pudieron cargar los datos después de 15 segundos');
+            alert('⚠️ No se pudieron cargar los datos de configuración. Recarga la página o intenta más tarde.');
+        }
+    }, 500);
+}
+
+// ==========================================
+// LISTENERS
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 nueva-requisicion.js - Inicializando...');
+    console.log('🚀 DOMContentLoaded - nueva-requisicion.js');
     var user = getCurrentUser();
     if (!user) { window.location.href = '/login.html'; return; }
     if (!tienePermiso('crear_requisicion')) {
@@ -242,55 +303,15 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // Escuchar evento de datos listos
+    // Escuchar evento de datos listos (por si configuracion.js lo dispara)
     window.addEventListener('datosConfiguracionListos', function(e) {
         console.log('📢 Recibido evento datosConfiguracionListos');
         datosCargados = true;
         cargarDatosFormulario();
     });
 
-    // Verificar si los datos ya están cargados
-    var data = obtenerDatosConfig();
-    if (data && data.comerciales && data.comerciales.length > 0) {
-        console.log('📦 Datos ya disponibles en localStorage, cargando...');
-        datosCargados = true;
-        cargarDatosFormulario();
-    } else {
-        console.log('⏳ Datos no disponibles, esperando...');
-        // Intentar cargar datos directamente desde Supabase
-        if (typeof initSupabaseData === 'function') {
-            console.log('🔄 Intentando cargar datos desde Supabase...');
-            initSupabaseData().then(function(result) {
-                if (result) {
-                    console.log('✅ Datos cargados desde Supabase');
-                    datosCargados = true;
-                    cargarDatosFormulario();
-                } else {
-                    console.warn('⚠️ No se pudieron cargar datos desde Supabase');
-                }
-            }).catch(function(err) {
-                console.error('❌ Error al cargar desde Supabase:', err);
-            });
-        }
-        
-        // Reintentar cada 500ms hasta que los datos estén listos
-        var intentos = 0;
-        var intervalo = setInterval(function() {
-            intentos++;
-            var data = obtenerDatosConfig();
-            if (data && data.comerciales && data.comerciales.length > 0) {
-                clearInterval(intervalo);
-                datosCargados = true;
-                cargarDatosFormulario();
-                console.log('✅ Datos disponibles después de', intentos, 'intentos');
-            } else if (intentos > 20) {
-                clearInterval(intervalo);
-                console.warn('⚠️ No se pudieron cargar los datos después de 10 segundos');
-                // Mostrar mensaje al usuario
-                alert('⚠️ No se pudieron cargar los datos de configuración. Intente recargar la página.');
-            }
-        }, 500);
-    }
+    // Iniciar carga
+    iniciarNuevaRequisicion();
 
     // Evento para filtrar tiendas
     var centroSelect = document.getElementById('centroComercial');
