@@ -217,6 +217,7 @@ function obtenerComercialesParaSelect() {
 // INICIALIZAR
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 configuracion.js - Inicializando...');
     var user = getCurrentUser();
     if (!user) { window.location.href = '/login.html'; return; }
     if (!tienePermiso('ver_configuracion')) { window.location.href = '/dashboard.html'; return; }
@@ -228,19 +229,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('✅ Supabase listo');
                 if (typeof suscribirseATodas === 'function') suscribirseATodas();
                 if (typeof initSupabaseData === 'function') {
-                    initSupabaseData().then(function() {
+                    initSupabaseData().then(function(data) {
                         // Disparar evento después de cargar datos
-                        var data = obtenerDatosConfig();
+                        console.log('📢 Datos cargados, disparando evento...');
                         if (data && typeof window.dispatchEvent === 'function') {
                             try {
                                 window.dispatchEvent(new CustomEvent('datosConfiguracionListos', { detail: data }));
-                                console.log('📢 Evento "datosConfiguracionListos" disparado desde configuracion.js');
-                            } catch (e) {}
+                                console.log('✅ Evento "datosConfiguracionListos" disparado');
+                            } catch (e) {
+                                console.warn('Error al disparar evento:', e);
+                            }
                         }
+                    }).catch(function(err) {
+                        console.error('❌ Error en initSupabaseData:', err);
                     });
                 }
             }).catch(function(error) {
-                console.warn('⚠️ Usando modo offline (Supabase no disponible)');
+                console.warn('⚠️ Error conectando a Supabase:', error);
             });
         }
     }, 500);

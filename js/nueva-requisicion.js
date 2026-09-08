@@ -6,24 +6,25 @@ var totalSteps = 4;
 var datosCargados = false;
 
 // ==========================================
-// CARGA DE DATOS (SOLO CUANDO ESTÉN LISTOS)
+// CARGA DE DATOS (CON LOGS)
 // ==========================================
 function cargarDatosFormulario() {
+    console.log('🔄 cargarDatosFormulario() ejecutado');
+    console.log('📊 datosCargados =', datosCargados);
+    
     if (!datosCargados) {
         console.log('⏳ Esperando datos de configuración...');
         return;
     }
     
-    console.log('🔄 Cargando datos del formulario...');
     var data = obtenerDatosConfig();
+    console.log('📦 Datos de configuración:', data);
     if (!data) {
         console.warn('⚠️ Datos no disponibles');
         return;
     }
-    
-    console.log('📦 Datos de configuración:', data);
 
-    // Centros comerciales
+    // Comerciales
     var comerciales = obtenerComerciales();
     console.log('🏢 Comerciales:', comerciales);
     poblarSelect('centroComercial', comerciales, 'Seleccionar centro...');
@@ -35,18 +36,22 @@ function cargarDatosFormulario() {
 
     // Departamentos
     var departamentos = data.departamentos || [];
+    console.log('🏛️ Departamentos:', departamentos);
     poblarSelect('departamento', departamentos, 'Seleccionar departamento...');
 
     // Tipos de contratación
     var tiposContratacion = data.tiposContratacion || [];
+    console.log('📄 Tipos de contratación:', tiposContratacion);
     poblarSelect('tipoContratacion', tiposContratacion, 'Seleccionar tipo...');
 
     // Prioridades
     var prioridades = data.prioridades || [];
+    console.log('🚩 Prioridades:', prioridades);
     poblarSelect('prioridad', prioridades, 'Seleccionar prioridad...');
 
     // Motivos
     var motivos = data.motivos || [];
+    console.log('❓ Motivos:', motivos);
     poblarSelect('motivo', motivos, 'Seleccionar motivo...');
 
     // Reclutadores
@@ -63,6 +68,7 @@ function poblarSelect(id, datos, textoDefault, esTienda) {
         console.warn('⚠️ Select no encontrado:', id);
         return;
     }
+    console.log('🔽 Poblando select', id, 'con', datos.length, 'elementos');
     select.innerHTML = '<option value="">' + (textoDefault || 'Seleccionar...') + '</option>';
     if (!datos || datos.length === 0) {
         select.innerHTML = '<option value="">No hay opciones disponibles</option>';
@@ -94,6 +100,7 @@ function filtrarTiendasPorComercial() {
     var comercialSelect = document.getElementById('centroComercial');
     var tiendaSelect = document.getElementById('tienda');
     var comercial = comercialSelect.value;
+    console.log('🔍 Filtrando tiendas por comercial:', comercial);
 
     if (!comercial) {
         var tiendas = obtenerTiendas();
@@ -223,9 +230,10 @@ function closeModal() {
 }
 
 // ==========================================
-// INICIALIZAR
+// INICIALIZAR CON CARGA ROBUSTA
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 nueva-requisicion.js - Inicializando...');
     var user = getCurrentUser();
     if (!user) { window.location.href = '/login.html'; return; }
     if (!tienePermiso('crear_requisicion')) {
@@ -241,14 +249,30 @@ document.addEventListener('DOMContentLoaded', function() {
         cargarDatosFormulario();
     });
 
-    // Si los datos ya están cargados (por si el evento ya pasó)
+    // Verificar si los datos ya están cargados
     var data = obtenerDatosConfig();
     if (data && data.comerciales && data.comerciales.length > 0) {
-        console.log('📦 Datos ya disponibles, cargando directamente...');
+        console.log('📦 Datos ya disponibles en localStorage, cargando...');
         datosCargados = true;
         cargarDatosFormulario();
     } else {
-        console.log('⏳ Esperando datos de configuración...');
+        console.log('⏳ Datos no disponibles, esperando...');
+        // Intentar cargar datos directamente desde Supabase
+        if (typeof initSupabaseData === 'function') {
+            console.log('🔄 Intentando cargar datos desde Supabase...');
+            initSupabaseData().then(function(result) {
+                if (result) {
+                    console.log('✅ Datos cargados desde Supabase');
+                    datosCargados = true;
+                    cargarDatosFormulario();
+                } else {
+                    console.warn('⚠️ No se pudieron cargar datos desde Supabase');
+                }
+            }).catch(function(err) {
+                console.error('❌ Error al cargar desde Supabase:', err);
+            });
+        }
+        
         // Reintentar cada 500ms hasta que los datos estén listos
         var intentos = 0;
         var intervalo = setInterval(function() {
@@ -262,21 +286,26 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (intentos > 20) {
                 clearInterval(intervalo);
                 console.warn('⚠️ No se pudieron cargar los datos después de 10 segundos');
+                // Mostrar mensaje al usuario
+                alert('⚠️ No se pudieron cargar los datos de configuración. Intente recargar la página.');
             }
         }, 500);
     }
 
+    // Evento para filtrar tiendas
     var centroSelect = document.getElementById('centroComercial');
     if (centroSelect) {
         centroSelect.addEventListener('change', filtrarTiendasPorComercial);
     }
 
+    // Fecha por defecto
     var fechaInput = document.getElementById('fecha');
     if (fechaInput) {
         var hoy = new Date().toISOString().split('T')[0];
         fechaInput.value = hoy;
     }
 
+    // Modal
     var modal = document.getElementById('successModal');
     if (modal) {
         modal.addEventListener('click', function(e) {
@@ -290,7 +319,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 window.addEventListener('storage', function(e) {
     if (e.key === 'siman_config_data') {
-        console.log('🔄 Configuración actualizada');
+        console.log('🔄 Configuración actualizada desde otra pestaña');
         if (datosCargados) {
             cargarDatosFormulario();
         }
