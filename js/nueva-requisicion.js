@@ -5,11 +5,19 @@ var currentStep = 1;
 var totalSteps = 4;
 
 // ==========================================
-// CARGA DE DATOS DESDE CONFIGURACIÓN
+// CARGA DE DATOS DESDE CONFIGURACIÓN (CON RETRY)
 // ==========================================
 function cargarDatosFormulario() {
     console.log('🔄 Cargando datos del formulario...');
+    
+    // Esperar a que los datos estén disponibles
     var data = obtenerDatosConfig();
+    if (!data || !data.comerciales || data.comerciales.length === 0) {
+        console.warn('⚠️ Datos de configuración aún no disponibles. Reintentando en 500ms...');
+        setTimeout(cargarDatosFormulario, 500);
+        return;
+    }
+    
     console.log('📦 Datos de configuración:', data);
 
     // Centros comerciales
@@ -42,6 +50,8 @@ function cargarDatosFormulario() {
     var reclutadores = obtenerReclutadores();
     console.log('👩‍💼 Reclutadores:', reclutadores);
     poblarSelect('reclutador', reclutadores, 'Seleccionar reclutador...');
+    
+    console.log('✅ Datos cargados correctamente');
 }
 
 function poblarSelect(id, datos, textoDefault, esTienda) {
@@ -53,6 +63,7 @@ function poblarSelect(id, datos, textoDefault, esTienda) {
     select.innerHTML = '<option value="">' + (textoDefault || 'Seleccionar...') + '</option>';
     if (!datos || datos.length === 0) {
         select.innerHTML = '<option value="">No hay opciones disponibles</option>';
+        console.warn('⚠️ No hay datos para', id);
         return;
     }
     datos.forEach(function(item) {
@@ -70,6 +81,7 @@ function poblarSelect(id, datos, textoDefault, esTienda) {
             select.appendChild(option);
         }
     });
+    console.log('✅ Select', id, 'poblado con', select.options.length - 1, 'opciones');
 }
 
 // ==========================================
@@ -170,13 +182,13 @@ function submitRequisicion() {
     };
     console.log('📝 Requisición a guardar:', requisicion);
 
-    // 1. Guardar localmente
+    // Guardar localmente
     var requisiciones = JSON.parse(localStorage.getItem('requisiciones_data') || '[]');
     requisiciones.unshift(requisicion);
     localStorage.setItem('requisiciones_data', JSON.stringify(requisiciones));
     console.log('💾 Guardado en localStorage');
 
-    // 2. Guardar en Supabase (con verificación)
+    // Guardar en Supabase
     if (typeof guardarEnSupabase === 'function') {
         console.log('☁️ Guardando en Supabase...');
         guardarEnSupabase('requisiciones', requisicion)
@@ -200,13 +212,13 @@ function submitRequisicion() {
                 }
             });
     } else {
-        console.warn('⚠️ guardarEnSupabase NO está definida. No se guardó en la nube.');
+        console.warn('⚠️ guardarEnSupabase NO está definida.');
         if (typeof agregarNotificacion === 'function') {
-            agregarNotificacion('warning', '⚠️ No se pudo conectar con la nube. Datos locales guardados.', '#');
+            agregarNotificacion('warning', '⚠️ No se pudo conectar con la nube.', '#');
         }
     }
 
-    // Mostrar modal de éxito
+    // Mostrar modal
     var modal = document.getElementById('successModal');
     modal.classList.add('show');
     var reclutadorNombre = document.getElementById('reclutador').value || 'No asignado';
@@ -230,24 +242,28 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     if (!tienePermiso('crear_requisicion')) {
-        console.warn('⛔ Acceso denegado: sin permiso crear_requisicion');
+        console.warn('⛔ Acceso denegado');
         window.location.href = '/dashboard.html';
         return;
     }
 
+    // Cargar datos con reintento
     cargarDatosFormulario();
 
+    // Evento para filtrar tiendas
     var centroSelect = document.getElementById('centroComercial');
     if (centroSelect) {
         centroSelect.addEventListener('change', filtrarTiendasPorComercial);
     }
 
+    // Fecha por defecto
     var fechaInput = document.getElementById('fecha');
     if (fechaInput) {
         var hoy = new Date().toISOString().split('T')[0];
         fechaInput.value = hoy;
     }
 
+    // Modal
     var modal = document.getElementById('successModal');
     if (modal) {
         modal.addEventListener('click', function(e) {
@@ -259,8 +275,10 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ Nueva requisición inicializada');
 });
 
+// Escuchar cambios en configuración
 window.addEventListener('storage', function(e) {
     if (e.key === 'siman_config_data') {
+        console.log('🔄 Configuración actualizada, recargando selects...');
         cargarDatosFormulario();
     }
 });
