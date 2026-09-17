@@ -218,36 +218,82 @@ function obtenerComercialesParaSelect() {
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 configuracion.js - Inicializando...');
+
     var user = getCurrentUser();
-    if (!user) { window.location.href = '/login.html'; return; }
-    if (!tienePermiso('ver_configuracion')) { window.location.href = '/dashboard.html'; return; }
-    actualizarContadores();
-    cargarSelects();
-    setTimeout(function() {
-        if (typeof initSupabase === 'function') {
-            initSupabase().then(function() {
-                console.log('✅ Supabase listo');
-                if (typeof suscribirseATodas === 'function') suscribirseATodas();
-                if (typeof initSupabaseData === 'function') {
-                    initSupabaseData().then(function(data) {
-                        // Disparar evento después de cargar datos
-                        console.log('📢 Datos cargados, disparando evento...');
-                        if (data && typeof window.dispatchEvent === 'function') {
-                            try {
-                                window.dispatchEvent(new CustomEvent('datosConfiguracionListos', { detail: data }));
-                                console.log('✅ Evento "datosConfiguracionListos" disparado');
-                            } catch (e) {
-                                console.warn('Error al disparar evento:', e);
-                            }
-                        }
-                    }).catch(function(err) {
-                        console.error('❌ Error en initSupabaseData:', err);
-                    });
-                }
-            }).catch(function(error) {
-                console.warn('⚠️ Error conectando a Supabase:', error);
-            });
+
+    // Validar que exista una sesión activa.
+    if (!user) {
+        console.warn('⛔ Usuario no autenticado');
+        window.location.href = '/login.html';
+        return;
+    }
+
+    console.log('👤 Usuario:', user.name, '| Rol:', user.role);
+
+    // configuracion.js también es utilizado como almacén de datos por otros módulos.
+    // Por eso SOLO se exige ver_configuracion cuando la página actual es configuracion.html.
+    var paginaActual = window.location.pathname.split('/').pop() || '';
+
+    if (paginaActual === 'configuracion.html') {
+        if (!tienePermiso('ver_configuracion')) {
+            console.warn('⛔ Acceso denegado a Configuración para el rol:', user.role);
+            window.location.href = '/dashboard.html';
+            return;
         }
+
+        console.log('✅ Acceso autorizado a Configuración');
+    }
+
+    // Estas funciones son seguras en otras páginas porque internamente
+    // comprueban si los elementos HTML existen.
+    if (typeof actualizarContadores === 'function') {
+        actualizarContadores();
+    }
+
+    if (typeof cargarSelects === 'function') {
+        cargarSelects();
+    }
+
+    // Inicializar Supabase y cargar los datos compartidos.
+    setTimeout(function() {
+        if (typeof initSupabase !== 'function') {
+            console.warn('⚠️ initSupabase no está disponible en esta página');
+            return;
+        }
+
+        initSupabase()
+            .then(function() {
+                console.log('✅ Supabase listo');
+
+                if (typeof suscribirseATodas === 'function') {
+                    suscribirseATodas();
+                }
+
+                if (typeof initSupabaseData === 'function') {
+                    return initSupabaseData();
+                }
+
+                return null;
+            })
+            .then(function(data) {
+                if (!data) return;
+
+                console.log('📢 Datos cargados, disparando evento...');
+
+                try {
+                    window.dispatchEvent(
+                        new CustomEvent('datosConfiguracionListos', {
+                            detail: data
+                        })
+                    );
+                    console.log('✅ Evento "datosConfiguracionListos" disparado');
+                } catch (e) {
+                    console.warn('Error al disparar evento:', e);
+                }
+            })
+            .catch(function(error) {
+                console.error('❌ Error inicializando/cargando Supabase:', error);
+            });
     }, 500);
 });
 
