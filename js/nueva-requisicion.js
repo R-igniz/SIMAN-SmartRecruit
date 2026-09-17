@@ -164,17 +164,20 @@ function updateSummary() {
 // ==========================================
 function saveDraft() { alert('📝 Borrador guardado correctamente'); }
 
-function submitRequisicion() {
+async function submitRequisicion() {
     console.log('🚀 Enviando requisición...');
     var nombrePuesto = document.getElementById('nombrePuesto').value.trim();
     if (!nombrePuesto) { alert('⚠️ Complete el nombre del puesto'); showStep(2); return; }
     var centro = document.getElementById('centroComercial').value;
     if (!centro) { alert('⚠️ Seleccione un centro comercial'); showStep(1); return; }
 
+    var user = getCurrentUser();
+    var boton = document.querySelector('[onclick="submitRequisicion()"]');
+    if (boton && boton.disabled) return;
+    if (boton) { boton.disabled = true; boton.dataset.textoOriginal = boton.innerHTML; boton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...'; }
+
     var requisicion = {
-        id: 'R-' + Date.now(),
-        puesto: nombrePuesto,
-        centro: centro,
+        id: 'R-' + Date.now(), puesto: nombrePuesto, centro: centro,
         tienda: document.getElementById('tienda').value,
         departamento: document.getElementById('departamento').value,
         gerente: document.getElementById('gerente').value,
@@ -184,51 +187,36 @@ function submitRequisicion() {
         prioridad: document.getElementById('prioridad').value,
         motivo: document.getElementById('motivo').value,
         reclutador: document.getElementById('reclutador').value,
-        estado: 'Nueva',
-        fechaCreacion: new Date().toISOString()
+        estado: 'Nueva', fechaCreacion: new Date().toISOString()
     };
-    console.log('📝 Requisición a guardar:', requisicion);
 
-    var requisiciones = JSON.parse(localStorage.getItem('requisiciones_data') || '[]');
-    requisiciones.unshift(requisicion);
-    localStorage.setItem('requisiciones_data', JSON.stringify(requisiciones));
-    console.log('💾 Guardado en localStorage');
+    try {
+        if (!navigator.onLine) throw new Error('Sin conexión a Internet. La requisición no fue enviada.');
+        if (typeof guardarEnSupabase !== 'function') throw new Error('Supabase no está disponible.');
 
-    if (typeof guardarEnSupabase === 'function') {
-        console.log('☁️ Guardando en Supabase...');
-        guardarEnSupabase('requisiciones', requisicion)
-            .then(function(result) {
-                if (result.success) {
-                    console.log('✅ Requisición guardada en Supabase');
-                    if (typeof agregarNotificacion === 'function') {
-                        agregarNotificacion('success', '✅ Requisición guardada en la nube', '#');
-                    }
-                } else {
-                    console.error('❌ Error en Supabase:', result.error);
-                    if (typeof agregarNotificacion === 'function') {
-                        agregarNotificacion('danger', '❌ Error: ' + result.error, '#');
-                    }
-                }
-            })
-            .catch(function(error) {
-                console.error('❌ Error:', error);
-                if (typeof agregarNotificacion === 'function') {
-                    agregarNotificacion('danger', '❌ Error: ' + error.message, '#');
-                }
-            });
-    } else {
-        console.warn('⚠️ guardarEnSupabase no definida');
+        var result = await guardarEnSupabase('requisiciones', requisicion);
+        if (!result.success) throw new Error(result.error || 'No se pudo guardar la requisición.');
+
+        // Actualizar caché solo DESPUÉS de confirmar Supabase.
+        var requisiciones = JSON.parse(localStorage.getItem('requisiciones_data') || '[]');
+        requisiciones = requisiciones.filter(function(r) { return r.id !== requisicion.id; });
+        requisiciones.unshift(requisicion);
+        localStorage.setItem('requisiciones_data', JSON.stringify(requisiciones));
+
         if (typeof agregarNotificacion === 'function') {
-            agregarNotificacion('warning', '⚠️ No se pudo conectar con la nube', '#');
+            agregarNotificacion('success', '✅ Requisición ' + requisicion.id + ' creada correctamente', '/requisiciones.html');
         }
+        var modal = document.getElementById('successModal');
+        if (modal) modal.classList.add('show');
+        var msg = document.getElementById('modalMessage');
+        if (msg) msg.textContent = '✅ Asignada a: ' + (requisicion.reclutador || 'No asignado');
+    } catch (error) {
+        console.error('❌ Error creando requisición:', error);
+        alert('❌ No se pudo crear la requisición.\n\n' + error.message);
+        if (typeof agregarNotificacion === 'function') agregarNotificacion('danger', '❌ ' + error.message, '#');
+    } finally {
+        if (boton) { boton.disabled = false; boton.innerHTML = boton.dataset.textoOriginal || 'Enviar requisición'; }
     }
-
-    var modal = document.getElementById('successModal');
-    modal.classList.add('show');
-    var reclutadorNombre = document.getElementById('reclutador').value || 'No asignado';
-    setTimeout(function() {
-        document.getElementById('modalMessage').textContent = '✅ Asignada a: ' + reclutadorNombre;
-    }, 1500);
 }
 
 function closeModal() {

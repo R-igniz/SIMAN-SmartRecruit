@@ -25,7 +25,7 @@ var PERMISOS = {
         'ver_seguimiento'
     ],
     'Reclutadora': [
-        'ver_dashboard', 'ver_requisiciones', 'ver_reclutadora',
+        'ver_dashboard', 'crear_requisicion', 'ver_requisiciones', 'editar_requisicion', 'ver_reclutadora',
         'administrar_requisicion', 'ver_notificaciones', 'ver_ia',
         'ver_vacantes', 'ver_seguimiento'
     ],

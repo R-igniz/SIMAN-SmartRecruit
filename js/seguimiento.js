@@ -29,6 +29,10 @@ function cargarSeguimiento() {
         return;
     }
 
+    if (user.role === 'Reclutadora') {
+        requisiciones = requisiciones.filter(function(r) { return r.reclutador === user.name; });
+    }
+
     var activas = requisiciones.filter(function(r) {
         return r.estado !== 'Cerrado' && r.estado !== 'Cerrada';
     });

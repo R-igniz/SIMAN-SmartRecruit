@@ -1061,3 +1061,44 @@ body.dark-mode .config-item {
     margin-left: auto;
     font-size: 0.6rem;
 }
+
+/* ==========================================
+   MODO OSCURO - COBERTURA GLOBAL TEST
+   Evita módulos blancos por estilos específicos.
+   ========================================== */
+html.dark-mode-root { background:#0f172a; }
+body.dark-mode .modal-content,
+body.dark-mode .wizard-container,
+body.dark-mode .wizard-content,
+body.dark-mode .summary-card,
+body.dark-mode .detail-card,
+body.dark-mode .filters,
+body.dark-mode .filter-bar,
+body.dark-mode .report-card,
+body.dark-mode .profile-card,
+body.dark-mode .requisition-card,
+body.dark-mode .vacante-card,
+body.dark-mode .seguimiento-card,
+body.dark-mode .comentario,
+body.dark-mode .timeline-content,
+body.dark-mode .dropdown-menu {
+    background: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+body.dark-mode h1, body.dark-mode h2, body.dark-mode h3, body.dark-mode h4,
+body.dark-mode h5, body.dark-mode h6, body.dark-mode label,
+body.dark-mode td, body.dark-mode .card-title, body.dark-mode .modal-title,
+body.dark-mode .timeline-title { color: var(--text-secondary) !important; }
+body.dark-mode input, body.dark-mode select, body.dark-mode textarea {
+    background-color: var(--bg-input) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+body.dark-mode select option { background:#0f172a; color:#e2e8f0; }
+body.dark-mode table, body.dark-mode tbody, body.dark-mode tr { color:var(--text-primary); }
+body.dark-mode tbody tr { border-color:var(--border-color) !important; }
+body.dark-mode tbody tr:hover { background:var(--bg-table-row-hover) !important; }
+body.dark-mode .btn-outline { background:transparent !important; color:var(--text-primary) !important; }
+body.dark-mode .empty-state { background:var(--bg-empty) !important; color:var(--text-muted) !important; }
+body.dark-mode .step-content, body.dark-mode .form-section { color:var(--text-primary); }
