@@ -1,1 +1,848 @@
-(function(){var candidatos=[],requisiciones=[];function e(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}function modal(v){document.getElementById('modalCandidato').hidden=!v}async function cargar(){var c=await initSupabase(),r=await Promise.all([c.from('candidatos').select('*').order('created_at',{ascending:false}),c.from('requisiciones').select('id,codigo,puesto').order('created_at',{ascending:false})]);if(r[0].error)throw r[0].error;candidatos=r[0].data||[];requisiciones=r[1].data||[];var s=document.getElementById('candRequisicion');s.innerHTML='<option value="">Sin asignar</option>'+requisiciones.map(x=>'<option value="'+e(x.id)+'">'+e((x.codigo||'#'+x.id)+' - '+(x.puesto||''))+'</option>').join('');render()}function render(){var q=document.getElementById('buscarCandidato').value.toLowerCase(),st=document.getElementById('filtroEstado').value,l=candidatos.filter(c=>(!q||[c.nombre,c.email,c.telefono].join(' ').toLowerCase().includes(q))&&(!st||c.estado===st)),m={};requisiciones.forEach(r=>m[r.id]=(r.codigo||'#'+r.id)+' - '+(r.puesto||''));document.getElementById('contadorCandidatos').textContent=l.length+' candidatos';document.getElementById('candidatosBody').innerHTML=l.length?l.map(c=>'<tr><td><strong>'+e(c.nombre)+'</strong></td><td>'+e(m[c.requisicion_id]||'Sin asignar')+'</td><td>'+e(c.email||'-')+'<br><small>'+e(c.telefono||'')+'</small></td><td><span class="badge">'+e(c.estado||'Nuevo')+'</span></td><td>'+e(c.fuente||'-')+'</td><td>'+e(c.created_at?new Date(c.created_at).toLocaleDateString('es-GT'):'-')+'</td></tr>').join(''):'<tr><td colspan="6">No hay candidatos.</td></tr>'}async function guardar(ev){ev.preventDefault();var b=document.getElementById('guardarCandidato');b.disabled=true;try{var p={nombre:document.getElementById('candNombre').value.trim(),email:document.getElementById('candEmail').value.trim()||null,telefono:document.getElementById('candTelefono').value.trim()||null,fuente:document.getElementById('candFuente').value.trim()||null,requisicion_id:document.getElementById('candRequisicion').value?Number(document.getElementById('candRequisicion').value):null,estado:document.getElementById('candEstado').value,pretension_salarial:document.getElementById('candSalario').value?Number(document.getElementById('candSalario').value):null,fecha_entrevista:document.getElementById('candEntrevista').value?new Date(document.getElementById('candEntrevista').value).toISOString():null,notas:document.getElementById('candNotas').value.trim()||null},r=await insertarEnSupabase('candidatos',p);if(!r.success)throw new Error(r.error||'No se pudo guardar');document.getElementById('formCandidato').reset();modal(false);await cargar()}catch(x){console.error(x);alert('No se pudo guardar: '+x.message)}finally{b.disabled=false}}document.addEventListener('DOMContentLoaded',function(){if(!getCurrentUser()){location.href='/login.html';return}document.getElementById('btnNuevoCandidato').onclick=()=>modal(true);document.getElementById('cerrarModalCandidato').onclick=()=>modal(false);document.getElementById('cancelarCandidato').onclick=()=>modal(false);document.getElementById('formCandidato').addEventListener('submit',guardar);document.getElementById('buscarCandidato').addEventListener('input',render);document.getElementById('filtroEstado').addEventListener('change',render);cargar().catch(x=>{console.error(x);document.getElementById('candidatosBody').innerHTML='<tr><td colspan="6">Ejecuta primero SQL/02_03_candidatos.sql.</td></tr>'});if(typeof suscribirseATabla==='function')suscribirseATabla('candidatos',cargar)})})();
+// ==========================================
+// CANDIDATOS
+// SMARTRECRUIT FASE 2
+// SUPABASE AUTH + UUID
+// ==========================================
+
+(function () {
+
+    var candidatos = [];
+    var requisiciones = [];
+
+
+    // ======================================
+    // ESCAPAR HTML
+    // ======================================
+
+    function escapar(valor) {
+
+        return String(
+            valor == null
+                ? ''
+                : valor
+        ).replace(
+            /[&<>"']/g,
+            function (caracter) {
+
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                }[caracter];
+            }
+        );
+    }
+
+
+    // ======================================
+    // MODAL
+    // ======================================
+
+    function mostrarModal(mostrar) {
+
+        var modal =
+            document.getElementById(
+                'modalCandidato'
+            );
+
+        if (!modal) return;
+
+        modal.hidden =
+            !mostrar;
+    }
+
+
+    // ======================================
+    // CARGAR DATOS
+    // ======================================
+
+    async function cargar() {
+
+        console.log(
+            '🔄 Cargando candidatos...'
+        );
+
+        var client =
+            await initSupabase();
+
+
+        var resultados =
+            await Promise.all([
+
+                client
+                    .from('candidatos')
+                    .select('*')
+                    .order(
+                        'created_at',
+                        {
+                            ascending: false
+                        }
+                    ),
+
+                client
+                    .from('requisiciones')
+                    .select(
+                        'id,codigo,puesto'
+                    )
+                    .order(
+                        'created_at',
+                        {
+                            ascending: false
+                        }
+                    )
+            ]);
+
+
+        var resultadoCandidatos =
+            resultados[0];
+
+        var resultadoRequisiciones =
+            resultados[1];
+
+
+        if (
+            resultadoCandidatos.error
+        ) {
+
+            throw resultadoCandidatos.error;
+        }
+
+
+        if (
+            resultadoRequisiciones.error
+        ) {
+
+            console.warn(
+                '⚠️ Error cargando requisiciones:',
+                resultadoRequisiciones.error
+            );
+        }
+
+
+        candidatos =
+            resultadoCandidatos.data ||
+            [];
+
+
+        requisiciones =
+            resultadoRequisiciones.data ||
+            [];
+
+
+        poblarRequisiciones();
+
+        render();
+
+
+        console.log(
+            '✅ Candidatos cargados:',
+            candidatos.length
+        );
+    }
+
+
+    // ======================================
+    // SELECT REQUISICIONES
+    // ======================================
+
+    function poblarRequisiciones() {
+
+        var select =
+            document.getElementById(
+                'candRequisicion'
+            );
+
+
+        if (!select) {
+            return;
+        }
+
+
+        select.innerHTML =
+            '<option value="">' +
+            'Sin asignar' +
+            '</option>';
+
+
+        requisiciones.forEach(
+            function (requisicion) {
+
+                var option =
+                    document.createElement(
+                        'option'
+                    );
+
+
+                option.value =
+                    requisicion.id;
+
+
+                option.textContent =
+                    (
+                        requisicion.codigo ||
+                        '#' +
+                        requisicion.id
+                    ) +
+                    ' - ' +
+                    (
+                        requisicion.puesto ||
+                        ''
+                    );
+
+
+                select.appendChild(
+                    option
+                );
+            }
+        );
+    }
+
+
+    // ======================================
+    // RENDER
+    // ======================================
+
+    function render() {
+
+        var buscar =
+            document.getElementById(
+                'buscarCandidato'
+            );
+
+
+        var filtro =
+            document.getElementById(
+                'filtroEstado'
+            );
+
+
+        var query =
+            buscar
+                ? buscar.value
+                    .toLowerCase()
+                    .trim()
+                : '';
+
+
+        var estado =
+            filtro
+                ? filtro.value
+                : '';
+
+
+        var filtrados =
+            candidatos.filter(
+                function (candidato) {
+
+                    var texto = [
+                        candidato.nombre,
+                        candidato.email,
+                        candidato.telefono
+                    ]
+                        .join(' ')
+                        .toLowerCase();
+
+
+                    var coincideBusqueda =
+                        !query ||
+                        texto.includes(
+                            query
+                        );
+
+
+                    var coincideEstado =
+                        !estado ||
+                        candidato.estado ===
+                            estado;
+
+
+                    return (
+                        coincideBusqueda &&
+                        coincideEstado
+                    );
+                }
+            );
+
+
+        var contador =
+            document.getElementById(
+                'contadorCandidatos'
+            );
+
+
+        if (contador) {
+
+            contador.textContent =
+                filtrados.length +
+                ' candidatos';
+        }
+
+
+        var requisicionesMap =
+            {};
+
+
+        requisiciones.forEach(
+            function (requisicion) {
+
+                requisicionesMap[
+                    requisicion.id
+                ] =
+                    (
+                        requisicion.codigo ||
+                        '#' +
+                        requisicion.id
+                    ) +
+                    ' - ' +
+                    (
+                        requisicion.puesto ||
+                        ''
+                    );
+            }
+        );
+
+
+        var body =
+            document.getElementById(
+                'candidatosBody'
+            );
+
+
+        if (!body) {
+            return;
+        }
+
+
+        if (
+            filtrados.length === 0
+        ) {
+
+            body.innerHTML =
+                '<tr>' +
+                '<td colspan="6">' +
+                'No hay candidatos.' +
+                '</td>' +
+                '</tr>';
+
+            return;
+        }
+
+
+        body.innerHTML =
+            filtrados.map(
+                function (candidato) {
+
+                    var fecha = '-';
+
+                    if (
+                        candidato.created_at
+                    ) {
+
+                        fecha =
+                            new Date(
+                                candidato.created_at
+                            )
+                                .toLocaleDateString(
+                                    'es-GT'
+                                );
+                    }
+
+
+                    return (
+                        '<tr>' +
+
+                        '<td>' +
+                        '<strong>' +
+                        escapar(
+                            candidato.nombre
+                        ) +
+                        '</strong>' +
+                        '</td>' +
+
+                        '<td>' +
+                        escapar(
+                            requisicionesMap[
+                                candidato.requisicion_id
+                            ] ||
+                            'Sin asignar'
+                        ) +
+                        '</td>' +
+
+                        '<td>' +
+                        escapar(
+                            candidato.email ||
+                            '-'
+                        ) +
+                        '<br>' +
+                        '<small>' +
+                        escapar(
+                            candidato.telefono ||
+                            ''
+                        ) +
+                        '</small>' +
+                        '</td>' +
+
+                        '<td>' +
+                        '<span class="badge">' +
+                        escapar(
+                            candidato.estado ||
+                            'Nuevo'
+                        ) +
+                        '</span>' +
+                        '</td>' +
+
+                        '<td>' +
+                        escapar(
+                            candidato.fuente ||
+                            '-'
+                        ) +
+                        '</td>' +
+
+                        '<td>' +
+                        escapar(fecha) +
+                        '</td>' +
+
+                        '</tr>'
+                    );
+                }
+            ).join('');
+    }
+
+
+    // ======================================
+    // GUARDAR CANDIDATO
+    // ======================================
+
+    async function guardar(event) {
+
+        event.preventDefault();
+
+
+        var boton =
+            document.getElementById(
+                'guardarCandidato'
+            );
+
+
+        if (boton) {
+            boton.disabled = true;
+        }
+
+
+        try {
+
+            // ==================================
+            // USUARIO SUPABASE AUTH
+            // ==================================
+
+            var usuarioActual =
+                typeof getCurrentUser ===
+                'function'
+                    ? getCurrentUser()
+                    : null;
+
+
+            if (
+                !usuarioActual ||
+                !usuarioActual.id
+            ) {
+
+                throw new Error(
+                    'No existe una sesión válida de Supabase Auth.'
+                );
+            }
+
+
+            console.log(
+                '👤 Candidato creado por:',
+                usuarioActual.email,
+                '| UUID:',
+                usuarioActual.id
+            );
+
+
+            // ==================================
+            // PAYLOAD
+            // ==================================
+
+            var payload = {
+
+                nombre:
+                    document
+                        .getElementById(
+                            'candNombre'
+                        )
+                        .value
+                        .trim(),
+
+                email:
+                    document
+                        .getElementById(
+                            'candEmail'
+                        )
+                        .value
+                        .trim() ||
+                    null,
+
+                telefono:
+                    document
+                        .getElementById(
+                            'candTelefono'
+                        )
+                        .value
+                        .trim() ||
+                    null,
+
+                fuente:
+                    document
+                        .getElementById(
+                            'candFuente'
+                        )
+                        .value
+                        .trim() ||
+                    null,
+
+                requisicion_id:
+                    document
+                        .getElementById(
+                            'candRequisicion'
+                        )
+                        .value
+                        ? Number(
+                            document
+                                .getElementById(
+                                    'candRequisicion'
+                                )
+                                .value
+                        )
+                        : null,
+
+                estado:
+                    document
+                        .getElementById(
+                            'candEstado'
+                        )
+                        .value,
+
+                pretension_salarial:
+                    document
+                        .getElementById(
+                            'candSalario'
+                        )
+                        .value
+                        ? Number(
+                            document
+                                .getElementById(
+                                    'candSalario'
+                                )
+                                .value
+                        )
+                        : null,
+
+                fecha_entrevista:
+                    document
+                        .getElementById(
+                            'candEntrevista'
+                        )
+                        .value
+                        ? new Date(
+                            document
+                                .getElementById(
+                                    'candEntrevista'
+                                )
+                                .value
+                        ).toISOString()
+                        : null,
+
+                notas:
+                    document
+                        .getElementById(
+                            'candNotas'
+                        )
+                        .value
+                        .trim() ||
+                    null,
+
+                // ==============================
+                // FASE 2
+                // ==============================
+
+                created_by:
+                    usuarioActual.id,
+
+                reclutador_id:
+                    usuarioActual.id
+            };
+
+
+            console.log(
+                '📦 Payload candidato:',
+                payload
+            );
+
+
+            // ==================================
+            // INSERT
+            // ==================================
+
+            var resultado =
+                await insertarEnSupabase(
+                    'candidatos',
+                    payload
+                );
+
+
+            if (
+                !resultado.success
+            ) {
+
+                throw new Error(
+                    resultado.error ||
+                    'No se pudo guardar el candidato'
+                );
+            }
+
+
+            console.log(
+                '✅ Candidato creado:',
+                resultado.data
+            );
+
+
+            // ==================================
+            // LIMPIAR
+            // ==================================
+
+            var formulario =
+                document.getElementById(
+                    'formCandidato'
+                );
+
+
+            if (formulario) {
+                formulario.reset();
+            }
+
+
+            mostrarModal(false);
+
+
+            await cargar();
+
+
+        } catch (error) {
+
+            console.error(
+                '❌ Error guardando candidato:',
+                error
+            );
+
+
+            alert(
+                'No se pudo guardar el candidato:\n\n' +
+                error.message
+            );
+
+
+        } finally {
+
+            if (boton) {
+                boton.disabled = false;
+            }
+        }
+    }
+
+
+    // ======================================
+    // INICIALIZACIÓN
+    // ======================================
+
+    document.addEventListener(
+        'DOMContentLoaded',
+        function () {
+
+            var usuario =
+                getCurrentUser();
+
+
+            if (!usuario) {
+
+                window.location.href =
+                    '/login.html';
+
+                return;
+            }
+
+
+            if (
+                !tienePermiso(
+                    'ver_candidatos'
+                )
+            ) {
+
+                window.location.href =
+                    '/dashboard.html';
+
+                return;
+            }
+
+
+            console.log(
+                '👤 Candidatos:',
+                usuario.email,
+                '|',
+                usuario.role,
+                '|',
+                usuario.id
+            );
+
+
+            var btnNuevo =
+                document.getElementById(
+                    'btnNuevoCandidato'
+                );
+
+
+            if (btnNuevo) {
+
+                btnNuevo.onclick =
+                    function () {
+
+                        mostrarModal(true);
+                    };
+            }
+
+
+            var cerrar =
+                document.getElementById(
+                    'cerrarModalCandidato'
+                );
+
+
+            if (cerrar) {
+
+                cerrar.onclick =
+                    function () {
+
+                        mostrarModal(false);
+                    };
+            }
+
+
+            var cancelar =
+                document.getElementById(
+                    'cancelarCandidato'
+                );
+
+
+            if (cancelar) {
+
+                cancelar.onclick =
+                    function () {
+
+                        mostrarModal(false);
+                    };
+            }
+
+
+            var formulario =
+                document.getElementById(
+                    'formCandidato'
+                );
+
+
+            if (formulario) {
+
+                formulario.addEventListener(
+                    'submit',
+                    guardar
+                );
+            }
+
+
+            var buscar =
+                document.getElementById(
+                    'buscarCandidato'
+                );
+
+
+            if (buscar) {
+
+                buscar.addEventListener(
+                    'input',
+                    render
+                );
+            }
+
+
+            var filtro =
+                document.getElementById(
+                    'filtroEstado'
+                );
+
+
+            if (filtro) {
+
+                filtro.addEventListener(
+                    'change',
+                    render
+                );
+            }
+
+
+            cargar()
+                .catch(
+                    function (error) {
+
+                        console.error(
+                            '❌ Error cargando candidatos:',
+                            error
+                        );
+
+
+                        var body =
+                            document.getElementById(
+                                'candidatosBody'
+                            );
+
+
+                        if (body) {
+
+                            body.innerHTML =
+                                '<tr>' +
+                                '<td colspan="6">' +
+                                'Error cargando candidatos.' +
+                                '</td>' +
+                                '</tr>';
+                        }
+                    }
+                );
+
+
+            // ==================================
+            // REALTIME
+            // ==================================
+
+            if (
+                typeof suscribirseATabla ===
+                'function'
+            ) {
+
+                suscribirseATabla(
+                    'candidatos',
+                    function () {
+
+                        console.log(
+                            '🔄 Cambio Realtime candidatos'
+                        );
+
+                        cargar();
+                    }
+                );
+            }
+        }
+    );
+
+})();

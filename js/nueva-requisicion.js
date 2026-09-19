@@ -1,355 +1,1023 @@
 // ==========================================
-// NUEVA REQUISICIÓN - WIZARD Y FILTROS
+// NUEVA REQUISICIÓN - FASE 2
+// SUPABASE AUTH + UUID
 // ==========================================
-console.log('🚀🚀🚀 nueva-requisicion.js se está ejecutando 🚀🚀🚀');
+
+console.log('🚀 nueva-requisicion.js Fase 2');
 
 var currentStep = 1;
 var totalSteps = 4;
 var datosCargados = false;
 var intervaloIntento = null;
 
+
 // ==========================================
 // CARGA DE DATOS
 // ==========================================
+
 function cargarDatosFormulario() {
-    console.log('🔄 cargarDatosFormulario() ejecutado');
-    console.log('📊 datosCargados =', datosCargados);
-    
+
+    console.log('🔄 cargarDatosFormulario()');
+
     if (!datosCargados) {
-        console.log('⏳ Esperando datos de configuración...');
+        console.log('⏳ Esperando configuración...');
         return;
     }
-    
+
     var data = obtenerDatosConfig();
-    console.log('📦 Datos de configuración:', data);
+
     if (!data) {
-        console.warn('⚠️ Datos no disponibles');
+        console.warn('⚠️ Configuración no disponible');
         return;
     }
 
-    // Comerciales
     var comerciales = obtenerComerciales();
-    console.log('🏢 Comerciales:', comerciales);
-    poblarSelect('centroComercial', comerciales, 'Seleccionar centro...');
+    poblarSelect(
+        'centroComercial',
+        comerciales,
+        'Seleccionar centro...'
+    );
 
-    // Tiendas
     var tiendas = obtenerTiendas();
-    console.log('🛒 Tiendas:', tiendas);
-    poblarSelect('tienda', tiendas, 'Seleccionar tienda...', true);
+    poblarSelect(
+        'tienda',
+        tiendas,
+        'Seleccionar tienda...',
+        true
+    );
 
-    // Departamentos
-    var departamentos = data.departamentos || [];
-    console.log('🏛️ Departamentos:', departamentos);
-    poblarSelect('departamento', departamentos, 'Seleccionar departamento...');
+    poblarSelect(
+        'departamento',
+        data.departamentos || [],
+        'Seleccionar departamento...'
+    );
 
-    // Tipos de contratación
-    var tiposContratacion = data.tiposContratacion || [];
-    console.log('📄 Tipos de contratación:', tiposContratacion);
-    poblarSelect('tipoContratacion', tiposContratacion, 'Seleccionar tipo...');
+    poblarSelect(
+        'tipoContratacion',
+        data.tiposContratacion || [],
+        'Seleccionar tipo...'
+    );
 
-    // Prioridades
-    var prioridades = data.prioridades || [];
-    console.log('🚩 Prioridades:', prioridades);
-    poblarSelect('prioridad', prioridades, 'Seleccionar prioridad...');
+    poblarSelect(
+        'prioridad',
+        data.prioridades || [],
+        'Seleccionar prioridad...'
+    );
 
-    // Motivos
-    var motivos = data.motivos || [];
-    console.log('❓ Motivos:', motivos);
-    poblarSelect('motivo', motivos, 'Seleccionar motivo...');
+    poblarSelect(
+        'motivo',
+        data.motivos || [],
+        'Seleccionar motivo...'
+    );
 
-    // Reclutadores
     var reclutadores = obtenerReclutadores();
-    console.log('👩‍💼 Reclutadores:', reclutadores);
-    poblarSelect('reclutador', reclutadores, 'Seleccionar reclutador...');
-    
-    console.log('✅ Datos cargados correctamente');
+
+    poblarSelect(
+        'reclutador',
+        reclutadores,
+        'Seleccionar reclutador...'
+    );
+
+    console.log('✅ Datos del formulario cargados');
+
     if (intervaloIntento) {
         clearInterval(intervaloIntento);
         intervaloIntento = null;
     }
 }
 
-function poblarSelect(id, datos, textoDefault, esTienda) {
+
+// ==========================================
+// POBLAR SELECT
+// ==========================================
+
+function poblarSelect(
+    id,
+    datos,
+    textoDefault,
+    esTienda
+) {
+
     var select = document.getElementById(id);
+
     if (!select) {
         console.warn('⚠️ Select no encontrado:', id);
         return;
     }
-    console.log('🔽 Poblando select', id, 'con', datos.length, 'elementos');
-    select.innerHTML = '<option value="">' + (textoDefault || 'Seleccionar...') + '</option>';
-    if (!datos || datos.length === 0) {
-        select.innerHTML = '<option value="">No hay opciones disponibles</option>';
-        console.warn('⚠️ No hay datos para', id);
+
+    datos = Array.isArray(datos) ? datos : [];
+
+    select.innerHTML =
+        '<option value="">' +
+        (textoDefault || 'Seleccionar...') +
+        '</option>';
+
+    if (datos.length === 0) {
         return;
     }
+
     datos.forEach(function(item) {
-        var estado = item.estado !== undefined ? item.estado : 'activo';
-        if (estado === 'activo') {
-            var option = document.createElement('option');
-            if (esTienda) {
-                option.value = item.nombre;
-                option.textContent = item.nombre;
-                option.dataset.comercial = item.comercial || '';
-            } else {
-                option.value = item.nombre;
-                option.textContent = item.nombre;
-            }
-            select.appendChild(option);
+
+        var estado =
+            item.estado !== undefined
+                ? item.estado
+                : 'activo';
+
+        if (estado !== 'activo') {
+            return;
         }
+
+        var option =
+            document.createElement('option');
+
+        option.value =
+            item.nombre || '';
+
+        option.textContent =
+            item.nombre || '';
+
+        if (esTienda) {
+            option.dataset.comercial =
+                item.comercial || '';
+        }
+
+        select.appendChild(option);
     });
-    console.log('✅ Select', id, 'poblado con', select.options.length - 1, 'opciones');
 }
 
+
 // ==========================================
-// FILTRO DINÁMICO
+// FILTRAR TIENDAS
 // ==========================================
+
 function filtrarTiendasPorComercial() {
-    var comercialSelect = document.getElementById('centroComercial');
-    var tiendaSelect = document.getElementById('tienda');
-    var comercial = comercialSelect.value;
-    console.log('🔍 Filtrando tiendas por comercial:', comercial);
+
+    var comercialSelect =
+        document.getElementById(
+            'centroComercial'
+        );
+
+    if (!comercialSelect) {
+        return;
+    }
+
+    var comercial =
+        comercialSelect.value;
 
     if (!comercial) {
-        var tiendas = obtenerTiendas();
-        poblarSelect('tienda', tiendas, 'Seleccionar tienda...', true);
+
+        poblarSelect(
+            'tienda',
+            obtenerTiendas(),
+            'Seleccionar tienda...',
+            true
+        );
+
         return;
     }
-    var tiendasFiltradas = obtenerTiendasPorComercial(comercial);
-    poblarSelect('tienda', tiendasFiltradas, 'Seleccionar tienda...', true);
+
+    var tiendasFiltradas =
+        obtenerTiendasPorComercial(
+            comercial
+        );
+
+    poblarSelect(
+        'tienda',
+        tiendasFiltradas,
+        'Seleccionar tienda...',
+        true
+    );
 }
 
+
 // ==========================================
-// WIZARD NAVEGACIÓN
+// WIZARD
 // ==========================================
+
 function showStep(step) {
-    document.querySelectorAll('.step-content').forEach(function(el) { el.classList.remove('active'); });
-    var el = document.getElementById('step' + step);
-    if (el) el.classList.add('active');
-    document.querySelectorAll('.wizard-steps .step').forEach(function(el) {
-        var num = parseInt(el.dataset.step);
-        el.classList.remove('active');
-        if (num < step) el.classList.add('completed');
-        if (num === step) el.classList.add('active');
-    });
-    if (step === 4) updateSummary();
+
+    document
+        .querySelectorAll('.step-content')
+        .forEach(function(el) {
+            el.classList.remove('active');
+        });
+
+    var contenido =
+        document.getElementById(
+            'step' + step
+        );
+
+    if (contenido) {
+        contenido.classList.add('active');
+    }
+
+    document
+        .querySelectorAll(
+            '.wizard-steps .step'
+        )
+        .forEach(function(el) {
+
+            var numero =
+                parseInt(
+                    el.dataset.step,
+                    10
+                );
+
+            el.classList.remove(
+                'active',
+                'completed'
+            );
+
+            if (numero < step) {
+                el.classList.add(
+                    'completed'
+                );
+            }
+
+            if (numero === step) {
+                el.classList.add(
+                    'active'
+                );
+            }
+        });
+
+    if (step === 4) {
+        updateSummary();
+    }
+
     currentStep = step;
 }
-function nextStep(step) { showStep(step); }
-function prevStep(step) { showStep(step); }
+
+
+function nextStep(step) {
+    showStep(step);
+}
+
+
+function prevStep(step) {
+    showStep(step);
+}
+
 
 // ==========================================
 // RESUMEN
 // ==========================================
+
 function updateSummary() {
-    var centro = document.getElementById('centroComercial').value || '-';
-    var tienda = document.getElementById('tienda').value || '-';
-    var departamento = document.getElementById('departamento').value || '-';
-    var puesto = document.getElementById('nombrePuesto').value || '-';
-    var cantidad = document.getElementById('cantidadPlazas').value || '-';
-    var prioridad = document.getElementById('prioridad').value || '-';
-    var tipo = document.getElementById('tipoContratacion').value || '-';
-    var reclutador = document.getElementById('reclutador').value || '-';
-    document.getElementById('resCentro').textContent = centro;
-    document.getElementById('resTienda').textContent = tienda;
-    document.getElementById('resDepartamento').textContent = departamento;
-    document.getElementById('resPuesto').textContent = puesto;
-    document.getElementById('resCantidad').textContent = cantidad;
-    document.getElementById('resPrioridad').textContent = prioridad;
-    document.getElementById('resTipo').textContent = tipo;
-    document.getElementById('resReclutador').textContent = reclutador;
-}
 
-// ==========================================
-// GUARDAR
-// ==========================================
-function saveDraft() { alert('📝 Borrador guardado correctamente'); }
+    function valor(id) {
 
-async function submitRequisicion() {
-    if (window.__guardandoRequisicion) return;
-    console.log('🚀 Enviando requisición...');
+        var elemento =
+            document.getElementById(id);
 
-    var nombrePuesto = document.getElementById('nombrePuesto').value.trim();
-    var centro = document.getElementById('centroComercial').value;
-    if (!centro) { alert('⚠️ Seleccione un centro comercial'); showStep(1); return; }
-    if (!nombrePuesto) { alert('⚠️ Complete el nombre del puesto'); showStep(2); return; }
+        return elemento
+            ? elemento.value || '-'
+            : '-';
+    }
 
-    var user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
-    if (!user) { window.location.href = '/login.html'; return; }
-
-    var ahora = new Date();
-    var codigo = 'R-' + String(ahora.getFullYear()).slice(-2) +
-        String(ahora.getMonth()+1).padStart(2,'0') +
-        String(ahora.getDate()).padStart(2,'0') + '-' +
-        Math.floor(1000 + Math.random()*9000);
-
-    // Nombres alineados con public.requisiciones
-    var requisicion = {
-        codigo: codigo,
-        puesto: nombrePuesto,
-        centro: centro,
-        tienda: document.getElementById('tienda').value || null,
-        departamento: document.getElementById('departamento').value || null,
-        fecha: document.getElementById('fecha').value || ahora.toISOString().slice(0,10),
-        tipo_contratacion: document.getElementById('tipoContratacion').value || null,
-        cantidad: parseInt(document.getElementById('cantidadPlazas').value, 10) || 1,
-        prioridad: document.getElementById('prioridad').value || 'Media',
-        motivo: document.getElementById('motivo').value || null,
-        reclutador: document.getElementById('reclutador').value || null,
-        estado: 'Nueva',
-        created_by: user.username || user.email || user.name || 'Sistema',
-        created_at: ahora.toISOString(),
-        updated_at: ahora.toISOString()
+    var resumen = {
+        resCentro: valor('centroComercial'),
+        resTienda: valor('tienda'),
+        resDepartamento: valor('departamento'),
+        resPuesto: valor('nombrePuesto'),
+        resCantidad: valor('cantidadPlazas'),
+        resPrioridad: valor('prioridad'),
+        resTipo: valor('tipoContratacion'),
+        resReclutador: valor('reclutador')
     };
 
-    window.__guardandoRequisicion = true;
+    Object.keys(resumen)
+        .forEach(function(id) {
+
+            var elemento =
+                document.getElementById(id);
+
+            if (elemento) {
+                elemento.textContent =
+                    resumen[id];
+            }
+        });
+}
+
+
+// ==========================================
+// BORRADOR
+// ==========================================
+
+function saveDraft() {
+
+    alert(
+        '📝 Borrador guardado correctamente'
+    );
+}
+
+
+// ==========================================
+// CREAR CÓDIGO
+// ==========================================
+
+function generarCodigoRequisicion() {
+
+    var ahora = new Date();
+
+    return (
+        'R-' +
+        String(
+            ahora.getFullYear()
+        ).slice(-2) +
+
+        String(
+            ahora.getMonth() + 1
+        ).padStart(2, '0') +
+
+        String(
+            ahora.getDate()
+        ).padStart(2, '0') +
+
+        '-' +
+
+        Math.floor(
+            1000 +
+            Math.random() * 9000
+        )
+    );
+}
+
+
+// ==========================================
+// GUARDAR REQUISICIÓN
+// ==========================================
+
+async function submitRequisicion() {
+
+    if (window.__guardandoRequisicion) {
+
+        console.warn(
+            '⚠️ Ya se está guardando'
+        );
+
+        return;
+    }
+
+
+    console.log(
+        '🚀 Enviando requisición...'
+    );
+
+
+    // ======================================
+    // VALIDACIONES
+    // ======================================
+
+    var puestoElement =
+        document.getElementById(
+            'nombrePuesto'
+        );
+
+    var centroElement =
+        document.getElementById(
+            'centroComercial'
+        );
+
+    var nombrePuesto =
+        puestoElement
+            ? puestoElement.value.trim()
+            : '';
+
+    var centro =
+        centroElement
+            ? centroElement.value
+            : '';
+
+
+    if (!centro) {
+
+        alert(
+            '⚠️ Seleccione un centro comercial'
+        );
+
+        showStep(1);
+
+        return;
+    }
+
+
+    if (!nombrePuesto) {
+
+        alert(
+            '⚠️ Complete el nombre del puesto'
+        );
+
+        showStep(2);
+
+        return;
+    }
+
+
+    // ======================================
+    // USUARIO SUPABASE AUTH
+    // ======================================
+
+    var user =
+        typeof getCurrentUser === 'function'
+            ? getCurrentUser()
+            : null;
+
+
+    if (
+        !user ||
+        !user.id ||
+        !user.email
+    ) {
+
+        console.error(
+            '❌ No existe usuario Supabase válido'
+        );
+
+        alert(
+            'La sesión no es válida. Inicie sesión nuevamente.'
+        );
+
+        window.location.href =
+            '/login.html';
+
+        return;
+    }
+
+
+    console.log(
+        '👤 Creando requisición:',
+        user.email,
+        '| UUID:',
+        user.id
+    );
+
+
+    var ahora =
+        new Date();
+
+    var codigo =
+        generarCodigoRequisicion();
+
+
+    function obtenerValor(id) {
+
+        var elemento =
+            document.getElementById(id);
+
+        return elemento
+            ? elemento.value
+            : '';
+    }
+
+
+    // ======================================
+    // PAYLOAD SUPABASE
+    // ======================================
+
+    var requisicion = {
+
+        codigo: codigo,
+
+        puesto:
+            nombrePuesto,
+
+        centro:
+            centro,
+
+        tienda:
+            obtenerValor('tienda') ||
+            null,
+
+        departamento:
+            obtenerValor(
+                'departamento'
+            ) || null,
+
+        fecha:
+            obtenerValor('fecha') ||
+            ahora
+                .toISOString()
+                .slice(0, 10),
+
+        tipo_contratacion:
+            obtenerValor(
+                'tipoContratacion'
+            ) || null,
+
+        cantidad:
+            parseInt(
+                obtenerValor(
+                    'cantidadPlazas'
+                ),
+                10
+            ) || 1,
+
+        prioridad:
+            obtenerValor(
+                'prioridad'
+            ) || 'Media',
+
+        motivo:
+            obtenerValor(
+                'motivo'
+            ) || null,
+
+        reclutador:
+            obtenerValor(
+                'reclutador'
+            ) || null,
+
+        estado:
+            'Nueva',
+
+        // ==================================
+        // FASE 2 - IDENTIDAD REAL
+        // ==================================
+
+        created_by:
+            user.email,
+
+        created_by_uuid:
+            user.id,
+
+        reclutador_id:
+            user.id,
+
+        created_at:
+            ahora.toISOString(),
+
+        updated_at:
+            ahora.toISOString()
+    };
+
+
+    console.log(
+        '📦 Payload requisición:',
+        requisicion
+    );
+
+
+    window.__guardandoRequisicion =
+        true;
+
+
     try {
-        if (typeof insertarEnSupabase !== 'function') throw new Error('insertarEnSupabase no está disponible');
-        var result = await insertarEnSupabase('requisiciones', requisicion);
-        if (!result.success) throw new Error(result.error || 'Supabase no confirmó el guardado');
 
-        // Cache local SOLO después de confirmar Supabase
-        var guardada = (result.data && result.data[0]) ? result.data[0] : requisicion;
-        var requisiciones = JSON.parse(localStorage.getItem('requisiciones_data') || '[]');
-        requisiciones = requisiciones.filter(function(r) { return r.id !== guardada.id; });
-        requisiciones.unshift(guardada);
-        localStorage.setItem('requisiciones_data', JSON.stringify(requisiciones));
+        if (
+            typeof insertarEnSupabase !==
+            'function'
+        ) {
 
-        console.log('✅ Requisición creada:', guardada);
-        if (typeof agregarNotificacion === 'function') {
-            agregarNotificacion('success', '✅ Requisición ' + codigo + ' creada', '/requisiciones.html');
+            throw new Error(
+                'insertarEnSupabase no está disponible'
+            );
         }
-        var modal = document.getElementById('successModal');
-        if (modal) modal.classList.add('show');
-        var msg = document.getElementById('modalMessage');
-        if (msg) msg.textContent = '✅ ' + codigo + ' creada y asignada a: ' + (requisicion.reclutador || 'No asignado');
+
+
+        var result =
+            await insertarEnSupabase(
+                'requisiciones',
+                requisicion
+            );
+
+
+        if (!result.success) {
+
+            throw new Error(
+                result.error ||
+                'Supabase no confirmó el guardado'
+            );
+        }
+
+
+        var guardada =
+            result.data &&
+            result.data[0]
+                ? result.data[0]
+                : requisicion;
+
+
+        // ==================================
+        // CACHE LOCAL
+        // ==================================
+
+        var requisiciones =
+            JSON.parse(
+                localStorage.getItem(
+                    'requisiciones_data'
+                ) || '[]'
+            );
+
+
+        requisiciones =
+            requisiciones.filter(
+                function(r) {
+
+                    return (
+                        r.id !==
+                        guardada.id
+                    );
+                }
+            );
+
+
+        requisiciones.unshift(
+            guardada
+        );
+
+
+        localStorage.setItem(
+            'requisiciones_data',
+            JSON.stringify(
+                requisiciones
+            )
+        );
+
+
+        console.log(
+            '✅ Requisición creada:',
+            guardada
+        );
+
+
+        // ==================================
+        // NOTIFICACIÓN
+        // ==================================
+
+        if (
+            typeof agregarNotificacion ===
+            'function'
+        ) {
+
+            agregarNotificacion(
+                'success',
+                '✅ Requisición ' +
+                    codigo +
+                    ' creada',
+                '/requisiciones.html'
+            );
+        }
+
+
+        // ==================================
+        // MODAL
+        // ==================================
+
+        var modal =
+            document.getElementById(
+                'successModal'
+            );
+
+        if (modal) {
+            modal.classList.add('show');
+        }
+
+
+        var mensaje =
+            document.getElementById(
+                'modalMessage'
+            );
+
+        if (mensaje) {
+
+            mensaje.textContent =
+                '✅ ' +
+                codigo +
+                ' creada y asignada a: ' +
+                (
+                    requisicion.reclutador ||
+                    user.name ||
+                    user.email
+                );
+        }
+
+
     } catch (error) {
-        console.error('❌ Error creando requisición:', error);
-        alert('❌ No se pudo crear la requisición.\n\n' + error.message);
+
+        console.error(
+            '❌ Error creando requisición:',
+            error
+        );
+
+
+        alert(
+            '❌ No se pudo crear la requisición.\n\n' +
+            error.message
+        );
+
+
     } finally {
-        window.__guardandoRequisicion = false;
+
+        window.__guardandoRequisicion =
+            false;
     }
 }
+
+
+// ==========================================
+// CERRAR MODAL
+// ==========================================
 
 function closeModal() {
-    document.getElementById('successModal').classList.remove('show');
-    window.location.href = '/requisiciones.html';
-}
 
-// ==========================================
-// INICIALIZACIÓN ROBUSTA
-// ==========================================
-function iniciarNuevaRequisicion() {
-    console.log('🚀 iniciarNuevaRequisicion() llamada');
-    
-    // Verificar si los datos ya están disponibles
-    var data = obtenerDatosConfig();
-    if (data && data.comerciales && data.comerciales.length > 0) {
-        console.log('📦 Datos ya disponibles, cargando...');
-        datosCargados = true;
-        cargarDatosFormulario();
-        return;
-    }
-    
-    console.log('⏳ Datos no disponibles, esperando...');
-    
-    // Intentar cargar desde Supabase directamente
-    if (typeof initSupabaseData === 'function') {
-        console.log('🔄 Intentando cargar desde Supabase...');
-        initSupabaseData().then(function(result) {
-            if (result) {
-                console.log('✅ Datos cargados desde Supabase');
-                datosCargados = true;
-                cargarDatosFormulario();
-            } else {
-                console.warn('⚠️ No se cargaron datos desde Supabase');
-            }
-        }).catch(function(err) {
-            console.error('❌ Error cargando desde Supabase:', err);
-        });
-    }
-    
-    // Reintentar cada 300ms hasta que los datos estén listos
-    if (intervaloIntento) clearInterval(intervaloIntento);
-    var intentos = 0;
-    intervaloIntento = setInterval(function() {
-        intentos++;
-        var data = obtenerDatosConfig();
-        if (data && data.comerciales && data.comerciales.length > 0) {
-            clearInterval(intervaloIntento);
-            intervaloIntento = null;
-            datosCargados = true;
-            cargarDatosFormulario();
-            console.log('✅ Datos disponibles después de', intentos, 'intentos');
-        } else if (intentos > 30) {
-            clearInterval(intervaloIntento);
-            intervaloIntento = null;
-            console.warn('⚠️ No se pudieron cargar los datos después de 15 segundos');
-            alert('⚠️ No se pudieron cargar los datos de configuración. Recarga la página o intenta más tarde.');
-        }
-    }, 500);
-}
+    var modal =
+        document.getElementById(
+            'successModal'
+        );
 
-// ==========================================
-// LISTENERS
-// ==========================================
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 DOMContentLoaded - nueva-requisicion.js');
-    var user = getCurrentUser();
-    if (!user) { window.location.href = '/login.html'; return; }
-    if (!tienePermiso('crear_requisicion')) {
-        console.warn('⛔ Acceso denegado');
-        window.location.href = '/dashboard.html';
-        return;
-    }
-
-    // Escuchar evento de datos listos (por si configuracion.js lo dispara)
-    window.addEventListener('datosConfiguracionListos', function(e) {
-        console.log('📢 Recibido evento datosConfiguracionListos');
-        datosCargados = true;
-        cargarDatosFormulario();
-    });
-
-    // Iniciar carga
-    iniciarNuevaRequisicion();
-
-    // Evento para filtrar tiendas
-    var centroSelect = document.getElementById('centroComercial');
-    if (centroSelect) {
-        centroSelect.addEventListener('change', filtrarTiendasPorComercial);
-    }
-
-    // Fecha por defecto
-    var fechaInput = document.getElementById('fecha');
-    if (fechaInput) {
-        var hoy = new Date().toISOString().split('T')[0];
-        fechaInput.value = hoy;
-    }
-
-    // Modal
-    var modal = document.getElementById('successModal');
     if (modal) {
-        modal.addEventListener('click', function(e) {
-            if (e.target === this) closeModal();
-        });
+        modal.classList.remove('show');
     }
 
-    showStep(1);
-    console.log('✅ Nueva requisición inicializada');
-});
+    window.location.href =
+        '/requisiciones.html';
+}
 
-window.addEventListener('storage', function(e) {
-    if (e.key === 'siman_config_data') {
-        console.log('🔄 Configuración actualizada desde otra pestaña');
-        if (datosCargados) {
-            cargarDatosFormulario();
+
+// ==========================================
+// INICIALIZAR DATOS
+// ==========================================
+
+function iniciarNuevaRequisicion() {
+
+    console.log(
+        '🚀 Inicializando nueva requisición'
+    );
+
+
+    var data =
+        obtenerDatosConfig();
+
+
+    if (
+        data &&
+        data.comerciales &&
+        data.comerciales.length > 0
+    ) {
+
+        datosCargados = true;
+
+        cargarDatosFormulario();
+
+        return;
+    }
+
+
+    if (
+        typeof initSupabaseData ===
+        'function'
+    ) {
+
+        initSupabaseData()
+            .then(function(result) {
+
+                if (result) {
+
+                    datosCargados =
+                        true;
+
+                    cargarDatosFormulario();
+                }
+            })
+            .catch(function(error) {
+
+                console.error(
+                    '❌ Configuración:',
+                    error
+                );
+            });
+    }
+
+
+    if (intervaloIntento) {
+        clearInterval(intervaloIntento);
+    }
+
+
+    var intentos = 0;
+
+
+    intervaloIntento =
+        setInterval(function() {
+
+            intentos++;
+
+            var config =
+                obtenerDatosConfig();
+
+
+            if (
+                config &&
+                config.comerciales &&
+                config.comerciales.length > 0
+            ) {
+
+                clearInterval(
+                    intervaloIntento
+                );
+
+                intervaloIntento =
+                    null;
+
+                datosCargados =
+                    true;
+
+                cargarDatosFormulario();
+
+            } else if (
+                intentos > 30
+            ) {
+
+                clearInterval(
+                    intervaloIntento
+                );
+
+                intervaloIntento =
+                    null;
+
+                console.warn(
+                    '⚠️ Timeout cargando configuración'
+                );
+            }
+
+        }, 500);
+}
+
+
+// ==========================================
+// DOM
+// ==========================================
+
+document.addEventListener(
+    'DOMContentLoaded',
+    function() {
+
+        console.log(
+            '🚀 DOMContentLoaded requisición'
+        );
+
+
+        var user =
+            getCurrentUser();
+
+
+        if (!user) {
+
+            window.location.href =
+                '/login.html';
+
+            return;
+        }
+
+
+        if (
+            !tienePermiso(
+                'crear_requisicion'
+            )
+        ) {
+
+            console.warn(
+                '⛔ Acceso denegado'
+            );
+
+            window.location.href =
+                '/dashboard.html';
+
+            return;
+        }
+
+
+        console.log(
+            '👤 Usuario:',
+            user.email,
+            '|',
+            user.role,
+            '|',
+            user.id
+        );
+
+
+        window.addEventListener(
+            'datosConfiguracionListos',
+            function() {
+
+                datosCargados =
+                    true;
+
+                cargarDatosFormulario();
+            }
+        );
+
+
+        iniciarNuevaRequisicion();
+
+
+        var centroSelect =
+            document.getElementById(
+                'centroComercial'
+            );
+
+
+        if (centroSelect) {
+
+            centroSelect.addEventListener(
+                'change',
+                filtrarTiendasPorComercial
+            );
+        }
+
+
+        var fechaInput =
+            document.getElementById(
+                'fecha'
+            );
+
+
+        if (fechaInput) {
+
+            fechaInput.value =
+                new Date()
+                    .toISOString()
+                    .split('T')[0];
+        }
+
+
+        var modal =
+            document.getElementById(
+                'successModal'
+            );
+
+
+        if (modal) {
+
+            modal.addEventListener(
+                'click',
+                function(e) {
+
+                    if (
+                        e.target === this
+                    ) {
+
+                        closeModal();
+                    }
+                }
+            );
+        }
+
+
+        showStep(1);
+
+
+        console.log(
+            '✅ Nueva requisición Fase 2 inicializada'
+        );
+    }
+);
+
+
+// ==========================================
+// ACTUALIZACIÓN CONFIGURACIÓN
+// ==========================================
+
+window.addEventListener(
+    'storage',
+    function(e) {
+
+        if (
+            e.key ===
+            'siman_config_data'
+        ) {
+
+            if (datosCargados) {
+                cargarDatosFormulario();
+            }
         }
     }
-});
+);
 
-window.cargarDatosFormulario = cargarDatosFormulario;
-window.filtrarTiendasPorComercial = filtrarTiendasPorComercial;
-window.nextStep = nextStep;
-window.prevStep = prevStep;
-window.submitRequisicion = submitRequisicion;
-window.saveDraft = saveDraft;
-window.closeModal = closeModal;
+
+// ==========================================
+// EXPORTAR
+// ==========================================
+
+window.cargarDatosFormulario =
+    cargarDatosFormulario;
+
+window.filtrarTiendasPorComercial =
+    filtrarTiendasPorComercial;
+
+window.nextStep =
+    nextStep;
+
+window.prevStep =
+    prevStep;
+
+window.submitRequisicion =
+    submitRequisicion;
+
+window.saveDraft =
+    saveDraft;
+
+window.closeModal =
+    closeModal;
