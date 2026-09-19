@@ -1,5 +1,6 @@
 // ==========================================
-// AUTH - ROLES Y PERMISOS (CON NORMALIZACIÓN Y LOGS)
+// SMARTRECRUIT - AUTH SUPABASE
+// FASE 2
 // ==========================================
 
 var ROLES = {
@@ -11,358 +12,790 @@ var ROLES = {
 
 var PERMISOS = {
     'Administrador': [
-        'ver_dashboard', 'ver_configuracion', 'ver_usuarios', 'crear_usuario',
-        'editar_usuario', 'eliminar_usuario', 'ver_roles', 'crear_rol',
-        'editar_rol', 'eliminar_rol', 'ver_reportes', 'ver_dashboard_ejecutivo',
-        'ver_notificaciones', 'ver_ia', 'crear_requisicion', 'ver_requisiciones',
-        'editar_requisicion', 'eliminar_requisicion', 'ver_reclutadora',
-        'administrar_requisicion', 'ver_vacantes', 'ver_candidatos', 'ver_seguimiento'
-    ],
-    'Gerente RH': [
-        'ver_dashboard', 'crear_requisicion', 'ver_requisiciones',
-        'editar_requisicion', 'ver_reportes', 'ver_notificaciones', 'ver_ia',
-        'ver_reclutadora', 'administrar_requisicion', 'ver_vacantes',
+        'ver_dashboard',
+        'ver_configuracion',
+        'ver_usuarios',
+        'crear_usuario',
+        'editar_usuario',
+        'eliminar_usuario',
+        'ver_roles',
+        'crear_rol',
+        'editar_rol',
+        'eliminar_rol',
+        'ver_reportes',
+        'ver_dashboard_ejecutivo',
+        'ver_notificaciones',
+        'ver_ia',
+        'crear_requisicion',
+        'ver_requisiciones',
+        'editar_requisicion',
+        'eliminar_requisicion',
+        'ver_reclutadora',
+        'administrar_requisicion',
+        'ver_vacantes',
+        'ver_candidatos',
         'ver_seguimiento'
     ],
-    'Reclutadora': [
-        'ver_dashboard', 'crear_requisicion', 'ver_requisiciones', 'ver_reclutadora',
-        'administrar_requisicion', 'ver_notificaciones', 'ver_ia',
-        'ver_vacantes', 'ver_candidatos', 'ver_seguimiento'
+
+    'Gerente RH': [
+        'ver_dashboard',
+        'crear_requisicion',
+        'ver_requisiciones',
+        'editar_requisicion',
+        'ver_reportes',
+        'ver_notificaciones',
+        'ver_ia',
+        'ver_reclutadora',
+        'administrar_requisicion',
+        'ver_vacantes',
+        'ver_candidatos',
+        'ver_seguimiento'
     ],
+
+    'Reclutadora': [
+        'ver_dashboard',
+        'crear_requisicion',
+        'ver_requisiciones',
+        'ver_reclutadora',
+        'administrar_requisicion',
+        'ver_notificaciones',
+        'ver_ia',
+        'ver_vacantes',
+        'ver_candidatos',
+        'ver_seguimiento'
+    ],
+
     'Ejecutivo': [
-        'ver_dashboard', 'ver_dashboard_ejecutivo', 'ver_reportes',
-        'ver_requisiciones', 'ver_notificaciones', 'ver_ia',
-        'ver_vacantes', 'ver_candidatos', 'ver_seguimiento'
+        'ver_dashboard',
+        'ver_dashboard_ejecutivo',
+        'ver_reportes',
+        'ver_requisiciones',
+        'ver_notificaciones',
+        'ver_ia',
+        'ver_vacantes',
+        'ver_candidatos',
+        'ver_seguimiento'
     ]
 };
 
-var DEFAULT_ADMIN = {
-    id: 1,
-    nombre: 'Administrador',
-    email: 'admin@siman.com',
-    password: 'admin123',
-    rol: 'Administrador',
-    centro: 'Central',
-    estado: 'activo'
-};
 
 // ==========================================
-// NORMALIZAR ROL
+// CONVERTIR role_code DE SUPABASE
 // ==========================================
-function normalizarRol(rol) {
-    if (!rol) return 'Reclutadora';
-    var limpio = rol.trim();
-    if (PERMISOS[limpio]) return limpio;
-    var normalizado = limpio.charAt(0).toUpperCase() + limpio.slice(1).toLowerCase();
-    if (PERMISOS[normalizado]) return normalizado;
+
+function roleCodeToRole(roleCode) {
+
     var mapa = {
-        'administrador': 'Administrador',
-        'gerente rh': 'Gerente RH',
+        'admin': 'Administrador',
+        'gerente_rh': 'Gerente RH',
         'reclutadora': 'Reclutadora',
         'ejecutivo': 'Ejecutivo'
     };
-    var encontrado = mapa[limpio.toLowerCase()];
-    if (encontrado) return encontrado;
-    console.warn('⚠️ Rol desconocido:', rol, 'asignando Reclutadora');
-    return 'Reclutadora';
+
+    return mapa[roleCode] || 'Reclutadora';
 }
+
 
 // ==========================================
-// OBTENER USUARIOS CON NORMALIZACIÓN
+// OBTENER PERFIL
 // ==========================================
-async function getUsersFromSupabase() {
-    try {
-        if (typeof initSupabase === 'function') await initSupabase();
-        if (typeof obtenerDeSupabase === 'function') {
-            var result = await obtenerDeSupabase('usuarios');
-            if (result.success && result.data && result.data.length > 0) {
-                return result.data.map(function(u) {
-                    var rol = normalizarRol(u.rol || 'Reclutadora');
-                    return {
-                        username: u.email,
-                        password: u.password,
-                        name: u.nombre,
-                        role: rol,
-                        store: u.centro || 'Central',
-                        id: u.id,
-                        estado: u.estado
-                    };
-                });
-            }
-        }
-        return null;
-    } catch (error) {
-        console.warn('⚠️ Error obteniendo usuarios de Supabase:', error);
+
+async function obtenerPerfilSupabase(user) {
+
+    if (!user) return null;
+
+    var client = await initSupabase();
+
+    var result = await client
+        .from('profiles')
+        .select('id,email,nombre,role_code,activo')
+        .eq('id', user.id)
+        .single();
+
+    if (result.error) {
+
+        console.error(
+            '❌ Error obteniendo profile:',
+            result.error
+        );
+
         return null;
     }
-}
 
-function getUsersFromStorage() {
-    try {
-        var data = localStorage.getItem('siman_config_data');
-        if (data) {
-            var parsed = JSON.parse(data);
-            var usuarios = parsed.usuarios || [];
-            if (usuarios.length > 0) {
-                return usuarios.map(function(u) {
-                    var rol = normalizarRol(u.rol || 'Reclutadora');
-                    return {
-                        username: u.email,
-                        password: u.password,
-                        name: u.nombre,
-                        role: rol,
-                        store: u.centro || 'Central',
-                        id: u.id,
-                        estado: u.estado
-                    };
-                });
-            }
-        }
-    } catch (e) {
-        console.error('Error al leer usuarios locales:', e);
-    }
-    return null;
-}
+    var profile = result.data;
 
-async function getUsers() {
-    console.log('🔍 Obteniendo usuarios...');
-    var supabaseUsers = await getUsersFromSupabase();
-    if (supabaseUsers && supabaseUsers.length > 0) {
-        console.log('✅ Usuarios cargados desde Supabase:', supabaseUsers.map(function(u) { return u.username + ' (' + u.role + ')'; }));
-        try {
-            var data = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
-            data.usuarios = supabaseUsers.map(function(u) {
-                return {
-                    id: u.id,
-                    nombre: u.name,
-                    email: u.username,
-                    password: u.password,
-                    rol: u.role,
-                    centro: u.store,
-                    estado: u.estado || 'activo'
-                };
-            });
-            localStorage.setItem('siman_config_data', JSON.stringify(data));
-        } catch (e) {}
-        return supabaseUsers;
+    if (!profile || profile.activo === false) {
+
+        console.warn('⛔ Usuario inactivo');
+
+        return null;
     }
-    var localUsers = getUsersFromStorage();
-    if (localUsers && localUsers.length > 0) {
-        console.log('📁 Usuarios cargados desde localStorage:', localUsers.map(function(u) { return u.username + ' (' + u.role + ')'; }));
-        if (typeof guardarEnSupabase === 'function') {
-            localUsers.forEach(function(u) {
-                guardarEnSupabase('usuarios', {
-                    id: u.id,
-                    nombre: u.name,
-                    email: u.username,
-                    password: u.password,
-                    rol: u.role,
-                    centro: u.store,
-                    estado: 'activo'
-                });
-            });
-        }
-        return localUsers;
-    }
-    console.log('👑 Creando usuario administrador por defecto');
-    var adminUser = {
-        username: 'admin@siman.com',
-        password: 'admin123',
-        name: 'Administrador',
-        role: 'Administrador',
+
+    return {
+        id: profile.id,
+
+        // Compatibilidad con código anterior
+        username: profile.email,
+        email: profile.email,
+
+        name: profile.nombre,
+        nombre: profile.nombre,
+
+        role: roleCodeToRole(profile.role_code),
+        role_code: profile.role_code,
+
         store: 'Central',
-        id: 1,
-        estado: 'activo'
+
+        estado: 'activo',
+
+        // Referencia al usuario real de Auth
+        auth_id: user.id
     };
-    if (typeof guardarEnSupabase === 'function') {
-        guardarEnSupabase('usuarios', {
-            id: 1,
-            nombre: 'Administrador',
-            email: 'admin@siman.com',
-            password: 'admin123',
-            rol: 'Administrador',
-            centro: 'Central',
-            estado: 'activo'
-        });
-    }
-    try {
-        var data = {
-            usuarios: [{
-                id: 1,
-                nombre: 'Administrador',
-                email: 'admin@siman.com',
-                password: 'admin123',
-                rol: 'Administrador',
-                centro: 'Central',
-                estado: 'activo'
-            }],
-            roles: [
-                { id: 1, nombre: 'Administrador', estado: 'activo' },
-                { id: 2, nombre: 'Gerente RH', estado: 'activo' },
-                { id: 3, nombre: 'Reclutadora', estado: 'activo' },
-                { id: 4, nombre: 'Ejecutivo', estado: 'activo' }
-            ],
-            comerciales: [],
-            tiendas: [],
-            departamentos: [],
-            estados: [],
-            prioridades: [],
-            motivos: [],
-            tiposContratacion: [],
-            asignaciones: [],
-            correos: [],
-            plantillas: [],
-            cartasOferta: []
-        };
-        localStorage.setItem('siman_config_data', JSON.stringify(data));
-    } catch (e) {}
-    return [adminUser];
 }
 
-async function login(username, password) {
-    console.log('🔐 Intentando login con:', username);
+
+// ==========================================
+// LOGIN SUPABASE AUTH
+// ==========================================
+
+async function login(email, password) {
+
+    console.log(
+        '🔐 Iniciando sesión mediante Supabase Auth:',
+        email
+    );
+
     try {
-        var users = await getUsers();
-        console.log('👥 Usuarios disponibles:', users.map(function(u) { return u.username + ' (' + u.role + ')'; }));
-        var user = users.find(function(u) {
-            return u.username === username && u.password === password && u.estado !== 'inactivo';
+
+        var client = await initSupabase();
+
+        var result = await client.auth.signInWithPassword({
+            email: email,
+            password: password
         });
-        if (user) {
-            console.log('✅ Login exitoso para:', user.username, 'Rol:', user.role);
-            sessionStorage.setItem('currentUser', JSON.stringify(user));
-            sessionStorage.setItem('isAuthenticated', 'true');
-            return user;
+
+        if (result.error) {
+
+            console.error(
+                '❌ Supabase Auth:',
+                result.error.message
+            );
+
+            return null;
         }
-        console.log('❌ Login fallido para:', username);
-        return null;
+
+        if (!result.data || !result.data.user) {
+
+            console.error(
+                '❌ Supabase no devolvió usuario'
+            );
+
+            return null;
+        }
+
+        var profile =
+            await obtenerPerfilSupabase(
+                result.data.user
+            );
+
+        if (!profile) {
+
+            console.error(
+                '❌ No existe profile válido'
+            );
+
+            await client.auth.signOut();
+
+            return null;
+        }
+
+        /*
+         * sessionStorage ya NO autentica.
+         *
+         * Solamente conservamos una copia del profile
+         * para mantener compatibilidad con los módulos
+         * existentes durante la migración.
+         */
+
+        sessionStorage.setItem(
+            'currentUser',
+            JSON.stringify(profile)
+        );
+
+        console.log(
+            '✅ Login Supabase:',
+            profile.email,
+            '| Rol:',
+            profile.role
+        );
+
+        return profile;
+
     } catch (error) {
-        console.error('❌ Error en login:', error);
+
+        console.error(
+            '❌ Error durante login:',
+            error
+        );
+
         return null;
     }
 }
 
-function logout() {
-    sessionStorage.removeItem('currentUser');
-    sessionStorage.removeItem('isAuthenticated');
-    window.location.href = '/login.html';
+
+// ==========================================
+// RESTAURAR SESIÓN SUPABASE
+// ==========================================
+
+async function restaurarSesion() {
+
+    try {
+
+        var client = await initSupabase();
+
+        var result =
+            await client.auth.getSession();
+
+        if (
+            result.error ||
+            !result.data ||
+            !result.data.session
+        ) {
+
+            sessionStorage.removeItem(
+                'currentUser'
+            );
+
+            return null;
+        }
+
+        var authUser =
+            result.data.session.user;
+
+        var profile =
+            await obtenerPerfilSupabase(
+                authUser
+            );
+
+        if (!profile) {
+
+            await client.auth.signOut();
+
+            sessionStorage.removeItem(
+                'currentUser'
+            );
+
+            return null;
+        }
+
+        sessionStorage.setItem(
+            'currentUser',
+            JSON.stringify(profile)
+        );
+
+        return profile;
+
+    } catch (error) {
+
+        console.error(
+            '❌ Error restaurando sesión:',
+            error
+        );
+
+        return null;
+    }
 }
+
+
+// ==========================================
+// USUARIO ACTUAL
+// ==========================================
 
 function getCurrentUser() {
-    var data = sessionStorage.getItem('currentUser');
-    if (!data) return null;
-    var user = JSON.parse(data);
-    console.log('👤 Usuario actual:', user.username, 'Rol:', user.role);
-    return user;
-}
 
-function isAuthenticated() {
-    return sessionStorage.getItem('isAuthenticated') === 'true' && getCurrentUser() !== null;
-}
+    try {
 
-function requireAuth() {
-    if (!isAuthenticated()) {
-        window.location.href = '/login.html';
+        var data =
+            sessionStorage.getItem(
+                'currentUser'
+            );
+
+        if (!data) return null;
+
+        return JSON.parse(data);
+
+    } catch (error) {
+
+        console.error(
+            '❌ Error leyendo currentUser:',
+            error
+        );
+
         return null;
     }
-    return getCurrentUser();
 }
 
-function refreshAuthUsers() {
-    return getUsers();
+
+// ==========================================
+// SESIÓN REAL
+// ==========================================
+
+async function getAuthSession() {
+
+    try {
+
+        var client = await initSupabase();
+
+        var result =
+            await client.auth.getSession();
+
+        return (
+            result.data &&
+            result.data.session
+        ) || null;
+
+    } catch (error) {
+
+        return null;
+    }
 }
+
+
+// ==========================================
+// AUTENTICACIÓN
+// ==========================================
+
+function isAuthenticated() {
+
+    /*
+     * Compatibilidad síncrona para módulos
+     * existentes.
+     *
+     * La seguridad real está en Supabase Auth
+     * y posteriormente en RLS.
+     */
+
+    return getCurrentUser() !== null;
+}
+
+
+// ==========================================
+// LOGOUT
+// ==========================================
+
+async function logout() {
+
+    try {
+
+        var client =
+            await initSupabase();
+
+        await client.auth.signOut();
+
+    } catch (error) {
+
+        console.error(
+            '⚠️ Error cerrando sesión:',
+            error
+        );
+
+    } finally {
+
+        sessionStorage.removeItem(
+            'currentUser'
+        );
+
+        window.location.href =
+            '/login.html';
+    }
+}
+
+
+// ==========================================
+// PERMISOS
+// ==========================================
 
 function tienePermiso(permiso) {
-    var user = getCurrentUser();
+
+    var user =
+        getCurrentUser();
+
     if (!user) {
-        console.warn('⚠️ No hay usuario autenticado para verificar permiso:', permiso);
+
+        console.warn(
+            '⚠️ No hay usuario autenticado'
+        );
+
         return false;
     }
-    var permisos = PERMISOS[user.role] || [];
-    var tiene = permisos.indexOf(permiso) !== -1;
-    console.log('🔍 Verificando permiso:', permiso, 'para rol:', user.role, '=>', tiene);
-    return tiene;
+
+    var permisos =
+        PERMISOS[user.role] || [];
+
+    var permitido =
+        permisos.indexOf(permiso) !== -1;
+
+    console.log(
+        '🔍 Permiso:',
+        permiso,
+        '| Rol:',
+        user.role,
+        '=>',
+        permitido
+    );
+
+    return permitido;
 }
+
 
 function tieneRol(rol) {
-    var user = getCurrentUser();
-    if (!user) return false;
-    return user.role === rol;
+
+    var user =
+        getCurrentUser();
+
+    return (
+        user &&
+        user.role === rol
+    );
 }
+
 
 function esAdministrador() {
-    return tieneRol('Administrador');
+
+    return tieneRol(
+        'Administrador'
+    );
 }
 
-function protegerRuta(permisoRequerido, redirectUrl) {
-    var user = getCurrentUser();
+
+// ==========================================
+// PROTEGER RUTA
+// ==========================================
+
+function protegerRuta(
+    permiso,
+    redirectUrl
+) {
+
+    var user =
+        getCurrentUser();
+
     if (!user) {
-        window.location.href = '/login.html';
+
+        window.location.href =
+            '/login.html';
+
         return false;
     }
-    if (permisoRequerido && !tienePermiso(permisoRequerido)) {
-        console.warn('🔒 Acceso denegado a', window.location.pathname, 'para rol', user.role);
-        window.location.href = redirectUrl || '/dashboard.html';
+
+    if (
+        permiso &&
+        !tienePermiso(permiso)
+    ) {
+
+        console.warn(
+            '🔒 Acceso denegado:',
+            window.location.pathname
+        );
+
+        window.location.href =
+            redirectUrl ||
+            '/dashboard.html';
+
         return false;
     }
+
     return true;
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    var currentPage = window.location.pathname;
-    if (currentPage.includes('login.html') || currentPage === '/') return;
-    var user = requireAuth();
-    if (!user) return;
-    console.log('🔐 Página:', currentPage, 'Usuario:', user.username, 'Rol:', user.role);
-    var permisosPorPagina = {
-        '/configuracion': 'ver_configuracion',
-        '/configuracion.html': 'ver_configuracion',
-        '/dashboard-ejecutivo': 'ver_dashboard_ejecutivo',
-        '/dashboard-ejecutivo.html': 'ver_dashboard_ejecutivo',
-        '/reportes': 'ver_reportes',
-        '/reportes.html': 'ver_reportes',
-        '/usuarios': 'ver_usuarios',
-        '/usuarios.html': 'ver_usuarios',
-        '/nueva-requisicion': 'crear_requisicion',
-        '/nueva-requisicion.html': 'crear_requisicion',
-        '/reclutadora': 'ver_reclutadora',
-        '/reclutadora.html': 'ver_reclutadora',
-        '/administrar-requisicion': 'administrar_requisicion',
-        '/administrar-requisicion.html': 'administrar_requisicion',
-        '/vacantes': 'ver_vacantes',
-        '/vacantes.html': 'ver_vacantes',
-        '/candidatos': 'ver_candidatos',
-        '/candidatos.html': 'ver_candidatos',
-        '/seguimiento': 'ver_seguimiento',
-        '/seguimiento.html': 'ver_seguimiento',
-        '/requisiciones': 'ver_requisiciones',
-        '/requisiciones.html': 'ver_requisiciones',
-        '/ia': 'ver_ia',
-        '/ia.html': 'ver_ia',
-        '/notificaciones': 'ver_notificaciones',
-        '/notificaciones.html': 'ver_notificaciones'
-    };
-    var permiso = permisosPorPagina[currentPage];
-    if (permiso && !tienePermiso(permiso)) {
-        console.warn('🔒 Acceso denegado a', currentPage, 'para rol', user.role);
-        window.location.href = '/dashboard.html';
+
+// ==========================================
+// MAPA DE PÁGINAS
+// ==========================================
+
+var permisosPorPagina = {
+
+    '/configuracion':
+        'ver_configuracion',
+
+    '/configuracion.html':
+        'ver_configuracion',
+
+    '/dashboard-ejecutivo':
+        'ver_dashboard_ejecutivo',
+
+    '/dashboard-ejecutivo.html':
+        'ver_dashboard_ejecutivo',
+
+    '/reportes':
+        'ver_reportes',
+
+    '/reportes.html':
+        'ver_reportes',
+
+    '/usuarios':
+        'ver_usuarios',
+
+    '/usuarios.html':
+        'ver_usuarios',
+
+    '/nueva-requisicion':
+        'crear_requisicion',
+
+    '/nueva-requisicion.html':
+        'crear_requisicion',
+
+    '/reclutadora':
+        'ver_reclutadora',
+
+    '/reclutadora.html':
+        'ver_reclutadora',
+
+    '/administrar-requisicion':
+        'administrar_requisicion',
+
+    '/administrar-requisicion.html':
+        'administrar_requisicion',
+
+    '/vacantes':
+        'ver_vacantes',
+
+    '/vacantes.html':
+        'ver_vacantes',
+
+    '/candidatos':
+        'ver_candidatos',
+
+    '/candidatos.html':
+        'ver_candidatos',
+
+    '/seguimiento':
+        'ver_seguimiento',
+
+    '/seguimiento.html':
+        'ver_seguimiento',
+
+    '/requisiciones':
+        'ver_requisiciones',
+
+    '/requisiciones.html':
+        'ver_requisiciones',
+
+    '/ia':
+        'ver_ia',
+
+    '/ia.html':
+        'ver_ia',
+
+    '/notificaciones':
+        'ver_notificaciones',
+
+    '/notificaciones.html':
+        'ver_notificaciones'
+};
+
+
+// ==========================================
+// INICIALIZAR AUTENTICACIÓN
+// ==========================================
+
+async function inicializarAuth() {
+
+    var pagina =
+        window.location.pathname;
+
+    /*
+     * login.js administra login.html
+     */
+
+    if (
+        pagina === '/' ||
+        pagina.includes('login.html')
+    ) {
+
         return;
     }
-    console.log('✅ Acceso permitido a', currentPage);
-});
 
-window.login = login;
-window.logout = logout;
-window.getCurrentUser = getCurrentUser;
-window.isAuthenticated = isAuthenticated;
-window.requireAuth = requireAuth;
-window.refreshAuthUsers = refreshAuthUsers;
-window.tienePermiso = tienePermiso;
-window.tieneRol = tieneRol;
-window.esAdministrador = esAdministrador;
-window.protegerRuta = protegerRuta;
-window.getUsers = getUsers;
-window.PERMISOS = PERMISOS;
-window.ROLES = ROLES;
-window.normalizarRol = normalizarRol;
+    var user =
+        await restaurarSesion();
 
-console.log('✅ Auth cargado correctamente');
+    if (!user) {
+
+        console.warn(
+            '🔒 No existe sesión Supabase'
+        );
+
+        window.location.href =
+            '/login.html';
+
+        return;
+    }
+
+    console.log(
+        '👤 Usuario:',
+        user.email,
+        '| Rol:',
+        user.role,
+        '| UUID:',
+        user.id
+    );
+
+    var permiso =
+        permisosPorPagina[pagina];
+
+    if (
+        permiso &&
+        !tienePermiso(permiso)
+    ) {
+
+        console.warn(
+            '⛔ Sin permiso:',
+            permiso
+        );
+
+        window.location.href =
+            '/dashboard.html';
+
+        return;
+    }
+
+    console.log(
+        '✅ Acceso permitido:',
+        pagina
+    );
+}
+
+
+// ==========================================
+// CAMBIOS DE SESIÓN
+// ==========================================
+
+async function escucharCambiosAuth() {
+
+    try {
+
+        var client =
+            await initSupabase();
+
+        client.auth.onAuthStateChange(
+            function(event, session) {
+
+                console.log(
+                    '🔐 Auth event:',
+                    event
+                );
+
+                if (
+                    event === 'SIGNED_OUT'
+                ) {
+
+                    sessionStorage.removeItem(
+                        'currentUser'
+                    );
+                }
+            }
+        );
+
+    } catch (error) {
+
+        console.warn(
+            '⚠️ Listener Auth no disponible'
+        );
+    }
+}
+
+
+// ==========================================
+// COMPATIBILIDAD TEMPORAL
+// ==========================================
+
+async function requireAuth() {
+
+    var user =
+        await restaurarSesion();
+
+    if (!user) {
+
+        window.location.href =
+            '/login.html';
+
+        return null;
+    }
+
+    return user;
+}
+
+
+async function refreshAuthUsers() {
+
+    return restaurarSesion();
+}
+
+
+// ==========================================
+// EXPORTAR
+// ==========================================
+
+window.login =
+    login;
+
+window.logout =
+    logout;
+
+window.getCurrentUser =
+    getCurrentUser;
+
+window.getAuthSession =
+    getAuthSession;
+
+window.restaurarSesion =
+    restaurarSesion;
+
+window.isAuthenticated =
+    isAuthenticated;
+
+window.requireAuth =
+    requireAuth;
+
+window.refreshAuthUsers =
+    refreshAuthUsers;
+
+window.tienePermiso =
+    tienePermiso;
+
+window.tieneRol =
+    tieneRol;
+
+window.esAdministrador =
+    esAdministrador;
+
+window.protegerRuta =
+    protegerRuta;
+
+window.PERMISOS =
+    PERMISOS;
+
+window.ROLES =
+    ROLES;
+
+window.roleCodeToRole =
+    roleCodeToRole;
+
+
+// ==========================================
+// ARRANQUE
+// ==========================================
+
+document.addEventListener(
+    'DOMContentLoaded',
+    function() {
+
+        inicializarAuth();
+
+        escucharCambiosAuth();
+    }
+);
+
+console.log(
+    '✅ Auth Supabase Fase 2 cargado'
+);
