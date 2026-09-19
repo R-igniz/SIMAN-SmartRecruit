@@ -1062,43 +1062,14 @@ body.dark-mode .config-item {
     font-size: 0.6rem;
 }
 
-/* ==========================================
-   MODO OSCURO - COBERTURA GLOBAL TEST
-   Evita módulos blancos por estilos específicos.
-   ========================================== */
-html.dark-mode-root { background:#0f172a; }
-body.dark-mode .modal-content,
-body.dark-mode .wizard-container,
-body.dark-mode .wizard-content,
-body.dark-mode .summary-card,
-body.dark-mode .detail-card,
-body.dark-mode .filters,
-body.dark-mode .filter-bar,
-body.dark-mode .report-card,
-body.dark-mode .profile-card,
-body.dark-mode .requisition-card,
-body.dark-mode .vacante-card,
-body.dark-mode .seguimiento-card,
-body.dark-mode .comentario,
-body.dark-mode .timeline-content,
-body.dark-mode .dropdown-menu {
-    background: var(--bg-card) !important;
-    color: var(--text-primary) !important;
-    border-color: var(--border-color) !important;
-}
-body.dark-mode h1, body.dark-mode h2, body.dark-mode h3, body.dark-mode h4,
-body.dark-mode h5, body.dark-mode h6, body.dark-mode label,
-body.dark-mode td, body.dark-mode .card-title, body.dark-mode .modal-title,
-body.dark-mode .timeline-title { color: var(--text-secondary) !important; }
-body.dark-mode input, body.dark-mode select, body.dark-mode textarea {
-    background-color: var(--bg-input) !important;
-    color: var(--text-primary) !important;
-    border-color: var(--border-color) !important;
-}
-body.dark-mode select option { background:#0f172a; color:#e2e8f0; }
-body.dark-mode table, body.dark-mode tbody, body.dark-mode tr { color:var(--text-primary); }
-body.dark-mode tbody tr { border-color:var(--border-color) !important; }
-body.dark-mode tbody tr:hover { background:var(--bg-table-row-hover) !important; }
-body.dark-mode .btn-outline { background:transparent !important; color:var(--text-primary) !important; }
-body.dark-mode .empty-state { background:var(--bg-empty) !important; color:var(--text-muted) !important; }
-body.dark-mode .step-content, body.dark-mode .form-section { color:var(--text-primary); }
+/* ===== DARK MODE V2: cobertura global de módulos ===== */
+body.dark-mode .main-content, body.dark-mode .content, body.dark-mode .page-content { background:#0f172a; color:#e5e7eb; }
+body.dark-mode input, body.dark-mode select, body.dark-mode textarea, body.dark-mode .form-control { background:#111827 !important; color:#f8fafc !important; border-color:#475569 !important; }
+body.dark-mode input::placeholder, body.dark-mode textarea::placeholder { color:#94a3b8 !important; }
+body.dark-mode option { background:#111827; color:#f8fafc; }
+body.dark-mode .modal-content, body.dark-mode .modal-box, body.dark-mode .dropdown-menu, body.dark-mode .wizard-container, body.dark-mode .summary-card, body.dark-mode .filter-card, body.dark-mode .table-card { background:#1e293b !important; color:#e5e7eb !important; border-color:#334155 !important; }
+body.dark-mode table, body.dark-mode th, body.dark-mode td { color:#e5e7eb; border-color:#334155 !important; }
+body.dark-mode thead, body.dark-mode th { background:#172033 !important; }
+body.dark-mode tbody tr:hover { background:#263449 !important; }
+body.dark-mode .mini-list .item, body.dark-mode .list-item { border-color:#334155 !important; }
+body.dark-mode .text-muted, body.dark-mode .subtitle, body.dark-mode .help-text { color:#94a3b8 !important; }

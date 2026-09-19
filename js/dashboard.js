@@ -1,243 +1,54 @@
-// ==========================================
-// DASHBOARD - DATOS REALES DESDE SUPABASE
-// ==========================================
-(function () {
-    'use strict';
+document.addEventListener('DOMContentLoaded', async function() {
+    var user = getCurrentUser();
+    if (!user) return;
+    console.log('📊 Dashboard real para:', user.name);
 
-    var dashboardChannel = null;
-
-    function normalizar(valor) {
-        return String(valor || '').trim().toLowerCase();
+    function setText(id, value) { var el=document.getElementById(id); if(el) el.textContent=value; }
+    function estadoCerrado(e) { e=String(e||'').toLowerCase(); return ['cerrada','cerrado','contratado','contratada','finalizada','finalizado'].indexOf(e)>=0; }
+    function estadoPendiente(e) { e=String(e||'').toLowerCase(); return ['nueva','revisando','pendiente','solicitada'].indexOf(e)>=0; }
+    function badge(estado) {
+        var e=String(estado||'Sin estado'); var l=e.toLowerCase(); var c='badge-blue';
+        if (estadoCerrado(l)) c='badge-green'; else if(l.indexOf('urgent')>=0||l.indexOf('venc')>=0) c='badge-red'; else if(l.indexOf('revis')>=0||l.indexOf('pend')>=0) c='badge-yellow';
+        return '<span class="badge '+c+'">'+e+'</span>';
     }
-
-    function escapar(valor) {
-        return String(valor == null ? '' : valor)
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-    }
-
-    function esCerrada(r) {
-        var e = normalizar(r.estado);
-        return e === 'cerrado' || e === 'cerrada';
-    }
-
-    function esContratada(r) {
-        return normalizar(r.estado) === 'contratado';
-    }
-
-    function fechaDe(r) {
-        var raw = r.fechaCreacion || r.fecha_creacion || r.created_at || r.fecha || null;
-        if (!raw) return null;
-        var d = new Date(raw);
-        return isNaN(d.getTime()) ? null : d;
-    }
-
-    function esDelMesActual(r) {
-        var d = fechaDe(r);
-        var hoy = new Date();
-        return d && d.getFullYear() === hoy.getFullYear() && d.getMonth() === hoy.getMonth();
-    }
-
-    function diasEntre(inicio, fin) {
-        return Math.max(0, Math.round((fin.getTime() - inicio.getTime()) / 86400000));
-    }
-
-    function badgeEstado(estado) {
-        var e = normalizar(estado);
-        if (e === 'cerrado' || e === 'cerrada' || e === 'contratado') return 'badge-green';
-        if (e === 'urgente') return 'badge-red';
-        if (e === 'revisando' || e === 'evaluaciones' || e === 'oferta') return 'badge-yellow';
-        if (e === 'entrevistas' || e === 'publicada' || e === 'recibiendo cv') return 'badge-blue';
-        return 'badge-gray';
-    }
-
-    function setText(id, value) {
-        var el = document.getElementById(id);
-        if (el) el.textContent = value;
-    }
-
-    function setTrend(id, html, clase) {
-        var el = document.getElementById(id);
-        if (!el) return;
-        el.className = 'trend ' + (clase || '');
-        el.innerHTML = html;
-    }
-
-    async function obtenerRequisicionesReales() {
-        if (typeof initSupabase !== 'function') throw new Error('initSupabase no está disponible');
-        var client = await initSupabase();
-        var respuesta = await client.from('requisiciones').select('*');
-        if (respuesta.error) throw respuesta.error;
-        var datos = respuesta.data || [];
-        localStorage.setItem('requisiciones_data', JSON.stringify(datos));
-        return datos;
-    }
-
-    function calcularMetricas(requisiciones) {
-        var abiertas = requisiciones.filter(function (r) { return !esCerrada(r); });
-        var cerradas = requisiciones.filter(esCerrada);
-        var contratadasMes = requisiciones.filter(function (r) { return esContratada(r) && esDelMesActual(r); });
-        var pendientes = requisiciones.filter(function (r) {
-            var e = normalizar(r.estado);
-            return e === 'nueva' || e === 'revisando';
-        });
-        var urgentes = abiertas.filter(function (r) { return normalizar(r.prioridad) === 'urgente'; });
-
-        // El modelo actual no guarda fecha de cierre. Como aproximación real basada
-        // en los datos disponibles, se muestra la antigüedad promedio de las cerradas.
-        var hoy = new Date();
-        var tiempos = cerradas.map(function (r) {
-            var inicio = fechaDe(r);
-            return inicio ? diasEntre(inicio, hoy) : null;
-        }).filter(function (v) { return v !== null; });
-        var promedio = tiempos.length ? Math.round(tiempos.reduce(function (a, b) { return a + b; }, 0) / tiempos.length) : 0;
-
-        return {
-            abiertas: abiertas.length,
-            cerradas: cerradas.length,
-            contratadasMes: contratadasMes.reduce(function (sum, r) { return sum + (parseInt(r.cantidad, 10) || 1); }, 0),
-            promedio: promedio,
-            pendientes: pendientes.length,
-            urgentes: urgentes.length,
-            alertas: urgentes.length
-        };
-    }
-
-    function renderKPIs(requisiciones) {
-        var m = calcularMetricas(requisiciones);
-        setText('kpiAbiertas', m.abiertas);
-        setText('kpiCerradas', m.cerradas);
-        setText('kpiContrataciones', m.contratadasMes);
-        setText('kpiTiempo', m.promedio + 'd');
-        setText('kpiPendientes', m.pendientes);
-        setText('kpiAlertas', m.alertas);
-
-        setTrend('trendAbiertas', '<i class="fas fa-database"></i> ' + m.abiertas + ' activas', 'up');
-        setTrend('trendCerradas', '<i class="fas fa-check"></i> ' + m.cerradas + ' cerradas', 'up');
-        setTrend('trendContrataciones', '<i class="fas fa-user-check"></i> mes actual', 'up');
-        setTrend('trendTiempo', '<i class="fas fa-clock"></i> antigüedad aprox.', '');
-        setTrend('trendPendientes', '<i class="fas fa-exclamation-triangle"></i> ' + m.urgentes + ' urgentes', m.urgentes ? 'danger' : '');
-        setTrend('trendAlertas', '<i class="fas fa-circle" style="color:var(--danger);font-size:.5rem"></i> ' + m.alertas + ' prioritarias', m.alertas ? 'danger' : '');
-    }
-
-    function renderComerciales(requisiciones) {
-        var contenedor = document.getElementById('chartComerciales');
-        var labels = document.getElementById('chartLabels');
-        if (!contenedor || !labels) return;
-
-        var mapa = {};
-        requisiciones.filter(function (r) { return !esCerrada(r); }).forEach(function (r) {
-            var nombre = r.centro || r.comercial || 'Sin centro';
-            mapa[nombre] = (mapa[nombre] || 0) + (parseInt(r.cantidad, 10) || 1);
-        });
-
-        var items = Object.keys(mapa).map(function (nombre) { return { nombre: nombre, total: mapa[nombre] }; })
-            .sort(function (a, b) { return b.total - a.total; }).slice(0, 8);
-
-        if (!items.length) {
-            contenedor.innerHTML = '<div style="width:100%;text-align:center;color:var(--text-muted);padding:45px 10px">Sin vacantes registradas</div>';
-            labels.innerHTML = '';
-            return;
-        }
-
-        var max = Math.max.apply(null, items.map(function (i) { return i.total; })) || 1;
-        contenedor.innerHTML = items.map(function (i) {
-            var altura = Math.max(18, Math.round((i.total / max) * 90));
-            return '<div class="bar" title="' + escapar(i.nombre) + ': ' + i.total + '" style="height:' + altura + 'px"></div>';
-        }).join('');
-        labels.innerHTML = items.map(function (i) { return '<span title="' + escapar(i.nombre) + '">' + escapar(i.nombre) + '</span>'; }).join('');
-    }
-
-    function renderActividad(requisiciones) {
-        var contenedor = document.getElementById('actividadReciente');
-        if (!contenedor) return;
-        var recientes = requisiciones.slice().sort(function (a, b) {
-            return (fechaDe(b) || new Date(0)) - (fechaDe(a) || new Date(0));
-        }).slice(0, 5);
-
-        if (!recientes.length) {
-            contenedor.innerHTML = '<div class="item"><span>No hay actividad registrada.</span></div>';
-            return;
-        }
-
-        contenedor.innerHTML = recientes.map(function (r) {
-            return '<div class="item">' +
-                '<span><i class="fas fa-file-alt" style="color:var(--primary)"></i> ' + escapar(r.id || 'Sin ID') + ' · ' + escapar(r.puesto || 'Sin puesto') + '</span>' +
-                '<span class="badge ' + badgeEstado(r.estado) + '">' + escapar(r.estado || 'Nueva') + '</span>' +
-                '</div>';
-        }).join('');
-    }
-
-    function renderUltimas(requisiciones) {
-        var contenedor = document.getElementById('ultimasRequisiciones');
-        if (!contenedor) return;
-        var recientes = requisiciones.slice().sort(function (a, b) {
-            return (fechaDe(b) || new Date(0)) - (fechaDe(a) || new Date(0));
-        }).slice(0, 6);
-
-        if (!recientes.length) {
-            contenedor.innerHTML = '<div class="item"><span>No existen requisiciones todavía.</span></div>';
-            return;
-        }
-
-        contenedor.innerHTML = recientes.map(function (r) {
-            return '<div class="item" style="cursor:pointer" onclick="window.location.href=\'/detalle-requisicion.html?id=' + encodeURIComponent(r.id || '') + '\'">' +
-                '<span><strong>#' + escapar(r.id || '-') + '</strong> · ' + escapar(r.puesto || '-') + ' · ' + escapar(r.centro || r.comercial || '-') + '</span>' +
-                '<span class="badge ' + badgeEstado(r.estado) + '">' + escapar(r.estado || 'Nueva') + '</span>' +
-                '</div>';
-        }).join('');
-    }
-
-    function renderTodo(requisiciones) {
-        renderKPIs(requisiciones);
-        renderComerciales(requisiciones);
-        renderActividad(requisiciones);
-        renderUltimas(requisiciones);
-        setText('dashboardActualizado', 'Actualizado ' + new Date().toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit' }));
-    }
+    function escapeHtml(v){ return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c];}); }
 
     async function cargarDashboard() {
         try {
-            setText('dashboardActualizado', 'Actualizando...');
-            var requisiciones = await obtenerRequisicionesReales();
-            console.log('📊 Dashboard: ' + requisiciones.length + ' requisiciones cargadas desde Supabase');
-            renderTodo(requisiciones);
-        } catch (error) {
-            console.error('❌ Error cargando dashboard desde Supabase:', error);
-            var cache = JSON.parse(localStorage.getItem('requisiciones_data') || '[]');
-            renderTodo(cache);
-            setText('dashboardActualizado', 'Sin conexión · datos en caché');
-        }
+            var result=await obtenerDeSupabase('requisiciones', null, {campo:'created_at', ascendente:false});
+            if(!result.success) throw new Error(result.error);
+            var reqs=result.data||[];
+            localStorage.setItem('requisiciones_data', JSON.stringify(reqs)); // cache, no fuente principal
+            var abiertas=reqs.filter(function(r){return !estadoCerrado(r.estado);});
+            var cerradas=reqs.filter(function(r){return estadoCerrado(r.estado);});
+            var ahora=new Date();
+            var contrataciones=reqs.filter(function(r){
+                if(String(r.estado||'').toLowerCase().indexOf('contrat')<0) return false;
+                var f=new Date(r.fecha_cierre||r.updated_at||r.created_at||r.fecha);
+                return !isNaN(f)&&f.getMonth()===ahora.getMonth()&&f.getFullYear()===ahora.getFullYear();
+            });
+            var pendientes=reqs.filter(function(r){return estadoPendiente(r.estado);});
+            var alertas=abiertas.filter(function(r){return String(r.prioridad||'').toLowerCase().indexOf('urgent')>=0;});
+            var dias=cerradas.map(function(r){ var a=new Date(r.created_at||r.fecha), b=new Date(r.fecha_cierre||r.updated_at); return (!isNaN(a)&&!isNaN(b))?Math.max(0,Math.round((b-a)/86400000)):null; }).filter(function(x){return x!==null;});
+            var promedio=dias.length?Math.round(dias.reduce(function(a,b){return a+b;},0)/dias.length):0;
+            setText('kpiAbiertas',abiertas.length); setText('kpiCerradas',cerradas.length); setText('kpiContrataciones',contrataciones.length); setText('kpiTiempo',promedio+'d'); setText('kpiPendientes',pendientes.length); setText('kpiAlertas',alertas.length);
+            setText('trendAbiertas','Total activo'); setText('trendCerradas','Total histórico'); setText('trendContrataciones','Mes actual'); setText('trendTiempo',dias.length?'Cobertura promedio':'Sin cierres medibles'); setText('trendPendientes',alertas.length+' urgentes'); setText('trendAlertas','Prioridad urgente');
+
+            var porCentro={}; abiertas.forEach(function(r){var c=r.centro||'Sin centro'; porCentro[c]=(porCentro[c]||0)+1;});
+            var pares=Object.keys(porCentro).map(function(k){return [k,porCentro[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,7);
+            var max=Math.max.apply(null,pares.map(function(x){return x[1];}).concat([1]));
+            var chart=document.getElementById('chartComerciales'), labels=document.getElementById('chartLabels');
+            if(chart) chart.innerHTML=pares.length?pares.map(function(x){return '<div class="bar" title="'+escapeHtml(x[0])+': '+x[1]+'" style="height:'+Math.max(12,Math.round(x[1]/max*90))+'px;"></div>';}).join(''):'<span>Sin vacantes abiertas</span>';
+            if(labels) labels.innerHTML=pares.map(function(x){return '<span>'+escapeHtml(x[0])+'</span>';}).join('');
+
+            var ult=document.getElementById('ultimasRequisiciones');
+            if(ult) ult.innerHTML=reqs.slice(0,5).map(function(r){return '<div class="item"><span><strong>#'+escapeHtml(r.codigo||r.id)+'</strong> · '+escapeHtml(r.puesto)+' · '+escapeHtml(r.centro||'Sin centro')+'</span>'+badge(r.estado)+'</div>';}).join('')||'<div class="item"><span>No hay requisiciones.</span></div>';
+            var act=document.getElementById('actividadReciente');
+            if(act) act.innerHTML=reqs.slice(0,4).map(function(r){return '<div class="item"><span><i class="fas fa-file-alt"></i> '+escapeHtml(r.codigo||r.id)+' · '+escapeHtml(r.puesto)+'</span>'+badge(r.estado)+'</div>';}).join('')||'<div class="item"><span>Sin actividad.</span></div>';
+            console.log('✅ Dashboard actualizado con',reqs.length,'requisiciones reales');
+        } catch(error) { console.error('❌ Error cargando dashboard:',error); }
     }
 
-    async function activarRealtime() {
-        try {
-            var client = await initSupabase();
-            if (dashboardChannel) await client.removeChannel(dashboardChannel);
-            dashboardChannel = client.channel('dashboard-requisiciones-' + Date.now())
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'requisiciones' }, function () {
-                    console.log('🔄 Cambio en requisiciones detectado. Actualizando dashboard...');
-                    cargarDashboard();
-                }).subscribe();
-        } catch (error) {
-            console.warn('⚠️ Realtime no disponible en dashboard:', error);
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        var user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
-        if (!user) return;
-        console.log('Dashboard cargado para:', user.name || user.username);
-        cargarDashboard();
-        activarRealtime();
-    });
-
-    window.addEventListener('beforeunload', async function () {
-        try {
-            if (dashboardChannel && supabaseClient) await supabaseClient.removeChannel(dashboardChannel);
-        } catch (_) {}
-    });
-
-    window.cargarDashboard = cargarDashboard;
-})();
+    await cargarDashboard();
+    if(typeof suscribirseATabla==='function') suscribirseATabla('requisiciones', function(){ cargarDashboard(); });
+});

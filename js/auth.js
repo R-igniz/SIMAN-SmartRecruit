@@ -16,7 +16,7 @@ var PERMISOS = {
         'editar_rol', 'eliminar_rol', 'ver_reportes', 'ver_dashboard_ejecutivo',
         'ver_notificaciones', 'ver_ia', 'crear_requisicion', 'ver_requisiciones',
         'editar_requisicion', 'eliminar_requisicion', 'ver_reclutadora',
-        'administrar_requisicion', 'ver_vacantes', 'ver_seguimiento'
+        'administrar_requisicion', 'ver_vacantes', 'ver_candidatos', 'ver_seguimiento'
     ],
     'Gerente RH': [
         'ver_dashboard', 'crear_requisicion', 'ver_requisiciones',
@@ -25,14 +25,14 @@ var PERMISOS = {
         'ver_seguimiento'
     ],
     'Reclutadora': [
-        'ver_dashboard', 'crear_requisicion', 'ver_requisiciones', 'editar_requisicion', 'ver_reclutadora',
+        'ver_dashboard', 'crear_requisicion', 'ver_requisiciones', 'ver_reclutadora',
         'administrar_requisicion', 'ver_notificaciones', 'ver_ia',
-        'ver_vacantes', 'ver_seguimiento'
+        'ver_vacantes', 'ver_candidatos', 'ver_seguimiento'
     ],
     'Ejecutivo': [
         'ver_dashboard', 'ver_dashboard_ejecutivo', 'ver_reportes',
         'ver_requisiciones', 'ver_notificaciones', 'ver_ia',
-        'ver_vacantes', 'ver_seguimiento'
+        'ver_vacantes', 'ver_candidatos', 'ver_seguimiento'
     ]
 };
 
@@ -330,6 +330,8 @@ document.addEventListener('DOMContentLoaded', function() {
         '/administrar-requisicion.html': 'administrar_requisicion',
         '/vacantes': 'ver_vacantes',
         '/vacantes.html': 'ver_vacantes',
+        '/candidatos': 'ver_candidatos',
+        '/candidatos.html': 'ver_candidatos',
         '/seguimiento': 'ver_seguimiento',
         '/seguimiento.html': 'ver_seguimiento',
         '/requisiciones': 'ver_requisiciones',

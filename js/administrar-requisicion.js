@@ -81,19 +81,15 @@ function avanzarEstado() {
     }
 }
 
-async function actualizarRequisicion() {
+function actualizarRequisicion() {
     var requisiciones = JSON.parse(localStorage.getItem('requisiciones_data') || '[]');
     var index = requisiciones.findIndex(function(r) { return r.id === requisicionId; });
     if (index !== -1) {
         requisiciones[index] = requisicionData;
-        if (typeof guardarEnSupabase === 'function') {
-            var cloud = await guardarEnSupabase('requisiciones', requisicionData);
-            if (!cloud.success) {
-                alert('❌ No se pudo actualizar en Supabase: ' + cloud.error);
-                return;
-            }
-        }
         localStorage.setItem('requisiciones_data', JSON.stringify(requisiciones));
+        if (typeof guardarEnSupabase === 'function') {
+            guardarEnSupabase('requisiciones', requisicionData);
+        }
         renderizarDatos();
         renderizarTimeline();
         if (typeof agregarNotificacion === 'function') {

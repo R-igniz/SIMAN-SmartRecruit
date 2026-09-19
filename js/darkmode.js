@@ -1,26 +1,49 @@
-// MODO OSCURO GLOBAL - versión TEST productiva
+// ==========================================
+// MODO OSCURO GLOBAL - SIMAN SMARTRECRUIT
+// ==========================================
 (function () {
-    'use strict';
-    function estadoGuardado() { return localStorage.getItem('darkMode') === 'true'; }
-    function aplicar(enable) {
-        document.documentElement.classList.toggle('dark-mode-root', enable);
-        if (document.body) document.body.classList.toggle('dark-mode', enable);
-        document.querySelectorAll('#darkModeToggle').forEach(function(t){ t.checked = enable; });
-        localStorage.setItem('darkMode', enable ? 'true' : 'false');
+    var STORAGE_KEY = 'darkMode';
+
+    function aplicarTema(isDark) {
+        document.body.classList.toggle('dark-mode', !!isDark);
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        var toggle = document.getElementById('darkModeToggle');
+        if (toggle) toggle.checked = !!isDark;
     }
-    window.toggleDarkMode = function () { aplicar(!document.body.classList.contains('dark-mode')); };
-    window.forceDarkMode = function (enable) { aplicar(enable === undefined ? !estadoGuardado() : !!enable); };
-    function init() {
-        aplicar(estadoGuardado());
-        document.querySelectorAll('#darkModeToggle').forEach(function(toggle) {
-            if (toggle.dataset.darkBound === '1') return;
+
+    function estadoGuardado() {
+        return localStorage.getItem(STORAGE_KEY) === 'true';
+    }
+
+    function toggleDarkMode() {
+        var nuevo = !document.body.classList.contains('dark-mode');
+        localStorage.setItem(STORAGE_KEY, nuevo ? 'true' : 'false');
+        aplicarTema(nuevo);
+        console.log('🌙 Modo oscuro:', nuevo ? 'activado' : 'desactivado');
+    }
+
+    function initDarkMode() {
+        aplicarTema(estadoGuardado());
+        var toggle = document.getElementById('darkModeToggle');
+        if (toggle && toggle.dataset.darkBound !== '1') {
             toggle.dataset.darkBound = '1';
-            toggle.addEventListener('change', function(){ aplicar(toggle.checked); });
-        });
+            toggle.addEventListener('change', function () {
+                localStorage.setItem(STORAGE_KEY, toggle.checked ? 'true' : 'false');
+                aplicarTema(toggle.checked);
+            });
+        }
+        console.log('🌙 Modo oscuro inicializado, estado:', estadoGuardado() ? 'activado' : 'desactivado');
     }
-    // Evita el destello claro antes de DOMContentLoaded cuando sea posible.
-    if (estadoGuardado()) document.documentElement.classList.add('dark-mode-root');
-    document.addEventListener('DOMContentLoaded', init);
-    window.addEventListener('load', init);
-    window.addEventListener('storage', function(e){ if (e.key === 'darkMode') aplicar(e.newValue === 'true'); });
+
+    document.addEventListener('DOMContentLoaded', initDarkMode);
+    window.addEventListener('storage', function (e) {
+        if (e.key === STORAGE_KEY) aplicarTema(e.newValue === 'true');
+    });
+    window.toggleDarkMode = toggleDarkMode;
+    window.initDarkMode = initDarkMode;
+    window.forceDarkMode = function(enable) {
+        var value = enable === undefined ? !document.body.classList.contains('dark-mode') : !!enable;
+        localStorage.setItem(STORAGE_KEY, value ? 'true' : 'false');
+        aplicarTema(value);
+    };
 })();

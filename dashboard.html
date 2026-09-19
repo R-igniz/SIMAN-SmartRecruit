@@ -19,33 +19,33 @@
         <div class="kpi-grid">
             <div class="kpi-card">
                 <div class="label">Vacantes abiertas</div>
-                <div class="value" id="kpiAbiertas">...</div>
-                <div class="trend" id="trendAbiertas">Cargando...</div>
+                <div class="value" id="kpiAbiertas">0</div>
+                <div class="trend" id="trendAbiertas">Datos reales</div>
             </div>
             <div class="kpi-card">
                 <div class="label">Vacantes cerradas</div>
-                <div class="value" id="kpiCerradas">...</div>
-                <div class="trend" id="trendCerradas">Cargando...</div>
+                <div class="value" id="kpiCerradas">0</div>
+                <div class="trend" id="trendCerradas">Datos reales</div>
             </div>
             <div class="kpi-card">
                 <div class="label">Contrataciones del mes</div>
-                <div class="value" id="kpiContrataciones">...</div>
-                <div class="trend" id="trendContrataciones">Cargando...</div>
+                <div class="value" id="kpiContrataciones">0</div>
+                <div class="trend" id="trendContrataciones">Datos reales</div>
             </div>
             <div class="kpi-card">
                 <div class="label">Tiempo promedio</div>
-                <div class="value" id="kpiTiempo">...</div>
-                <div class="trend" id="trendTiempo">Cargando...</div>
+                <div class="value" id="kpiTiempo">0d</div>
+                <div class="trend" id="trendTiempo">Datos reales</div>
             </div>
             <div class="kpi-card">
                 <div class="label">Solicitudes pendientes</div>
-                <div class="value" id="kpiPendientes">...</div>
-                <div class="trend" id="trendPendientes">Cargando...</div>
+                <div class="value" id="kpiPendientes">0</div>
+                <div class="trend" id="trendPendientes">Datos reales</div>
             </div>
             <div class="kpi-card">
                 <div class="label">Alertas</div>
-                <div class="value" id="kpiAlertas">...</div>
-                <div class="trend" id="trendAlertas">Cargando...</div>
+                <div class="value" id="kpiAlertas">0</div>
+                <div class="trend" id="trendAlertas">Datos reales</div>
             </div>
         </div>
         
@@ -54,7 +54,7 @@
             <div class="card">
                 <div class="card-header">
                     <span><i class="fas fa-chart-bar"></i> Vacantes por comercial</span>
-                    <span class="badge badge-blue" id="dashboardActualizado">Actualizando...</span>
+                    <span class="badge badge-blue">Últimos 30d</span>
                 </div>
                 <div class="chart-placeholder" id="chartComerciales"></div>
                 <div class="chart-labels" id="chartLabels"></div>
@@ -65,25 +65,26 @@
                     <span><i class="fas fa-clock"></i> Actividad reciente</span>
                     <i class="far fa-calendar-alt"></i>
                 </div>
-                <div class="mini-list" id="actividadReciente"><div class="item"><span>Cargando actividad...</span></div></div>
+                <div class="mini-list" id="actividadReciente"><div class="item"><span>Cargando...</span></div></div>
             </div>
         </div>
-        
+
         <!-- Últimas requisiciones -->
         <div class="card" style="margin-top:24px;">
             <div class="card-header">
                 <span><i class="fas fa-list"></i> Últimas requisiciones</span>
                 <span class="badge badge-blue" style="cursor:pointer;" onclick="navigateTo('/requisiciones.html')">Ver todas</span>
             </div>
-            <div class="mini-list" id="ultimasRequisiciones"><div class="item"><span>Cargando requisiciones...</span></div></div>
+            <div class="mini-list" id="ultimasRequisiciones"><div class="item"><span>Cargando...</span></div></div>
+        
         </div>
     </div>
     
-    <script src="js/supabase-client.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/router.js"></script>
     <script src="js/sidebar.js"></script>
     <script src="js/darkmode.js"></script>
+    <script src="js/supabase-client.js"></script>
     <script src="js/dashboard.js"></script>
 </body>
 </html>
