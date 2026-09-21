@@ -1,1 +1,748 @@
-<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Candidatos | SIMAN SmartRecruit</title><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"><link rel="stylesheet" href="css/global.css"><link rel="stylesheet" href="css/candidatos.css"></head><body><div id="sidebarContainer"></div><main class="main-content"><div class="page-header"><div><h1><i class="fas fa-users"></i> Candidatos</h1><p class="text-muted">Pipeline conectado a Supabase</p></div><button class="btn btn-primary" id="btnNuevoCandidato"><i class="fas fa-user-plus"></i> Nuevo candidato</button></div><section class="card candidatos-toolbar"><input id="buscarCandidato" type="search" placeholder="Buscar candidato"><select id="filtroEstado"><option value="">Todos los estados</option><option>Nuevo</option><option>Preselección</option><option>Entrevista RH</option><option>Entrevista</option><option>Evaluación</option><option>Oferta</option><option>Contratado</option><option>Descartado</option></select><span id="contadorCandidatos" class="badge">0 candidatos</span></section><section class="card"><div class="table-responsive"><table class="data-table"><thead><tr><th>Nombre</th><th>Vacante</th><th>Contacto</th><th>Estado</th><th>Fuente</th><th>Creado</th></tr></thead><tbody id="candidatosBody"><tr><td colspan="6">Cargando...</td></tr></tbody></table></div></section></main><div class="modal-overlay" id="modalCandidato" hidden><div class="modal-card"><div class="modal-header"><h2>Nuevo candidato</h2><button type="button" class="modal-close" id="cerrarModalCandidato">&times;</button></div><form id="formCandidato"><div class="form-grid"><label>Nombre<input id="candNombre" required></label><label>Correo<input id="candEmail" type="email"></label><label>Teléfono<input id="candTelefono"></label><label>Fuente<input id="candFuente"></label><label>Vacante<select id="candRequisicion"><option value="">Sin asignar</option></select></label><label>Estado<select id="candEstado"><option>Nuevo</option><option>Preselección</option><option>Entrevista RH</option><option>Entrevista</option><option>Evaluación</option><option>Oferta</option><option>Contratado</option><option>Descartado</option></select></label><label>Pretensión salarial<input id="candSalario" type="number" min="0" step=".01"></label><label>Entrevista<input id="candEntrevista" type="datetime-local"></label></div><label>Notas<textarea id="candNotas" rows="4"></textarea></label><div class="modal-actions"><button type="button" class="btn" id="cancelarCandidato">Cancelar</button><button type="submit" class="btn btn-primary" id="guardarCandidato">Guardar</button></div></form></div></div><script src="js/supabase-client.js"></script><script src="js/auth.js"></script><script src="js/router.js"></script><script src="js/sidebar.js"></script><script src="js/darkmode.js"></script><script src="js/candidatos.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>SIMAN SmartRecruit - Candidatos</title>
+
+    <!-- ==============================
+         ESTILOS
+    =============================== -->
+
+    <link
+        rel="stylesheet"
+        href="css/global.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="css/candidatos.css"
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+</head>
+
+
+<body>
+
+    <!-- ==================================================
+         SIDEBAR
+         IMPORTANTE:
+         sidebar.js busca exactamente sidebar-container
+    =================================================== -->
+
+    <div id="sidebar-container"></div>
+
+
+    <!-- ==================================================
+         CONTENIDO PRINCIPAL
+    =================================================== -->
+
+    <main class="main-content">
+
+        <!-- TOPBAR GLOBAL -->
+
+        <div id="topbar-container"></div>
+
+
+        <!-- ==================================================
+             CONTENIDO CANDIDATOS
+        =================================================== -->
+
+        <div class="candidatos-page">
+
+
+            <!-- ==============================================
+                 ENCABEZADO
+            =============================================== -->
+
+            <div class="candidatos-header">
+
+                <div>
+
+                    <h1>
+
+                        <i class="fas fa-users"></i>
+
+                        Candidatos
+
+                    </h1>
+
+                    <p>
+
+                        Gestión en tiempo real de candidatos
+                        y procesos de selección.
+
+                    </p>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    id="btnNuevoCandidato"
+                >
+
+                    <i class="fas fa-user-plus"></i>
+
+                    Nuevo candidato
+
+                </button>
+
+            </div>
+
+
+            <!-- ==============================================
+                 RESUMEN
+            =============================================== -->
+
+            <div class="candidatos-resumen">
+
+
+                <!-- TOTAL -->
+
+                <div class="candidato-kpi">
+
+                    <div class="candidato-kpi-icon">
+
+                        <i class="fas fa-users"></i>
+
+                    </div>
+
+                    <div>
+
+                        <span class="candidato-kpi-label">
+                            Candidatos registrados
+                        </span>
+
+                        <strong
+                            class="candidato-kpi-value"
+                            id="cantidadCandidatosVisual"
+                        >
+                            0
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ESTADO SUPABASE -->
+
+                <div class="candidato-kpi">
+
+                    <div class="candidato-kpi-icon">
+
+                        <i class="fas fa-database"></i>
+
+                    </div>
+
+                    <div>
+
+                        <span class="candidato-kpi-label">
+                            Fuente de datos
+                        </span>
+
+                        <strong class="candidato-kpi-status">
+
+                            <i class="fas fa-circle"></i>
+
+                            Supabase Realtime
+
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ==============================================
+                 PANEL PRINCIPAL
+            =============================================== -->
+
+            <section class="card candidatos-panel">
+
+
+                <!-- CABECERA -->
+
+                <div class="card-header">
+
+                    <div class="candidatos-card-title">
+
+                        <i class="fas fa-address-card"></i>
+
+                        <span>
+                            Gestión de Candidatos
+                        </span>
+
+                    </div>
+
+
+                    <span
+                        id="contadorCandidatos"
+                        class="badge badge-blue candidatos-contador"
+                    >
+
+                        0 CANDIDATOS
+
+                    </span>
+
+                </div>
+
+
+                <!-- ==========================================
+                     FILTROS
+                =========================================== -->
+
+                <div class="candidatos-toolbar">
+
+
+                    <!-- BUSCADOR -->
+
+                    <div class="candidato-search">
+
+                        <i class="fas fa-search"></i>
+
+                        <input
+                            id="buscarCandidato"
+                            type="search"
+                            placeholder="Buscar candidato..."
+                            autocomplete="off"
+                        >
+
+                    </div>
+
+
+                    <!-- ESTADO -->
+
+                    <div class="candidato-filter">
+
+                        <i class="fas fa-filter"></i>
+
+                        <select id="filtroEstado">
+
+                            <option value="">
+                                Todos los estados
+                            </option>
+
+                            <option value="Nuevo">
+                                Nuevo
+                            </option>
+
+                            <option value="Preselección">
+                                Preselección
+                            </option>
+
+                            <option value="Entrevista RH">
+                                Entrevista RH
+                            </option>
+
+                            <option value="Entrevista">
+                                Entrevista
+                            </option>
+
+                            <option value="Evaluación">
+                                Evaluación
+                            </option>
+
+                            <option value="Oferta">
+                                Oferta
+                            </option>
+
+                            <option value="Contratado">
+                                Contratado
+                            </option>
+
+                            <option value="Descartado">
+                                Descartado
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ==========================================
+                     TABLA
+                =========================================== -->
+
+                <div class="table-responsive">
+
+                    <table class="data-table candidatos-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Candidato
+                                </th>
+
+                                <th>
+                                    Vacante
+                                </th>
+
+                                <th>
+                                    Contacto
+                                </th>
+
+                                <th>
+                                    Estado
+                                </th>
+
+                                <th>
+                                    Fuente
+                                </th>
+
+                                <th>
+                                    Creado
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody id="candidatosBody">
+
+                            <tr>
+
+                                <td
+                                    colspan="6"
+                                    class="candidatos-loading"
+                                >
+
+                                    <i
+                                        class="fas fa-spinner fa-spin"
+                                    ></i>
+
+                                    <span>
+                                        Cargando candidatos desde Supabase...
+                                    </span>
+
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+
+
+    <!-- ==================================================
+         MODAL NUEVO CANDIDATO
+    =================================================== -->
+
+    <div
+        class="modal-overlay"
+        id="modalCandidato"
+        hidden
+    >
+
+        <div class="modal-card">
+
+
+            <!-- HEADER MODAL -->
+
+            <div class="modal-header">
+
+                <div>
+
+                    <h2>
+
+                        <i class="fas fa-user-plus"></i>
+
+                        Nuevo candidato
+
+                    </h2>
+
+                    <p>
+                        Registra un nuevo candidato
+                        en SmartRecruit.
+                    </p>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="modal-close"
+                    id="cerrarModalCandidato"
+                    aria-label="Cerrar"
+                >
+
+                    &times;
+
+                </button>
+
+            </div>
+
+
+            <!-- ==========================================
+                 FORMULARIO
+            =========================================== -->
+
+            <form id="formCandidato">
+
+
+                <div class="form-grid">
+
+
+                    <!-- NOMBRE -->
+
+                    <label>
+
+                        <span>
+                            Nombre completo *
+                        </span>
+
+                        <input
+                            id="candNombre"
+                            type="text"
+                            required
+                            placeholder="Nombre del candidato"
+                        >
+
+                    </label>
+
+
+                    <!-- CORREO -->
+
+                    <label>
+
+                        <span>
+                            Correo electrónico
+                        </span>
+
+                        <input
+                            id="candEmail"
+                            type="email"
+                            placeholder="correo@ejemplo.com"
+                        >
+
+                    </label>
+
+
+                    <!-- TELÉFONO -->
+
+                    <label>
+
+                        <span>
+                            Teléfono
+                        </span>
+
+                        <input
+                            id="candTelefono"
+                            type="tel"
+                            placeholder="Teléfono"
+                        >
+
+                    </label>
+
+
+                    <!-- FUENTE -->
+
+                    <label>
+
+                        <span>
+                            Fuente
+                        </span>
+
+                        <input
+                            id="candFuente"
+                            type="text"
+                            placeholder="LinkedIn, referido, portal..."
+                        >
+
+                    </label>
+
+
+                    <!-- VACANTE -->
+
+                    <label>
+
+                        <span>
+                            Vacante
+                        </span>
+
+                        <select id="candRequisicion">
+
+                            <option value="">
+                                Sin asignar
+                            </option>
+
+                        </select>
+
+                    </label>
+
+
+                    <!-- ESTADO -->
+
+                    <label>
+
+                        <span>
+                            Estado
+                        </span>
+
+                        <select id="candEstado">
+
+                            <option value="Nuevo">
+                                Nuevo
+                            </option>
+
+                            <option value="Preselección">
+                                Preselección
+                            </option>
+
+                            <option value="Entrevista RH">
+                                Entrevista RH
+                            </option>
+
+                            <option value="Entrevista">
+                                Entrevista
+                            </option>
+
+                            <option value="Evaluación">
+                                Evaluación
+                            </option>
+
+                            <option value="Oferta">
+                                Oferta
+                            </option>
+
+                            <option value="Contratado">
+                                Contratado
+                            </option>
+
+                            <option value="Descartado">
+                                Descartado
+                            </option>
+
+                        </select>
+
+                    </label>
+
+
+                    <!-- SALARIO -->
+
+                    <label>
+
+                        <span>
+                            Pretensión salarial
+                        </span>
+
+                        <input
+                            id="candSalario"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="0.00"
+                        >
+
+                    </label>
+
+
+                    <!-- ENTREVISTA -->
+
+                    <label>
+
+                        <span>
+                            Fecha de entrevista
+                        </span>
+
+                        <input
+                            id="candEntrevista"
+                            type="datetime-local"
+                        >
+
+                    </label>
+
+                </div>
+
+
+                <!-- NOTAS -->
+
+                <label class="notas-field">
+
+                    <span>
+                        Notas
+                    </span>
+
+                    <textarea
+                        id="candNotas"
+                        rows="4"
+                        placeholder="Observaciones del candidato..."
+                    ></textarea>
+
+                </label>
+
+
+                <!-- BOTONES -->
+
+                <div class="modal-actions">
+
+                    <button
+                        type="button"
+                        class="btn btn-outline"
+                        id="cancelarCandidato"
+                    >
+
+                        Cancelar
+
+                    </button>
+
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                        id="guardarCandidato"
+                    >
+
+                        <i class="fas fa-save"></i>
+
+                        Guardar candidato
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ==================================================
+         SUPABASE
+    =================================================== -->
+
+    <script
+        src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+    </script>
+
+
+    <!-- ==================================================
+         CORE SMARTRECRUIT
+         MISMO ORDEN DEL DASHBOARD
+    =================================================== -->
+
+    <script src="js/supabase-client.js"></script>
+
+    <script src="js/auth.js"></script>
+
+    <script src="js/router.js"></script>
+
+    <script src="js/sidebar.js"></script>
+
+    <script src="js/darkmode.js"></script>
+
+    <script src="js/notifications.js"></script>
+
+
+    <!-- ==================================================
+         MÓDULO CANDIDATOS
+    =================================================== -->
+
+    <script src="js/candidatos.js"></script>
+
+
+    <!-- ==================================================
+         SINCRONIZAR KPI VISUAL CON CONTADOR EXISTENTE
+
+         No modifica candidatos.js.
+    =================================================== -->
+
+    <script>
+
+        document.addEventListener(
+            'DOMContentLoaded',
+            function () {
+
+                var contador =
+                    document.getElementById(
+                        'contadorCandidatos'
+                    );
+
+                var visual =
+                    document.getElementById(
+                        'cantidadCandidatosVisual'
+                    );
+
+
+                if (!contador || !visual) {
+                    return;
+                }
+
+
+                function actualizarKPI() {
+
+                    var texto =
+                        contador.textContent || '0';
+
+                    var numero =
+                        texto.match(/\d+/);
+
+                    visual.textContent =
+                        numero
+                            ? numero[0]
+                            : '0';
+                }
+
+
+                actualizarKPI();
+
+
+                var observer =
+                    new MutationObserver(
+                        actualizarKPI
+                    );
+
+
+                observer.observe(
+                    contador,
+                    {
+                        childList: true,
+                        subtree: true,
+                        characterData: true
+                    }
+                );
+
+            }
+        );
+
+    </script>
+
+</body>
+
+</html>
