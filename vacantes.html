@@ -1,55 +1,276 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    />
+
     <title>SIMAN SmartRecruit - Vacantes</title>
-    <link rel="stylesheet" href="css/global.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+
+    <!-- CSS GLOBAL DEL SISTEMA -->
+    <link
+        rel="stylesheet"
+        href="css/global.css"
+    />
+
+    <!-- INTER -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap"
+        rel="stylesheet"
+    />
+
+    <!-- FONT AWESOME -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+
     <style>
-        .vacante-card {
-            transition: all 0.2s;
+
+        .vacantes-page-header {
+            margin-bottom: 24px;
         }
+
+        .vacantes-page-header h2 {
+            margin: 0 0 6px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .vacantes-page-header h2 i {
+            color: var(--primary);
+        }
+
+        .vacantes-page-header p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .vacantes-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .vacantes-grid {
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+        }
+
+        .vacante-card {
+            transition:
+                transform 0.2s ease,
+                box-shadow 0.2s ease;
+        }
+
         .vacante-card:hover {
-            transform: translateY(-4px);
+            transform: translateY(-3px);
             box-shadow: var(--shadow-hover);
         }
+
+        .vacante-title {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin: 0 0 8px 0;
+        }
+
+        .vacante-info {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin: 5px 0;
+        }
+
+        .vacante-footer {
+            margin-top: 16px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .vacante-meta {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .vacante-actions {
+            display: flex;
+            gap: 7px;
+            flex-wrap: wrap;
+        }
+
+        .vacantes-loading {
+            grid-column: 1 / -1;
+            padding: 50px 20px;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .vacantes-loading i {
+            display: block;
+            font-size: 28px;
+            margin-bottom: 14px;
+        }
+
+        @media (max-width: 700px) {
+
+            .vacantes-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .vacante-footer {
+                align-items: stretch;
+            }
+
+            .vacante-actions {
+                width: 100%;
+            }
+
+            .vacante-actions .btn {
+                flex: 1;
+            }
+        }
+
     </style>
+
 </head>
+
+
 <body>
+
+    <!-- SIDEBAR DEL SISTEMA -->
     <div id="sidebar-container"></div>
-    
+
+
+    <!-- CONTENIDO PRINCIPAL -->
     <div class="main-content">
+
+        <!-- TOPBAR DEL SISTEMA -->
         <div id="topbar-container"></div>
-        
-        <div class="card">
-            <div class="card-header">
-                <span><i class="fas fa-briefcase"></i> Vacantes Disponibles</span>
-                <div>
-                    <span class="badge badge-blue" id="totalVacantes">0 activas</span>
-                    <button class="btn btn-outline" onclick="cargarVacantes()" style="padding:4px 12px; margin-left:8px;">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div id="vacantesContainer" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:16px;">
-                <div class="empty-state">
-                    <i class="fas fa-briefcase"></i>
-                    No hay vacantes disponibles
-                </div>
-            </div>
+
+
+        <!-- ENCABEZADO -->
+
+        <div class="vacantes-page-header">
+
+            <h2>
+
+                <i class="fas fa-briefcase"></i>
+
+                Vacantes
+
+            </h2>
+
+            <p>
+                Consulta y administra las vacantes activas
+                del proceso de reclutamiento.
+            </p>
+
         </div>
+
+
+        <!-- TARJETA PRINCIPAL -->
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <span>
+
+                    <i class="fas fa-briefcase"></i>
+
+                    Vacantes Disponibles
+
+                </span>
+
+
+                <div class="vacantes-toolbar">
+
+                    <span
+                        class="badge badge-blue"
+                        id="totalVacantes"
+                    >
+                        0 activas
+                    </span>
+
+
+                    <button
+                        type="button"
+                        class="btn btn-outline"
+                        id="btnRecargarVacantes"
+                        title="Actualizar vacantes"
+                        style="padding:5px 12px;"
+                    >
+
+                        <i class="fas fa-sync-alt"></i>
+
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- DATOS REALES -->
+
+            <div
+                id="vacantesContainer"
+                class="vacantes-grid"
+            >
+
+                <div class="vacantes-loading">
+
+                    <i class="fas fa-spinner fa-spin"></i>
+
+                    Cargando vacantes desde Supabase...
+
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
 
-    <!-- Scripts -->
-    <script src="js/auth.js"></script>
-    <script src="js/router.js"></script>
-    <script src="js/sidebar.js"></script>
-    <script src="js/darkmode.js"></script>
-    <script src="js/notifications.js"></script>
+
+    <!-- =====================================================
+         SCRIPTS
+         MISMA BASE DEL DASHBOARD
+    ====================================================== -->
+
+    <script
+        src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+    ></script>
+
     <script src="js/supabase-client.js"></script>
-    <script src="js/configuracion.js"></script>
+
+    <script src="js/auth.js"></script>
+
+    <script src="js/router.js"></script>
+
+    <script src="js/sidebar.js"></script>
+
+    <script src="js/darkmode.js"></script>
+
+    <script src="js/notifications.js"></script>
+
+    <!-- VACANTES SIEMPRE AL FINAL -->
+    <script src="js/vacantes.js"></script>
+
 </body>
+
 </html>
