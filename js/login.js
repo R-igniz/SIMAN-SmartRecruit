@@ -1,81 +1,410 @@
-document.addEventListener('DOMContentLoaded', async function() {
-    console.log('🔐 Login - Inicializando...');
-    
-    if (typeof isAuthenticated === 'function' && isAuthenticated()) {
-        console.log('✅ Usuario ya autenticado, redirigiendo...');
-        window.location.href = '/dashboard.html';
-        return;
-    }
-    
-    if (typeof initSupabase === 'function') {
-        try {
-            await initSupabase();
-            console.log('✅ Supabase inicializado para login');
-            if (typeof getUsers === 'function') {
-                await getUsers();
-                console.log('✅ Usuarios cargados para login');
-            }
-        } catch (error) {
-            console.warn('⚠️ Supabase no disponible, usando modo local');
-        }
-    }
-    
-    var form = document.getElementById('loginForm');
-    var errorMsg = document.getElementById('errorMessage');
-    var errorText = document.getElementById('errorText');
+// ============================================================
+// SIMAN SMARTRECRUIT
+// LOGIN.JS - SUPABASE AUTH
+// ============================================================
 
-    if (errorMsg) errorMsg.style.display = 'none';
+document.addEventListener(
+    'DOMContentLoaded',
+    async function () {
 
-    form.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        if (errorMsg) errorMsg.style.display = 'none';
+        console.log(
+            '🔐 Login - Inicializando...'
+        );
 
-        var username = document.getElementById('username').value.trim();
-        var password = document.getElementById('password').value.trim();
 
-        if (!username || !password) {
-            if (errorText) errorText.textContent = '⚠️ Por favor ingrese usuario y contraseña';
-            if (errorMsg) errorMsg.style.display = 'block';
+        // ====================================================
+        // ELEMENTOS
+        // ====================================================
+
+        var form =
+            document.getElementById(
+                'loginForm'
+            );
+
+
+        var errorMsg =
+            document.getElementById(
+                'errorMessage'
+            );
+
+
+        var errorText =
+            document.getElementById(
+                'errorText'
+            );
+
+
+        if (!form) {
+
+            console.error(
+                '❌ No se encontró #loginForm'
+            );
+
             return;
         }
 
-        var submitBtn = form.querySelector('button[type="submit"]');
-        var originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
-        submitBtn.disabled = true;
+
+        if (errorMsg) {
+
+            errorMsg.style.display =
+                'none';
+        }
+
+
+        // ====================================================
+        // VERIFICAR DEPENDENCIAS
+        // ====================================================
+
+        if (
+            typeof initSupabase !==
+            'function'
+        ) {
+
+            console.error(
+                '❌ initSupabase no está disponible'
+            );
+
+
+            mostrarError(
+                'No se pudo inicializar Supabase.'
+            );
+
+
+            return;
+        }
+
+
+        if (
+            typeof window.login !==
+            'function'
+        ) {
+
+            console.error(
+                '❌ window.login no está disponible'
+            );
+
+
+            mostrarError(
+                'El módulo de autenticación no está cargado.'
+            );
+
+
+            return;
+        }
+
+
+        // ====================================================
+        // INICIALIZAR SUPABASE
+        // ====================================================
 
         try {
-            var user = await login(username, password);
-            console.log('🔍 Resultado login:', user);
-            
-            if (user) {
-                console.log('✅ Login exitoso! Redirigiendo...');
-                if (errorMsg) errorMsg.style.display = 'none';
-                window.location.href = '/dashboard.html';
-            } else {
-                console.log('❌ Login fallido');
-                if (errorText) errorText.textContent = '❌ Usuario o contraseña incorrectos. Verifique sus credenciales.';
-                if (errorMsg) errorMsg.style.display = 'block';
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            }
-        } catch (error) {
-            console.error('❌ Error en login:', error);
-            if (errorText) errorText.textContent = '❌ Error al conectar con el servidor. Intente nuevamente.';
-            if (errorMsg) errorMsg.style.display = 'block';
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-        }
-    });
 
-    document.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            var active = document.activeElement;
-            if (active && (active.id === 'username' || active.id === 'password')) {
-                form.dispatchEvent(new Event('submit'));
+            await initSupabase();
+
+
+            console.log(
+                '✅ Supabase inicializado para login'
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                '❌ Error inicializando Supabase:',
+                error
+            );
+
+
+            mostrarError(
+                'No fue posible conectar con Supabase.'
+            );
+
+
+            return;
+        }
+
+
+        // ====================================================
+        // SI YA EXISTE SESIÓN
+        // ====================================================
+
+        try {
+
+            var client =
+                await initSupabase();
+
+
+            var resultadoSesion =
+                await client.auth
+                    .getSession();
+
+
+            if (
+                resultadoSesion.data &&
+                resultadoSesion.data.session
+            ) {
+
+                console.log(
+                    '🔐 Sesión Supabase encontrada'
+                );
+
+
+                var usuario =
+                    await restaurarSesion();
+
+
+                if (usuario) {
+
+                    console.log(
+                        '✅ Usuario ya autenticado:',
+                        usuario.email
+                    );
+
+
+                    window.location.href =
+                        '/dashboard.html';
+
+
+                    return;
+                }
+            }
+
+
+        } catch (error) {
+
+            console.warn(
+                '⚠️ No se pudo restaurar sesión:',
+                error
+            );
+        }
+
+
+        // ====================================================
+        // SUBMIT
+        // ====================================================
+
+        form.addEventListener(
+            'submit',
+            async function (event) {
+
+                event.preventDefault();
+
+
+                ocultarError();
+
+
+                var usernameElement =
+                    document.getElementById(
+                        'username'
+                    );
+
+
+                var passwordElement =
+                    document.getElementById(
+                        'password'
+                    );
+
+
+                var email =
+                    usernameElement
+                        ? usernameElement
+                            .value
+                            .trim()
+                            .toLowerCase()
+                        : '';
+
+
+                var password =
+                    passwordElement
+                        ? passwordElement.value
+                        : '';
+
+
+                // --------------------------------------------
+                // VALIDACIÓN
+                // --------------------------------------------
+
+                if (!email) {
+
+                    mostrarError(
+                        'Ingrese su correo electrónico.'
+                    );
+
+                    return;
+                }
+
+
+                if (!password) {
+
+                    mostrarError(
+                        'Ingrese su contraseña.'
+                    );
+
+                    return;
+                }
+
+
+                // --------------------------------------------
+                // BOTÓN
+                // --------------------------------------------
+
+                var submitBtn =
+                    form.querySelector(
+                        'button[type="submit"]'
+                    );
+
+
+                var originalText =
+                    submitBtn
+                        ? submitBtn.innerHTML
+                        : 'Ingresar';
+
+
+                if (submitBtn) {
+
+                    submitBtn.disabled =
+                        true;
+
+
+                    submitBtn.innerHTML =
+                        '<i class="fas fa-spinner fa-spin"></i> Ingresando...';
+                }
+
+
+                try {
+
+                    console.log(
+                        '🔐 Intentando login:',
+                        email
+                    );
+
+
+                    // IMPORTANTE:
+                    // usamos window.login para garantizar
+                    // que sea la función global de auth.js.
+
+                    var usuario =
+                        await window.login(
+                            email,
+                            password
+                        );
+
+
+                    console.log(
+                        '🔍 Resultado login:',
+                        usuario
+                    );
+
+
+                    if (!usuario) {
+
+                        console.warn(
+                            '❌ Login fallido'
+                        );
+
+
+                        mostrarError(
+                            'Correo o contraseña incorrectos.'
+                        );
+
+
+                        restaurarBoton();
+
+
+                        return;
+                    }
+
+
+                    console.log(
+                        '✅ Login correcto:',
+                        usuario.email,
+                        '| Rol:',
+                        usuario.role
+                    );
+
+
+                    // ----------------------------------------
+                    // REDIRECCIÓN
+                    // ----------------------------------------
+
+                    window.location.href =
+                        '/dashboard.html';
+
+
+                } catch (error) {
+
+                    console.error(
+                        '❌ Error en login:',
+                        error
+                    );
+
+
+                    mostrarError(
+                        'No fue posible iniciar sesión.'
+                    );
+
+
+                    restaurarBoton();
+                }
+
+
+                function restaurarBoton() {
+
+                    if (!submitBtn) {
+                        return;
+                    }
+
+
+                    submitBtn.disabled =
+                        false;
+
+
+                    submitBtn.innerHTML =
+                        originalText;
+                }
+            }
+        );
+
+
+        // ====================================================
+        // ERROR
+        // ====================================================
+
+        function mostrarError(mensaje) {
+
+            if (errorText) {
+
+                errorText.textContent =
+                    '❌ ' + mensaje;
+            }
+
+
+            if (errorMsg) {
+
+                errorMsg.style.display =
+                    'block';
+            }
+
+
+            console.warn(
+                '🔐',
+                mensaje
+            );
+        }
+
+
+        function ocultarError() {
+
+            if (errorMsg) {
+
+                errorMsg.style.display =
+                    'none';
             }
         }
-    });
-    
-    console.log('✅ Login - Inicialización completada');
-});
+
+
+        console.log(
+            '✅ Login - Inicialización completada'
+        );
+    }
+);
