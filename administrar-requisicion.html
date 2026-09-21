@@ -1,179 +1,1150 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SIMAN SmartRecruit - Administrar Requisición</title>
-  <link rel="stylesheet" href="css/global.css" />
-  <link rel="stylesheet" href="css/detalle.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SIMAN SmartRecruit - Administrar Requisición</title>
+
+    <!-- ESTILOS -->
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/detalle.css">
+
+    <!-- FUENTE -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- ICONOS -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
 </head>
+
+
 <body>
-  <div id="sidebar-container"></div>
-  
-  <div class="main-content">
-    <div id="topbar-container"></div>
-    
-    <div class="detail-header">
-      <div>
-        <h1>Administrar Requisición #R-142</h1>
-        <div class="detail-meta">
-          <span><i class="fas fa-store"></i> Gran Vía</span>
-          <span><i class="fas fa-briefcase"></i> Analista Financiero</span>
-          <span class="badge badge-blue">En proceso</span>
-        </div>
-      </div>
-      <div class="detail-actions">
-        <button class="btn btn-outline"><i class="fas fa-envelope"></i> Enviar Correo</button>
-        <button class="btn btn-primary"><i class="fas fa-user-plus"></i> Registrar Candidato</button>
-      </div>
-    </div>
-    
-    <div class="detail-grid">
-      <div class="detail-main">
-        <!-- Estados Timeline -->
-        <div class="card">
-          <div class="card-header">
-            <span><i class="fas fa-tasks"></i> Estados de la Requisición</span>
-          </div>
-          <div class="status-timeline">
-            <div class="status-item completed">
-              <div class="status-dot"></div>
-              <div class="status-content">
-                <div class="status-title">Nueva</div>
-                <div class="status-date">21 jul 2026</div>
-              </div>
+
+    <!-- =====================================================
+         SIDEBAR GLOBAL
+    ====================================================== -->
+
+    <div id="sidebar-container"></div>
+
+
+    <!-- =====================================================
+         CONTENIDO PRINCIPAL
+    ====================================================== -->
+
+    <main class="main-content">
+
+        <!-- TOPBAR -->
+        <div id="topbar-container"></div>
+
+
+        <!-- =================================================
+             PÁGINA
+        ================================================== -->
+
+        <div class="detail-page">
+
+
+            <!-- =============================================
+                 VOLVER
+            ============================================== -->
+
+            <div class="detail-back">
+
+                <a
+                    href="seguimiento.html"
+                    class="btn-back"
+                >
+                    <i class="fas fa-arrow-left"></i>
+                    Volver a Seguimiento
+                </a>
+
             </div>
-            <div class="status-item completed">
-              <div class="status-dot"></div>
-              <div class="status-content">
-                <div class="status-title">Revisando</div>
-                <div class="status-date">23 jul 2026</div>
-              </div>
-            </div>
-            <div class="status-item completed">
-              <div class="status-dot"></div>
-              <div class="status-content">
-                <div class="status-title">Publicada</div>
-                <div class="status-date">24 jul 2026</div>
-              </div>
-            </div>
-            <div class="status-item active">
-              <div class="status-dot"></div>
-              <div class="status-content">
-                <div class="status-title">Recibiendo CV</div>
-                <div class="status-date">Actual</div>
-              </div>
-            </div>
-            <div class="status-item">
-              <div class="status-dot"></div>
-              <div class="status-content">
-                <div class="status-title">Entrevistas</div>
-                <div class="status-date">Pendiente</div>
-              </div>
-            </div>
-            <div class="status-item">
-              <div class="status-dot"></div>
-              <div class="status-content">
-                <div class="status-title">Evaluaciones</div>
-                <div class="status-date">Pendiente</div>
-              </div>
-            </div>
-            <div class="status-item">
-              <div class="status-dot"></div>
-              <div class="status-content">
-                <div class="status-title">Oferta</div>
-                <div class="status-date">Pendiente</div>
-              </div>
-            </div>
-            <div class="status-item">
-              <div class="status-dot"></div>
-              <div class="status-content">
-                <div class="status-title">Contratado</div>
-                <div class="status-date">Pendiente</div>
-              </div>
-            </div>
-            <div class="status-item">
-              <div class="status-dot"></div>
-              <div class="status-content">
-                <div class="status-title">Cerrado</div>
-                <div class="status-date">Pendiente</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Comentarios -->
-        <div class="card">
-          <div class="card-header">
-            <span><i class="fas fa-comment"></i> Comentarios</span>
-            <button class="btn btn-outline" style="padding:6px 16px;"><i class="fas fa-paperclip"></i> Adjuntar</button>
-          </div>
-          <div class="comments">
-            <div class="comment">
-              <div class="comment-avatar">ML</div>
-              <div class="comment-content">
-                <div class="comment-header">
-                  <span class="comment-author">María López</span>
-                  <span class="comment-date">Hace 2 horas</span>
+
+
+            <!-- =============================================
+                 ENCABEZADO
+            ============================================== -->
+
+            <section class="detail-header">
+
+                <div class="detail-title-area">
+
+                    <div class="detail-title-line">
+
+                        <h1 id="tituloRequisicion">
+                            Cargando requisición...
+                        </h1>
+
+                        <span
+                            id="estadoRequisicion"
+                            class="status-badge"
+                        >
+                            CARGANDO
+                        </span>
+
+                    </div>
+
+
+                    <div class="detail-meta">
+
+                        <span>
+                            <i class="fas fa-store"></i>
+                            <span id="tiendaRequisicion">
+                                —
+                            </span>
+                        </span>
+
+
+                        <span>
+                            <i class="fas fa-briefcase"></i>
+                            <span id="puestoRequisicion">
+                                —
+                            </span>
+                        </span>
+
+
+                        <span>
+                            <i class="fas fa-user-tie"></i>
+                            <span id="reclutadorRequisicion">
+                                —
+                            </span>
+                        </span>
+
+                    </div>
+
                 </div>
-                <p>Se han recibido 12 CVs para la posición. Procediendo a preselección.</p>
-              </div>
+
+
+                <!-- ACCIONES SUPERIORES -->
+
+                <div class="detail-actions">
+
+                    <button
+                        type="button"
+                        class="btn btn-outline"
+                        id="btnEnviarCorreo"
+                    >
+                        <i class="fas fa-envelope"></i>
+                        Enviar Correo
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="btn btn-primary"
+                        id="btnRegistrarCandidato"
+                    >
+                        <i class="fas fa-user-plus"></i>
+                        Registrar Candidato
+                    </button>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- =============================================
+                 RESUMEN / KPI
+            ============================================== -->
+
+            <section class="detail-kpis">
+
+
+                <article class="detail-kpi">
+
+                    <div class="detail-kpi-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+
+                    <div>
+                        <span>Progreso</span>
+
+                        <strong id="kpiProgreso">
+                            0%
+                        </strong>
+                    </div>
+
+                </article>
+
+
+                <article class="detail-kpi">
+
+                    <div class="detail-kpi-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+
+                    <div>
+                        <span>Candidatos</span>
+
+                        <strong id="kpiCandidatos">
+                            0
+                        </strong>
+                    </div>
+
+                </article>
+
+
+                <article class="detail-kpi">
+
+                    <div class="detail-kpi-icon">
+                        <i class="fas fa-calendar-days"></i>
+                    </div>
+
+                    <div>
+                        <span>Días abierta</span>
+
+                        <strong id="kpiDiasAbierta">
+                            0
+                        </strong>
+                    </div>
+
+                </article>
+
+
+                <article class="detail-kpi">
+
+                    <div class="detail-kpi-icon">
+                        <i class="fas fa-flag"></i>
+                    </div>
+
+                    <div>
+                        <span>Prioridad</span>
+
+                        <strong id="kpiPrioridad">
+                            —
+                        </strong>
+                    </div>
+
+                </article>
+
+            </section>
+
+
+
+            <!-- =============================================
+                 PROGRESO GENERAL
+            ============================================== -->
+
+            <section class="card process-progress-card">
+
+                <div class="card-header">
+
+                    <div>
+                        <i class="fas fa-route"></i>
+                        Progreso del Proceso
+                    </div>
+
+                    <strong id="porcentajeProceso">
+                        0%
+                    </strong>
+
+                </div>
+
+
+                <div class="process-progress">
+
+                    <div class="progress-track">
+
+                        <div
+                            id="barraProgreso"
+                            class="progress-fill"
+                            style="width: 0%;"
+                        ></div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- STEPPER -->
+
+                <div
+                    id="stepperEstados"
+                    class="process-stepper"
+                >
+                    <!-- administrar-requisicion.js -->
+                </div>
+
+            </section>
+
+
+
+            <!-- =============================================
+                 GRID PRINCIPAL
+            ============================================== -->
+
+            <div class="detail-grid">
+
+
+                <!-- =========================================
+                     COLUMNA IZQUIERDA
+                ========================================== -->
+
+                <div class="detail-main-column">
+
+
+                    <!-- =====================================
+                         SEGUIMIENTO / TIMELINE
+                    ====================================== -->
+
+                    <section class="card">
+
+                        <div class="card-header">
+
+                            <div>
+                                <i class="fas fa-list-check"></i>
+                                Estados de la Requisición
+                            </div>
+
+                            <span
+                                id="badgeEstadoActual"
+                                class="badge badge-blue"
+                            >
+                                CARGANDO
+                            </span>
+
+                        </div>
+
+
+                        <div
+                            id="timelineEstados"
+                            class="timeline"
+                        >
+
+                            <div class="detail-loading">
+
+                                <i class="fas fa-spinner fa-spin"></i>
+
+                                Cargando estados...
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+
+
+                    <!-- =====================================
+                         INFORMACIÓN DE REQUISICIÓN
+                    ====================================== -->
+
+                    <section class="card">
+
+                        <div class="card-header">
+
+                            <div>
+                                <i class="fas fa-circle-info"></i>
+                                Información de la Requisición
+                            </div>
+
+                        </div>
+
+
+                        <div class="detail-info">
+
+
+                            <div class="info-row">
+                                <span class="info-label">
+                                    Código
+                                </span>
+
+                                <span
+                                    class="info-value"
+                                    id="infoCodigo"
+                                >
+                                    —
+                                </span>
+                            </div>
+
+
+                            <div class="info-row">
+                                <span class="info-label">
+                                    Departamento
+                                </span>
+
+                                <span
+                                    class="info-value"
+                                    id="infoDepartamento"
+                                >
+                                    —
+                                </span>
+                            </div>
+
+
+                            <div class="info-row">
+                                <span class="info-label">
+                                    Centro
+                                </span>
+
+                                <span
+                                    class="info-value"
+                                    id="infoCentro"
+                                >
+                                    —
+                                </span>
+                            </div>
+
+
+                            <div class="info-row">
+                                <span class="info-label">
+                                    Tienda
+                                </span>
+
+                                <span
+                                    class="info-value"
+                                    id="infoTienda"
+                                >
+                                    —
+                                </span>
+                            </div>
+
+
+                            <div class="info-row">
+                                <span class="info-label">
+                                    Contratación
+                                </span>
+
+                                <span
+                                    class="info-value"
+                                    id="infoContratacion"
+                                >
+                                    —
+                                </span>
+                            </div>
+
+
+                            <div class="info-row">
+                                <span class="info-label">
+                                    Motivo
+                                </span>
+
+                                <span
+                                    class="info-value"
+                                    id="infoMotivo"
+                                >
+                                    —
+                                </span>
+                            </div>
+
+
+                            <div class="info-row">
+                                <span class="info-label">
+                                    Plazas
+                                </span>
+
+                                <span
+                                    class="info-value"
+                                    id="infoCantidad"
+                                >
+                                    0
+                                </span>
+                            </div>
+
+
+                            <div class="info-row">
+                                <span class="info-label">
+                                    Fecha límite
+                                </span>
+
+                                <span
+                                    class="info-value"
+                                    id="infoFechaLimite"
+                                >
+                                    —
+                                </span>
+                            </div>
+
+                        </div>
+
+
+                        <!-- DESCRIPCIÓN -->
+
+                        <div class="detail-text-section">
+
+                            <h4>Descripción</h4>
+
+                            <p id="infoDescripcion">
+                                Sin descripción.
+                            </p>
+
+                        </div>
+
+
+                        <!-- REQUISITOS -->
+
+                        <div class="detail-text-section">
+
+                            <h4>Requisitos</h4>
+
+                            <p id="infoRequisitos">
+                                Sin requisitos registrados.
+                            </p>
+
+                        </div>
+
+
+                        <!-- OBSERVACIONES -->
+
+                        <div class="detail-text-section">
+
+                            <h4>Observaciones</h4>
+
+                            <p id="infoObservaciones">
+                                Sin observaciones.
+                            </p>
+
+                        </div>
+
+                    </section>
+
+
+
+                    <!-- =====================================
+                         CANDIDATOS ASOCIADOS
+                    ====================================== -->
+
+                    <section class="card">
+
+                        <div class="card-header">
+
+                            <div>
+                                <i class="fas fa-users"></i>
+                                Candidatos Asociados
+                            </div>
+
+                            <span
+                                id="contadorCandidatos"
+                                class="badge badge-blue"
+                            >
+                                0 CANDIDATOS
+                            </span>
+
+                        </div>
+
+
+                        <div
+                            id="listaCandidatos"
+                            class="requisition-candidates"
+                        >
+
+                            <div class="detail-loading">
+
+                                <i class="fas fa-spinner fa-spin"></i>
+
+                                Cargando candidatos...
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+
+
+                    <!-- =====================================
+                         COMENTARIOS
+                    ====================================== -->
+
+                    <section class="card">
+
+                        <div class="card-header">
+
+                            <div>
+                                <i class="fas fa-comments"></i>
+                                Comentarios
+                            </div>
+
+                            <span
+                                id="contadorComentarios"
+                                class="badge badge-blue"
+                            >
+                                0
+                            </span>
+
+                        </div>
+
+
+                        <!-- NUEVO COMENTARIO -->
+
+                        <form
+                            id="formComentario"
+                            class="comment-form"
+                        >
+
+                            <div class="comment-input">
+
+                                <input
+                                    type="text"
+                                    id="nuevoComentario"
+                                    placeholder="Escribe un comentario..."
+                                    maxlength="1000"
+                                    autocomplete="off"
+                                    required
+                                >
+
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-primary"
+                                    id="btnPublicarComentario"
+                                >
+                                    <i class="fas fa-paper-plane"></i>
+                                    Publicar
+                                </button>
+
+                            </div>
+
+                        </form>
+
+
+                        <!-- LISTA -->
+
+                        <div
+                            id="listaComentarios"
+                            class="comments"
+                        >
+
+                            <div class="detail-loading">
+
+                                <i class="fas fa-spinner fa-spin"></i>
+
+                                Cargando comentarios...
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+                </div>
+
+
+
+                <!-- =========================================
+                     COLUMNA DERECHA
+                ========================================== -->
+
+                <aside class="detail-sidebar-column">
+
+
+                    <!-- =====================================
+                         ACCIONES
+                    ====================================== -->
+
+                    <section class="card">
+
+                        <div class="card-header">
+
+                            <div>
+                                <i class="fas fa-circle-info"></i>
+                                Acciones
+                            </div>
+
+                        </div>
+
+
+                        <div class="detail-action-list">
+
+
+                            <button
+                                type="button"
+                                id="btnAvanzarEstado"
+                                class="btn btn-primary btn-block"
+                            >
+                                <i class="fas fa-forward"></i>
+                                Avanzar Estado
+                            </button>
+
+
+                            <button
+                                type="button"
+                                id="btnGenerarReporte"
+                                class="btn btn-outline btn-block"
+                            >
+                                <i class="fas fa-file-lines"></i>
+                                Generar Reporte
+                            </button>
+
+
+                            <button
+                                type="button"
+                                id="btnRegistrarCandidatoLateral"
+                                class="btn btn-outline btn-block"
+                            >
+                                <i class="fas fa-user-plus"></i>
+                                Registrar Candidato
+                            </button>
+
+
+                            <button
+                                type="button"
+                                id="btnAdjuntarDocumento"
+                                class="btn btn-outline btn-block"
+                            >
+                                <i class="fas fa-paperclip"></i>
+                                Adjuntar Documento
+                            </button>
+
+                        </div>
+
+                    </section>
+
+
+
+                    <!-- =====================================
+                         RESPONSABLE
+                    ====================================== -->
+
+                    <section class="card">
+
+                        <div class="card-header">
+
+                            <div>
+                                <i class="fas fa-user-tie"></i>
+                                Responsable
+                            </div>
+
+                        </div>
+
+
+                        <div class="responsable-info">
+
+                            <div
+                                id="responsableAvatar"
+                                class="responsable-avatar"
+                            >
+                                —
+                            </div>
+
+
+                            <div>
+
+                                <div
+                                    id="responsableNombre"
+                                    class="responsable-name"
+                                >
+                                    Sin asignar
+                                </div>
+
+                                <div
+                                    id="responsableRol"
+                                    class="responsable-role"
+                                >
+                                    Reclutador
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+
+
+                    <!-- =====================================
+                         HISTORIAL
+                    ====================================== -->
+
+                    <section class="card">
+
+                        <div class="card-header">
+
+                            <div>
+                                <i class="fas fa-clock-rotate-left"></i>
+                                Historial Completo
+                            </div>
+
+                            <span
+                                id="contadorHistorial"
+                                class="badge badge-blue"
+                            >
+                                0
+                            </span>
+
+                        </div>
+
+
+                        <div
+                            id="historialRequisicion"
+                            class="history-list"
+                        >
+
+                            <div class="detail-loading">
+
+                                <i class="fas fa-spinner fa-spin"></i>
+
+                                Cargando historial...
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+                </aside>
+
             </div>
-            <div class="comment-input">
-              <input type="text" placeholder="Agregar comentario..." />
-              <button class="btn btn-primary" style="padding:10px 20px;"><i class="fas fa-paper-plane"></i></button>
-            </div>
-          </div>
+
         </div>
-      </div>
-      
-      <div class="detail-sidebar">
-        <div class="card">
-          <div class="card-header">
-            <span><i class="fas fa-info-circle"></i> Acciones</span>
-          </div>
-          <div style="display:flex; flex-direction:column; gap:8px;">
-            <button class="btn btn-primary" style="width:100%; justify-content:center;"><i class="fas fa-forward"></i> Avanzar Estado</button>
-            <button class="btn btn-outline" style="width:100%; justify-content:center;"><i class="fas fa-file-alt"></i> Generar Reporte</button>
-            <button class="btn btn-outline" style="width:100%; justify-content:center;"><i class="fas fa-user-plus"></i> Registrar Candidato</button>
-          </div>
+
+    </main>
+
+
+
+    <!-- =====================================================
+         MODAL REGISTRAR CANDIDATO
+    ====================================================== -->
+
+    <div
+        id="modalCandidato"
+        class="modal-overlay"
+        hidden
+    >
+
+        <div class="modal-card">
+
+
+            <div class="modal-header">
+
+                <div>
+
+                    <h2>
+                        <i class="fas fa-user-plus"></i>
+                        Registrar Candidato
+                    </h2>
+
+                    <p id="modalCandidatoRequisicion">
+                        Asociado a la requisición actual
+                    </p>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="cerrarModalCandidato"
+                    class="modal-close"
+                    aria-label="Cerrar"
+                >
+                    &times;
+                </button>
+
+            </div>
+
+
+            <form id="formCandidato">
+
+
+                <div class="form-grid">
+
+
+                    <label>
+
+                        <span>Nombre completo *</span>
+
+                        <input
+                            type="text"
+                            id="candNombre"
+                            required
+                        >
+
+                    </label>
+
+
+                    <label>
+
+                        <span>Correo</span>
+
+                        <input
+                            type="email"
+                            id="candEmail"
+                        >
+
+                    </label>
+
+
+                    <label>
+
+                        <span>Teléfono</span>
+
+                        <input
+                            type="tel"
+                            id="candTelefono"
+                        >
+
+                    </label>
+
+
+                    <label>
+
+                        <span>Fuente</span>
+
+                        <input
+                            type="text"
+                            id="candFuente"
+                            placeholder="LinkedIn, referido..."
+                        >
+
+                    </label>
+
+
+                    <label>
+
+                        <span>Estado</span>
+
+                        <select id="candEstado">
+
+                            <option value="Nuevo">
+                                Nuevo
+                            </option>
+
+                            <option value="Preselección">
+                                Preselección
+                            </option>
+
+                            <option value="Entrevista RH">
+                                Entrevista RH
+                            </option>
+
+                            <option value="Evaluación">
+                                Evaluación
+                            </option>
+
+                            <option value="Oferta">
+                                Oferta
+                            </option>
+
+                            <option value="Contratado">
+                                Contratado
+                            </option>
+
+                            <option value="Descartado">
+                                Descartado
+                            </option>
+
+                        </select>
+
+                    </label>
+
+
+                    <label>
+
+                        <span>Pretensión salarial</span>
+
+                        <input
+                            type="number"
+                            id="candSalario"
+                            min="0"
+                            step="0.01"
+                        >
+
+                    </label>
+
+
+                    <label>
+
+                        <span>Fecha de entrevista</span>
+
+                        <input
+                            type="datetime-local"
+                            id="candEntrevista"
+                        >
+
+                    </label>
+
+                </div>
+
+
+                <label class="form-full">
+
+                    <span>Notas</span>
+
+                    <textarea
+                        id="candNotas"
+                        rows="4"
+                    ></textarea>
+
+                </label>
+
+
+                <div class="modal-actions">
+
+                    <button
+                        type="button"
+                        class="btn btn-outline"
+                        id="cancelarCandidato"
+                    >
+                        Cancelar
+                    </button>
+
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                        id="guardarCandidato"
+                    >
+                        <i class="fas fa-save"></i>
+                        Guardar Candidato
+                    </button>
+
+                </div>
+
+            </form>
+
         </div>
-        
-        <div class="card">
-          <div class="card-header">
-            <span><i class="fas fa-history"></i> Historial Completo</span>
-          </div>
-          <div class="history-list">
-            <div class="history-item">
-              <span class="history-date">24/07/26 09:00</span>
-              <span>Publicada la vacante</span>
-            </div>
-            <div class="history-item">
-              <span class="history-date">23/07/26 14:15</span>
-              <span>Revisión de requisitos</span>
-            </div>
-            <div class="history-item">
-              <span class="history-date">22/07/26 10:30</span>
-              <span>Asignada a reclutadora</span>
-            </div>
-            <div class="history-item">
-              <span class="history-date">21/07/26 08:30</span>
-              <span>Requisición creada</span>
-            </div>
-          </div>
-        </div>
-      </div>
+
     </div>
-  </div>
-  
-  <script src="js/auth.js"></script>
-  <script src="js/router.js"></script>
-  <script src="js/sidebar.js"></script>
-  <script src="js/darkmode.js"></script>
-  <script src="js/notifications.js"></script>
-  <script src="js/supabase-client.js"></script>
-  <script src="js/configuracion.js"></script>
+
+
+
+    <!-- =====================================================
+         MODAL ENVIAR CORREO
+    ====================================================== -->
+
+    <div
+        id="modalCorreo"
+        class="modal-overlay"
+        hidden
+    >
+
+        <div class="modal-card modal-small">
+
+
+            <div class="modal-header">
+
+                <div>
+
+                    <h2>
+                        <i class="fas fa-envelope"></i>
+                        Enviar Correo
+                    </h2>
+
+                    <p>
+                        Comunicación relacionada con la requisición.
+                    </p>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="cerrarModalCorreo"
+                    class="modal-close"
+                >
+                    &times;
+                </button>
+
+            </div>
+
+
+            <form id="formCorreo">
+
+
+                <label class="form-full">
+
+                    <span>Destinatario</span>
+
+                    <input
+                        type="email"
+                        id="correoDestinatario"
+                        required
+                    >
+
+                </label>
+
+
+                <label class="form-full">
+
+                    <span>Asunto</span>
+
+                    <input
+                        type="text"
+                        id="correoAsunto"
+                        required
+                    >
+
+                </label>
+
+
+                <label class="form-full">
+
+                    <span>Mensaje</span>
+
+                    <textarea
+                        id="correoMensaje"
+                        rows="7"
+                        required
+                    ></textarea>
+
+                </label>
+
+
+                <div class="modal-actions">
+
+                    <button
+                        type="button"
+                        class="btn btn-outline"
+                        id="cancelarCorreo"
+                    >
+                        Cancelar
+                    </button>
+
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                    >
+                        <i class="fas fa-paper-plane"></i>
+                        Preparar Correo
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         SUPABASE
+    ====================================================== -->
+
+    <script
+        src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+    </script>
+
+
+    <!-- =====================================================
+         CORE SMARTRECRUIT
+    ====================================================== -->
+
+    <script src="js/supabase-client.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/sidebar.js"></script>
+    <script src="js/darkmode.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/configuracion.js"></script>
+
+
+    <!-- =====================================================
+         ADMINISTRAR REQUISICIÓN FASE 3
+    ====================================================== -->
+
+    <script src="js/administrar-requisicion.js"></script>
+
 </body>
+
 </html>
