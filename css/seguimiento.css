@@ -1,0 +1,452 @@
+/* =========================================================
+   SIMAN SMARTRECRUIT
+   SEGUIMIENTO - FASE 3
+========================================================= */
+
+
+/* =========================================================
+   PÁGINA
+========================================================= */
+
+.seguimiento-page {
+    width: 100%;
+    padding: 24px;
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   ENCABEZADO
+========================================================= */
+
+.seguimiento-page .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.seguimiento-page .page-header h1 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.seguimiento-page .page-header h1 i {
+    color: var(--primary);
+}
+
+.seguimiento-page .page-header p {
+    margin: 7px 0 0;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   PANEL
+========================================================= */
+
+.seguimiento-panel {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.seguimiento-panel .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.seguimiento-panel .card-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+}
+
+.seguimiento-panel .card-title i {
+    color: var(--primary);
+}
+
+
+/* =========================================================
+   CONTENEDOR DE PROCESOS
+========================================================= */
+
+#seguimientoContainer {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+
+/* =========================================================
+   CARGANDO
+========================================================= */
+
+.seguimiento-loading {
+    min-height: 180px;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 12px;
+
+    color: var(--text-muted);
+}
+
+.seguimiento-loading i {
+    font-size: 26px;
+    color: var(--primary);
+}
+
+
+/* =========================================================
+   TARJETA DE PROCESO
+========================================================= */
+
+.proceso-card {
+    position: relative;
+
+    width: 100%;
+
+    padding: 20px;
+
+    box-sizing: border-box;
+
+    border-radius: 14px;
+
+    border: 1px solid var(--border);
+
+    background: var(--bg-card);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.proceso-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+
+/* =========================================================
+   CABECERA DEL PROCESO
+========================================================= */
+
+.proceso-header {
+    display: flex;
+
+    justify-content: space-between;
+    align-items: flex-start;
+
+    gap: 20px;
+
+    margin-bottom: 16px;
+}
+
+.proceso-titulo {
+    display: flex;
+    flex-wrap: wrap;
+
+    align-items: center;
+
+    gap: 8px;
+
+    color: var(--text-primary);
+}
+
+.proceso-codigo {
+    font-weight: 700;
+}
+
+.proceso-puesto {
+    font-weight: 500;
+}
+
+.proceso-reclutador {
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    font-size: 13px;
+
+    color: var(--text-muted);
+}
+
+
+/* =========================================================
+   UBICACIÓN
+========================================================= */
+
+.proceso-ubicacion {
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    margin-top: 8px;
+
+    font-size: 13px;
+
+    color: var(--text-muted);
+}
+
+
+/* =========================================================
+   PROGRESO
+========================================================= */
+
+.proceso-progreso {
+    margin-top: 18px;
+}
+
+.progreso-info {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    margin-bottom: 7px;
+
+    font-size: 12px;
+
+    color: var(--text-muted);
+}
+
+.progreso-porcentaje {
+    font-weight: 700;
+
+    color: var(--text-primary);
+}
+
+
+/* =========================================================
+   BARRA
+========================================================= */
+
+.progreso-barra {
+    width: 100%;
+
+    height: 8px;
+
+    overflow: hidden;
+
+    border-radius: 999px;
+
+    background: var(--bg-body);
+}
+
+.progreso-barra-fill {
+    height: 100%;
+
+    border-radius: inherit;
+
+    background: var(--primary);
+
+    transition: width 0.4s ease;
+}
+
+
+/* =========================================================
+   FOOTER DEL PROCESO
+========================================================= */
+
+.proceso-footer {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 16px;
+
+    margin-top: 18px;
+}
+
+.proceso-meta {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    align-items: center;
+
+    gap: 10px;
+}
+
+.proceso-meta-item {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    font-size: 12px;
+
+    color: var(--text-muted);
+}
+
+
+/* =========================================================
+   BOTÓN GESTIONAR
+========================================================= */
+
+.btn-gestionar {
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 7px;
+
+    padding: 8px 14px;
+
+    border-radius: 8px;
+
+    border: 1px solid var(--border);
+
+    background: transparent;
+
+    color: var(--text-primary);
+
+    cursor: pointer;
+
+    font-size: 13px;
+
+    transition: all 0.2s ease;
+}
+
+.btn-gestionar:hover {
+    background: var(--primary);
+
+    color: #ffffff;
+
+    border-color: var(--primary);
+}
+
+
+/* =========================================================
+   ESTADOS
+========================================================= */
+
+.estado-badge {
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 5px 11px;
+
+    border-radius: 999px;
+
+    font-size: 11px;
+
+    font-weight: 600;
+
+    text-transform: uppercase;
+}
+
+
+/* =========================================================
+   SIN RESULTADOS
+========================================================= */
+
+.seguimiento-empty {
+    min-height: 240px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    text-align: center;
+
+    gap: 12px;
+
+    color: var(--text-muted);
+}
+
+.seguimiento-empty i {
+    font-size: 40px;
+
+    color: var(--text-muted);
+}
+
+.seguimiento-empty h3 {
+    margin: 0;
+
+    color: var(--text-primary);
+}
+
+.seguimiento-empty p {
+    margin: 0;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 900px) {
+
+    .seguimiento-page {
+        padding: 18px;
+    }
+
+    .proceso-header {
+        flex-direction: column;
+    }
+
+    .proceso-footer {
+        flex-direction: column;
+
+        align-items: stretch;
+    }
+
+    .btn-gestionar {
+        width: 100%;
+    }
+}
+
+
+@media (max-width: 600px) {
+
+    .seguimiento-page {
+        padding: 14px;
+    }
+
+    .seguimiento-page .page-header h1 {
+        font-size: 22px;
+    }
+
+    .proceso-card {
+        padding: 16px;
+    }
+
+    .proceso-meta {
+        flex-direction: column;
+
+        align-items: flex-start;
+    }
+}
