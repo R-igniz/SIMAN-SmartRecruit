@@ -1,327 +1,932 @@
-// ==========================================
-// NUEVA REQUISICIÓN - FASE 2
-// SUPABASE AUTH + UUID
-// ==========================================
+// ============================================================
+// SIMAN SMARTRECRUIT
+// NUEVA-REQUISICION.JS - FASE 3
+// SUPABASE + RLS + CATÁLOGOS REALES
+// ============================================================
 
-console.log('🚀 nueva-requisicion.js Fase 2');
+console.log('🚀 nueva-requisicion.js Fase 3');
 
 var currentStep = 1;
 var totalSteps = 4;
+
 var datosCargados = false;
-var intervaloIntento = null;
+var guardandoRequisicion = false;
 
 
-// ==========================================
-// CARGA DE DATOS
-// ==========================================
+// ============================================================
+// UTILIDADES
+// ============================================================
+
+function obtenerElemento(id) {
+    return document.getElementById(id);
+}
+
+
+function obtenerValor(id) {
+
+    var elemento = obtenerElemento(id);
+
+    if (!elemento) {
+        return '';
+    }
+
+    return String(elemento.value || '').trim();
+}
+
+
+function obtenerTextoSeleccionado(id) {
+
+    var select = obtenerElemento(id);
+
+    if (!select) {
+        return '';
+    }
+
+    var option =
+        select.options[
+            select.selectedIndex
+        ];
+
+    return option
+        ? String(option.textContent || '').trim()
+        : '';
+}
+
+
+function escapeHtml(valor) {
+
+    return String(valor || '')
+        .replace(
+            /[&<>"']/g,
+            function(caracter) {
+
+                var mapa = {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                };
+
+                return mapa[caracter];
+            }
+        );
+}
+
+
+// ============================================================
+// POBLAR SELECT
+// ============================================================
+
+function poblarSelect(
+    id,
+    datos,
+    textoDefault,
+    opciones
+) {
+
+    var select =
+        obtenerElemento(id);
+
+    if (!select) {
+
+        console.warn(
+            '⚠️ Select no encontrado:',
+            id
+        );
+
+        return;
+    }
+
+
+    datos =
+        Array.isArray(datos)
+            ? datos
+            : [];
+
+
+    opciones =
+        opciones || {};
+
+
+    select.innerHTML = '';
+
+
+    var optionDefault =
+        document.createElement('option');
+
+    optionDefault.value = '';
+
+    optionDefault.textContent =
+        textoDefault ||
+        'Seleccionar...';
+
+    select.appendChild(
+        optionDefault
+    );
+
+
+    datos.forEach(
+        function(item) {
+
+            if (
+                item.activo === false
+            ) {
+                return;
+            }
+
+
+            var option =
+                document.createElement(
+                    'option'
+                );
+
+
+            /*
+             * Para mantener compatibilidad con
+             * requisiciones, guardamos el nombre
+             * como value en catálogos normales.
+             */
+
+            option.value =
+                item.nombre ||
+                item.name ||
+                '';
+
+
+            option.textContent =
+                item.nombre ||
+                item.name ||
+                item.email ||
+                'Sin nombre';
+
+
+            if (item.id !== undefined) {
+
+                option.dataset.id =
+                    String(item.id);
+            }
+
+
+            if (
+                item.uuid !== undefined
+            ) {
+
+                option.dataset.uuid =
+                    String(item.uuid);
+            }
+
+
+            if (
+                item.centro_comercial_id !==
+                undefined &&
+                item.centro_comercial_id !==
+                null
+            ) {
+
+                option.dataset.centroId =
+                    String(
+                        item.centro_comercial_id
+                    );
+            }
+
+
+            if (item.comercial) {
+
+                option.dataset.comercial =
+                    item.comercial;
+            }
+
+
+            if (item.centro) {
+
+                option.dataset.centro =
+                    item.centro;
+            }
+
+
+            if (item.email) {
+
+                option.dataset.email =
+                    item.email;
+            }
+
+
+            if (item.role_code) {
+
+                option.dataset.role =
+                    item.role_code;
+            }
+
+
+            select.appendChild(
+                option
+            );
+        }
+    );
+}
+
+
+// ============================================================
+// POBLAR RECLUTADORES
+// ============================================================
+
+function poblarReclutadores(
+    reclutadores
+) {
+
+    var select =
+        obtenerElemento(
+            'reclutador'
+        );
+
+
+    if (!select) {
+        return;
+    }
+
+
+    select.innerHTML =
+        '<option value="">' +
+        'Seleccionar reclutador...' +
+        '</option>';
+
+
+    (reclutadores || [])
+        .forEach(
+            function(reclutador) {
+
+                if (
+                    reclutador.activo ===
+                    false
+                ) {
+                    return;
+                }
+
+
+                var option =
+                    document.createElement(
+                        'option'
+                    );
+
+
+                /*
+                 * El value continúa siendo el
+                 * nombre para compatibilidad.
+                 *
+                 * El UUID real queda guardado
+                 * en data-uuid.
+                 */
+
+                option.value =
+                    reclutador.nombre ||
+                    reclutador.name ||
+                    reclutador.email ||
+                    '';
+
+
+                option.textContent =
+                    reclutador.nombre ||
+                    reclutador.name ||
+                    reclutador.email ||
+                    'Sin nombre';
+
+
+                option.dataset.uuid =
+                    reclutador.uuid ||
+                    reclutador.id ||
+                    '';
+
+
+                option.dataset.email =
+                    reclutador.email ||
+                    '';
+
+
+                option.dataset.role =
+                    reclutador.role_code ||
+                    '';
+
+
+                select.appendChild(
+                    option
+                );
+            }
+        );
+}
+
+
+// ============================================================
+// CARGAR DATOS DEL FORMULARIO
+// ============================================================
 
 function cargarDatosFormulario() {
 
-    console.log('🔄 cargarDatosFormulario()');
+    console.log(
+        '🔄 cargarDatosFormulario() Fase 3'
+    );
 
-    if (!datosCargados) {
-        console.log('⏳ Esperando configuración...');
-        return;
-    }
 
-    var data = obtenerDatosConfig();
+    var data =
+        typeof obtenerDatosConfig ===
+        'function'
+            ? obtenerDatosConfig()
+            : null;
+
 
     if (!data) {
-        console.warn('⚠️ Configuración no disponible');
-        return;
+
+        console.warn(
+            '⚠️ Configuración no disponible'
+        );
+
+        return false;
     }
 
-    var comerciales = obtenerComerciales();
+
+    var comerciales =
+        typeof obtenerComerciales ===
+        'function'
+            ? obtenerComerciales()
+            : [];
+
+
+    var tiendas =
+        typeof obtenerTiendas ===
+        'function'
+            ? obtenerTiendas()
+            : [];
+
+
+    var departamentos =
+        typeof obtenerDepartamentos ===
+        'function'
+            ? obtenerDepartamentos()
+            : [];
+
+
+    var tipos =
+        typeof obtenerTiposContratacion ===
+        'function'
+            ? obtenerTiposContratacion()
+            : [];
+
+
+    var prioridades =
+        typeof obtenerPrioridades ===
+        'function'
+            ? obtenerPrioridades()
+            : [];
+
+
+    var motivos =
+        typeof obtenerMotivos ===
+        'function'
+            ? obtenerMotivos()
+            : [];
+
+
+    var reclutadores =
+        typeof obtenerReclutadores ===
+        'function'
+            ? obtenerReclutadores()
+            : [];
+
+
+    console.log(
+        '🏢 Centros:',
+        comerciales.length
+    );
+
+    console.log(
+        '🛒 Tiendas:',
+        tiendas.length
+    );
+
+    console.log(
+        '🏛️ Departamentos:',
+        departamentos.length
+    );
+
+    console.log(
+        '📄 Tipos:',
+        tipos.length
+    );
+
+    console.log(
+        '🚩 Prioridades:',
+        prioridades.length
+    );
+
+    console.log(
+        '❓ Motivos:',
+        motivos.length
+    );
+
+    console.log(
+        '👩‍💼 Reclutadores:',
+        reclutadores.length
+    );
+
+
     poblarSelect(
         'centroComercial',
         comerciales,
         'Seleccionar centro...'
     );
 
-    var tiendas = obtenerTiendas();
+
+    /*
+     * Inicialmente no mostramos todas las
+     * tiendas. Primero se selecciona centro.
+     */
+
     poblarSelect(
         'tienda',
-        tiendas,
-        'Seleccionar tienda...',
-        true
+        [],
+        'Primero seleccione un centro...'
     );
+
 
     poblarSelect(
         'departamento',
-        data.departamentos || [],
+        departamentos,
         'Seleccionar departamento...'
     );
 
+
     poblarSelect(
         'tipoContratacion',
-        data.tiposContratacion || [],
+        tipos,
         'Seleccionar tipo...'
     );
 
+
     poblarSelect(
         'prioridad',
-        data.prioridades || [],
+        prioridades,
         'Seleccionar prioridad...'
     );
 
+
     poblarSelect(
         'motivo',
-        data.motivos || [],
+        motivos,
         'Seleccionar motivo...'
     );
 
-    var reclutadores = obtenerReclutadores();
 
-    poblarSelect(
-        'reclutador',
-        reclutadores,
-        'Seleccionar reclutador...'
+    poblarReclutadores(
+        reclutadores
     );
 
-    console.log('✅ Datos del formulario cargados');
 
-    if (intervaloIntento) {
-        clearInterval(intervaloIntento);
-        intervaloIntento = null;
-    }
+    datosCargados = true;
+
+
+    console.log(
+        '✅ Formulario conectado a catálogos Supabase'
+    );
+
+
+    return true;
 }
 
 
-// ==========================================
-// POBLAR SELECT
-// ==========================================
-
-function poblarSelect(
-    id,
-    datos,
-    textoDefault,
-    esTienda
-) {
-
-    var select = document.getElementById(id);
-
-    if (!select) {
-        console.warn('⚠️ Select no encontrado:', id);
-        return;
-    }
-
-    datos = Array.isArray(datos) ? datos : [];
-
-    select.innerHTML =
-        '<option value="">' +
-        (textoDefault || 'Seleccionar...') +
-        '</option>';
-
-    if (datos.length === 0) {
-        return;
-    }
-
-    datos.forEach(function(item) {
-
-        var estado =
-            item.estado !== undefined
-                ? item.estado
-                : 'activo';
-
-        if (estado !== 'activo') {
-            return;
-        }
-
-        var option =
-            document.createElement('option');
-
-        option.value =
-            item.nombre || '';
-
-        option.textContent =
-            item.nombre || '';
-
-        if (esTienda) {
-            option.dataset.comercial =
-                item.comercial || '';
-        }
-
-        select.appendChild(option);
-    });
-}
-
-
-// ==========================================
-// FILTRAR TIENDAS
-// ==========================================
+// ============================================================
+// FILTRAR TIENDAS POR CENTRO
+// ============================================================
 
 function filtrarTiendasPorComercial() {
 
-    var comercialSelect =
-        document.getElementById(
+    var selectCentro =
+        obtenerElemento(
             'centroComercial'
         );
 
-    if (!comercialSelect) {
+
+    if (!selectCentro) {
         return;
     }
 
-    var comercial =
-        comercialSelect.value;
 
-    if (!comercial) {
+    var nombreCentro =
+        selectCentro.value;
+
+
+    var optionCentro =
+        selectCentro.options[
+            selectCentro.selectedIndex
+        ];
+
+
+    var centroId =
+        optionCentro &&
+        optionCentro.dataset
+            ? optionCentro.dataset.id
+            : null;
+
+
+    if (!nombreCentro) {
 
         poblarSelect(
             'tienda',
-            obtenerTiendas(),
-            'Seleccionar tienda...',
-            true
+            [],
+            'Primero seleccione un centro...'
         );
 
         return;
     }
 
-    var tiendasFiltradas =
-        obtenerTiendasPorComercial(
-            comercial
+
+    var tiendas =
+        typeof obtenerTiendas ===
+        'function'
+            ? obtenerTiendas()
+            : [];
+
+
+    var filtradas =
+        tiendas.filter(
+            function(tienda) {
+
+                /*
+                 * Primero usamos la FK.
+                 */
+
+                if (
+                    centroId &&
+                    tienda.centro_comercial_id !==
+                    undefined &&
+                    tienda.centro_comercial_id !==
+                    null &&
+                    String(
+                        tienda.centro_comercial_id
+                    ) ===
+                    String(
+                        centroId
+                    )
+                ) {
+
+                    return true;
+                }
+
+
+                /*
+                 * Compatibilidad temporal con
+                 * columna comercial anterior.
+                 */
+
+                var centroTienda =
+                    tienda.comercial ||
+                    tienda.centro ||
+                    '';
+
+
+                return (
+                    String(centroTienda)
+                        .trim()
+                        .toLowerCase()
+                    ===
+                    String(nombreCentro)
+                        .trim()
+                        .toLowerCase()
+                );
+            }
         );
+
+
+    console.log(
+        '🔍 Centro:',
+        nombreCentro,
+        '| ID:',
+        centroId,
+        '| Tiendas:',
+        filtradas.length
+    );
+
 
     poblarSelect(
         'tienda',
-        tiendasFiltradas,
-        'Seleccionar tienda...',
-        true
+        filtradas,
+        filtradas.length
+            ? 'Seleccionar tienda...'
+            : 'Sin tiendas asociadas'
     );
 }
 
 
-// ==========================================
+// ============================================================
 // WIZARD
-// ==========================================
+// ============================================================
 
 function showStep(step) {
 
+    step =
+        parseInt(
+            step,
+            10
+        );
+
+
+    if (
+        isNaN(step) ||
+        step < 1
+    ) {
+        step = 1;
+    }
+
+
+    if (step > totalSteps) {
+        step = totalSteps;
+    }
+
+
     document
-        .querySelectorAll('.step-content')
-        .forEach(function(el) {
-            el.classList.remove('active');
-        });
+        .querySelectorAll(
+            '.step-content'
+        )
+        .forEach(
+            function(elemento) {
+
+                elemento.classList
+                    .remove('active');
+            }
+        );
+
 
     var contenido =
-        document.getElementById(
+        obtenerElemento(
             'step' + step
         );
 
+
     if (contenido) {
-        contenido.classList.add('active');
+
+        contenido.classList
+            .add('active');
     }
+
 
     document
         .querySelectorAll(
             '.wizard-steps .step'
         )
-        .forEach(function(el) {
+        .forEach(
+            function(elemento) {
 
-            var numero =
-                parseInt(
-                    el.dataset.step,
-                    10
-                );
+                var numero =
+                    parseInt(
+                        elemento.dataset.step,
+                        10
+                    );
 
-            el.classList.remove(
-                'active',
-                'completed'
-            );
 
-            if (numero < step) {
-                el.classList.add(
+                elemento.classList.remove(
+                    'active',
                     'completed'
                 );
-            }
 
-            if (numero === step) {
-                el.classList.add(
-                    'active'
-                );
+
+                if (numero < step) {
+
+                    elemento.classList
+                        .add(
+                            'completed'
+                        );
+                }
+
+
+                if (numero === step) {
+
+                    elemento.classList
+                        .add(
+                            'active'
+                        );
+                }
             }
-        });
+        );
+
+
+    currentStep =
+        step;
+
 
     if (step === 4) {
+
         updateSummary();
     }
-
-    currentStep = step;
 }
 
 
 function nextStep(step) {
+
     showStep(step);
 }
 
 
 function prevStep(step) {
+
     showStep(step);
 }
 
 
-// ==========================================
+// ============================================================
 // RESUMEN
-// ==========================================
+// ============================================================
 
 function updateSummary() {
 
-    function valor(id) {
-
-        var elemento =
-            document.getElementById(id);
-
-        return elemento
-            ? elemento.value || '-'
-            : '-';
-    }
-
     var resumen = {
-        resCentro: valor('centroComercial'),
-        resTienda: valor('tienda'),
-        resDepartamento: valor('departamento'),
-        resPuesto: valor('nombrePuesto'),
-        resCantidad: valor('cantidadPlazas'),
-        resPrioridad: valor('prioridad'),
-        resTipo: valor('tipoContratacion'),
-        resReclutador: valor('reclutador')
+
+        resCentro:
+            obtenerTextoSeleccionado(
+                'centroComercial'
+            ) || '-',
+
+        resTienda:
+            obtenerTextoSeleccionado(
+                'tienda'
+            ) || '-',
+
+        resDepartamento:
+            obtenerTextoSeleccionado(
+                'departamento'
+            ) || '-',
+
+        resPuesto:
+            obtenerValor(
+                'nombrePuesto'
+            ) || '-',
+
+        resCantidad:
+            obtenerValor(
+                'cantidadPlazas'
+            ) || '1',
+
+        resPrioridad:
+            obtenerTextoSeleccionado(
+                'prioridad'
+            ) || '-',
+
+        resTipo:
+            obtenerTextoSeleccionado(
+                'tipoContratacion'
+            ) || '-',
+
+        resReclutador:
+            obtenerTextoSeleccionado(
+                'reclutador'
+            ) || '-'
     };
 
+
     Object.keys(resumen)
-        .forEach(function(id) {
+        .forEach(
+            function(id) {
 
-            var elemento =
-                document.getElementById(id);
+                var elemento =
+                    obtenerElemento(id);
 
-            if (elemento) {
-                elemento.textContent =
-                    resumen[id];
+
+                if (elemento) {
+
+                    elemento.textContent =
+                        resumen[id];
+                }
             }
-        });
+        );
 }
 
 
-// ==========================================
-// BORRADOR
-// ==========================================
+// ============================================================
+// VALIDACIÓN
+// ============================================================
 
-function saveDraft() {
+function validarFormulario() {
 
-    alert(
-        '📝 Borrador guardado correctamente'
-    );
+    var errores = [];
+
+
+    if (
+        !obtenerValor(
+            'centroComercial'
+        )
+    ) {
+
+        errores.push(
+            'Seleccione un centro comercial.'
+        );
+    }
+
+
+    if (
+        !obtenerValor(
+            'tienda'
+        )
+    ) {
+
+        errores.push(
+            'Seleccione una tienda.'
+        );
+    }
+
+
+    if (
+        !obtenerValor(
+            'departamento'
+        )
+    ) {
+
+        errores.push(
+            'Seleccione un departamento.'
+        );
+    }
+
+
+    if (
+        !obtenerValor(
+            'nombrePuesto'
+        )
+    ) {
+
+        errores.push(
+            'Ingrese el nombre del puesto.'
+        );
+    }
+
+
+    var cantidad =
+        parseInt(
+            obtenerValor(
+                'cantidadPlazas'
+            ),
+            10
+        );
+
+
+    if (
+        isNaN(cantidad) ||
+        cantidad < 1
+    ) {
+
+        errores.push(
+            'La cantidad de plazas debe ser mayor a 0.'
+        );
+    }
+
+
+    if (
+        !obtenerValor(
+            'tipoContratacion'
+        )
+    ) {
+
+        errores.push(
+            'Seleccione el tipo de contratación.'
+        );
+    }
+
+
+    if (
+        !obtenerValor(
+            'prioridad'
+        )
+    ) {
+
+        errores.push(
+            'Seleccione una prioridad.'
+        );
+    }
+
+
+    if (
+        !obtenerValor(
+            'motivo'
+        )
+    ) {
+
+        errores.push(
+            'Seleccione el motivo de la requisición.'
+        );
+    }
+
+
+    return errores;
 }
 
 
-// ==========================================
-// CREAR CÓDIGO
-// ==========================================
+// ============================================================
+// GENERAR CÓDIGO
+// ============================================================
 
 function generarCodigoRequisicion() {
 
-    var ahora = new Date();
+    var ahora =
+        new Date();
 
-    return (
-        'R-' +
+
+    var fecha =
         String(
             ahora.getFullYear()
         ).slice(-2) +
@@ -332,28 +937,128 @@ function generarCodigoRequisicion() {
 
         String(
             ahora.getDate()
+        ).padStart(2, '0');
+
+
+    var hora =
+        String(
+            ahora.getHours()
         ).padStart(2, '0') +
 
-        '-' +
+        String(
+            ahora.getMinutes()
+        ).padStart(2, '0') +
 
+        String(
+            ahora.getSeconds()
+        ).padStart(2, '0');
+
+
+    var aleatorio =
         Math.floor(
-            1000 +
-            Math.random() * 9000
-        )
+            10 +
+            Math.random() * 90
+        );
+
+
+    return (
+        'R-' +
+        fecha +
+        '-' +
+        hora +
+        aleatorio
     );
 }
 
 
-// ==========================================
-// GUARDAR REQUISICIÓN
-// ==========================================
+// ============================================================
+// OBTENER RECLUTADOR SELECCIONADO
+// ============================================================
+
+function obtenerReclutadorSeleccionado(
+    user
+) {
+
+    var select =
+        obtenerElemento(
+            'reclutador'
+        );
+
+
+    if (!select) {
+
+        return {
+            nombre:
+                user.nombre ||
+                user.name ||
+                user.email,
+
+            uuid:
+                user.id,
+
+            email:
+                user.email
+        };
+    }
+
+
+    var option =
+        select.options[
+            select.selectedIndex
+        ];
+
+
+    /*
+     * Si no seleccionaron reclutador,
+     * asignamos al creador.
+     */
+
+    if (
+        !option ||
+        !select.value
+    ) {
+
+        return {
+            nombre:
+                user.nombre ||
+                user.name ||
+                user.email,
+
+            uuid:
+                user.id,
+
+            email:
+                user.email
+        };
+    }
+
+
+    return {
+
+        nombre:
+            select.value,
+
+        uuid:
+            option.dataset.uuid ||
+            user.id,
+
+        email:
+            option.dataset.email ||
+            ''
+    };
+}
+
+
+// ============================================================
+// CREAR REQUISICIÓN
+// ============================================================
 
 async function submitRequisicion() {
 
-    if (window.__guardandoRequisicion) {
+    if (guardandoRequisicion) {
 
         console.warn(
-            '⚠️ Ya se está guardando'
+            '⚠️ La requisición ya se está guardando'
         );
 
         return;
@@ -361,67 +1066,52 @@ async function submitRequisicion() {
 
 
     console.log(
-        '🚀 Enviando requisición...'
+        '🚀 Creando requisición Fase 3...'
     );
 
 
-    // ======================================
-    // VALIDACIONES
-    // ======================================
+    // ========================================================
+    // VALIDAR
+    // ========================================================
 
-    var puestoElement =
-        document.getElementById(
-            'nombrePuesto'
-        );
-
-    var centroElement =
-        document.getElementById(
-            'centroComercial'
-        );
-
-    var nombrePuesto =
-        puestoElement
-            ? puestoElement.value.trim()
-            : '';
-
-    var centro =
-        centroElement
-            ? centroElement.value
-            : '';
+    var errores =
+        validarFormulario();
 
 
-    if (!centro) {
+    if (errores.length) {
 
         alert(
-            '⚠️ Seleccione un centro comercial'
+            '⚠️ Revise la información:\n\n' +
+            errores.join('\n')
         );
-
-        showStep(1);
 
         return;
     }
 
 
-    if (!nombrePuesto) {
+    // ========================================================
+    // SESIÓN REAL
+    // ========================================================
 
-        alert(
-            '⚠️ Complete el nombre del puesto'
-        );
+    var user = null;
 
-        showStep(2);
 
-        return;
+    if (
+        typeof requireAuth ===
+        'function'
+    ) {
+
+        user =
+            await requireAuth();
+
+    } else if (
+        typeof getCurrentUser ===
+        'function'
+    ) {
+
+        user =
+            getCurrentUser();
     }
-
-
-    // ======================================
-    // USUARIO SUPABASE AUTH
-    // ======================================
-
-    var user =
-        typeof getCurrentUser === 'function'
-            ? getCurrentUser()
-            : null;
 
 
     if (
@@ -431,63 +1121,80 @@ async function submitRequisicion() {
     ) {
 
         console.error(
-            '❌ No existe usuario Supabase válido'
+            '❌ Sesión Supabase inválida'
         );
 
+
         alert(
-            'La sesión no es válida. Inicie sesión nuevamente.'
+            'Su sesión no es válida. Inicie sesión nuevamente.'
         );
+
 
         window.location.href =
             '/login.html';
+
 
         return;
     }
 
 
-    console.log(
-        '👤 Creando requisición:',
-        user.email,
-        '| UUID:',
-        user.id
-    );
+    // ========================================================
+    // RECLUTADOR
+    // ========================================================
 
+    var reclutador =
+        obtenerReclutadorSeleccionado(
+            user
+        );
+
+
+    // ========================================================
+    // DATOS
+    // ========================================================
 
     var ahora =
         new Date();
+
+
+    var fecha =
+        obtenerValor('fecha') ||
+        ahora
+            .toISOString()
+            .slice(0, 10);
+
+
+    var cantidad =
+        parseInt(
+            obtenerValor(
+                'cantidadPlazas'
+            ),
+            10
+        );
+
 
     var codigo =
         generarCodigoRequisicion();
 
 
-    function obtenerValor(id) {
-
-        var elemento =
-            document.getElementById(id);
-
-        return elemento
-            ? elemento.value
-            : '';
-    }
-
-
-    // ======================================
-    // PAYLOAD SUPABASE
-    // ======================================
-
     var requisicion = {
 
-        codigo: codigo,
+        codigo:
+            codigo,
 
         puesto:
-            nombrePuesto,
+            obtenerValor(
+                'nombrePuesto'
+            ),
 
         centro:
-            centro,
+            obtenerValor(
+                'centroComercial'
+            ),
 
         tienda:
-            obtenerValor('tienda') ||
-            null,
+            obtenerValor(
+                'tienda'
+            ) || null,
 
         departamento:
             obtenerValor(
@@ -495,28 +1202,20 @@ async function submitRequisicion() {
             ) || null,
 
         fecha:
-            obtenerValor('fecha') ||
-            ahora
-                .toISOString()
-                .slice(0, 10),
+            fecha,
+
+        cantidad:
+            cantidad,
 
         tipo_contratacion:
             obtenerValor(
                 'tipoContratacion'
             ) || null,
 
-        cantidad:
-            parseInt(
-                obtenerValor(
-                    'cantidadPlazas'
-                ),
-                10
-            ) || 1,
-
         prioridad:
             obtenerValor(
                 'prioridad'
-            ) || 'Media',
+            ) || null,
 
         motivo:
             obtenerValor(
@@ -524,16 +1223,10 @@ async function submitRequisicion() {
             ) || null,
 
         reclutador:
-            obtenerValor(
-                'reclutador'
-            ) || null,
+            reclutador.nombre,
 
         estado:
             'Nueva',
-
-        // ==================================
-        // FASE 2 - IDENTIDAD REAL
-        // ==================================
 
         created_by:
             user.email,
@@ -541,8 +1234,15 @@ async function submitRequisicion() {
         created_by_uuid:
             user.id,
 
+        /*
+         * CORRECCIÓN IMPORTANTE:
+         *
+         * Ahora reclutador_id es realmente
+         * el UUID de la reclutadora seleccionada.
+         */
+
         reclutador_id:
-            user.id,
+            reclutador.uuid,
 
         created_at:
             ahora.toISOString(),
@@ -553,9 +1253,33 @@ async function submitRequisicion() {
 
 
     console.log(
-        '📦 Payload requisición:',
+        '📦 Payload Supabase:',
         requisicion
     );
+
+
+    console.log(
+        '👤 Creador:',
+        user.email,
+        '|',
+        user.id
+    );
+
+
+    console.log(
+        '👩‍💼 Reclutador asignado:',
+        reclutador.nombre,
+        '|',
+        reclutador.uuid
+    );
+
+
+    // ========================================================
+    // INSERT SUPABASE
+    // ========================================================
+
+    guardandoRequisicion =
+        true;
 
 
     window.__guardandoRequisicion =
@@ -570,126 +1294,137 @@ async function submitRequisicion() {
         ) {
 
             throw new Error(
-                'insertarEnSupabase no está disponible'
+                'insertarEnSupabase no está disponible.'
             );
         }
 
 
-        var result =
+        var resultado =
             await insertarEnSupabase(
                 'requisiciones',
                 requisicion
             );
 
 
-        if (!result.success) {
+        if (
+            !resultado ||
+            !resultado.success
+        ) {
 
             throw new Error(
-                result.error ||
-                'Supabase no confirmó el guardado'
+                resultado &&
+                resultado.error
+                    ? resultado.error
+                    : 'Supabase no confirmó la creación.'
             );
         }
 
 
         var guardada =
-            result.data &&
-            result.data[0]
-                ? result.data[0]
+            resultado.data &&
+            resultado.data.length
+                ? resultado.data[0]
                 : requisicion;
 
 
-        // ==================================
-        // CACHE LOCAL
-        // ==================================
-
-        var requisiciones =
-            JSON.parse(
-                localStorage.getItem(
-                    'requisiciones_data'
-                ) || '[]'
-            );
-
-
-        requisiciones =
-            requisiciones.filter(
-                function(r) {
-
-                    return (
-                        r.id !==
-                        guardada.id
-                    );
-                }
-            );
-
-
-        requisiciones.unshift(
-            guardada
-        );
-
-
-        localStorage.setItem(
-            'requisiciones_data',
-            JSON.stringify(
-                requisiciones
-            )
-        );
+        /*
+         * IMPORTANTE:
+         *
+         * NO guardamos requisiciones en
+         * localStorage.
+         *
+         * Supabase es la única fuente.
+         */
 
 
         console.log(
-            '✅ Requisición creada:',
+            '✅ Requisición creada en Supabase:',
             guardada
         );
 
 
-        // ==================================
+        // ====================================================
         // NOTIFICACIÓN
-        // ==================================
+        // ====================================================
 
         if (
             typeof agregarNotificacion ===
             'function'
         ) {
 
-            agregarNotificacion(
-                'success',
-                '✅ Requisición ' +
+            try {
+
+                agregarNotificacion(
+                    'success',
+
+                    'Requisición ' +
                     codigo +
                     ' creada',
-                '/requisiciones.html'
-            );
+
+                    '/requisiciones.html'
+                );
+
+            } catch (errorNotificacion) {
+
+                console.warn(
+                    '⚠️ No se pudo generar notificación:',
+                    errorNotificacion
+                );
+            }
         }
 
 
-        // ==================================
+        // ====================================================
         // MODAL
-        // ==================================
+        // ====================================================
 
         var modal =
-            document.getElementById(
+            obtenerElemento(
                 'successModal'
             );
 
+
         if (modal) {
-            modal.classList.add('show');
+
+            modal.classList.add(
+                'show'
+            );
         }
 
 
         var mensaje =
-            document.getElementById(
+            obtenerElemento(
                 'modalMessage'
             );
+
 
         if (mensaje) {
 
             mensaje.textContent =
                 '✅ ' +
                 codigo +
-                ' creada y asignada a: ' +
-                (
-                    requisicion.reclutador ||
-                    user.name ||
-                    user.email
-                );
+                ' creada correctamente y asignada a ' +
+                reclutador.nombre +
+                '.';
+        }
+
+
+        /*
+         * Si el HTML no tiene modal,
+         * redireccionamos directamente.
+         */
+
+        if (!modal) {
+
+            alert(
+                '✅ Requisición ' +
+                codigo +
+                ' creada correctamente.'
+            );
+
+
+            window.location.href =
+                '/requisiciones.html';
         }
 
 
@@ -703,11 +1438,18 @@ async function submitRequisicion() {
 
         alert(
             '❌ No se pudo crear la requisición.\n\n' +
-            error.message
+            (
+                error.message ||
+                String(error)
+            )
         );
 
 
     } finally {
+
+        guardandoRequisicion =
+            false;
+
 
         window.__guardandoRequisicion =
             false;
@@ -715,174 +1457,221 @@ async function submitRequisicion() {
 }
 
 
-// ==========================================
+// ============================================================
+// BORRADOR
+// ============================================================
+
+function saveDraft() {
+
+    /*
+     * Fase 3:
+     * No guardamos borradores falsos en
+     * localStorage.
+     *
+     * Posteriormente crearemos tabla
+     * borradores_requisicion si se requiere.
+     */
+
+    alert(
+        'ℹ️ La función de borrador será conectada a Supabase en la siguiente etapa.'
+    );
+}
+
+
+// ============================================================
 // CERRAR MODAL
-// ==========================================
+// ============================================================
 
 function closeModal() {
 
     var modal =
-        document.getElementById(
+        obtenerElemento(
             'successModal'
         );
 
+
     if (modal) {
-        modal.classList.remove('show');
+
+        modal.classList.remove(
+            'show'
+        );
     }
+
 
     window.location.href =
         '/requisiciones.html';
 }
 
 
-// ==========================================
-// INICIALIZAR DATOS
-// ==========================================
+// ============================================================
+// INICIALIZAR
+// ============================================================
 
-function iniciarNuevaRequisicion() {
+async function iniciarNuevaRequisicion() {
 
     console.log(
-        '🚀 Inicializando nueva requisición'
+        '🚀 Inicializando Nueva Requisición Fase 3'
     );
 
 
-    var data =
-        obtenerDatosConfig();
+    try {
 
+        /*
+         * Configuración Fase 3 tiene su propia
+         * promesa de carga.
+         */
 
-    if (
-        data &&
-        data.comerciales &&
-        data.comerciales.length > 0
-    ) {
+        if (
+            typeof cargarConfiguracionSupabase ===
+            'function'
+        ) {
 
-        datosCargados = true;
+            await cargarConfiguracionSupabase();
+        }
+
 
         cargarDatosFormulario();
 
-        return;
-    }
-
-
-    if (
-        typeof initSupabaseData ===
-        'function'
-    ) {
-
-        initSupabaseData()
-            .then(function(result) {
-
-                if (result) {
-
-                    datosCargados =
-                        true;
-
-                    cargarDatosFormulario();
-                }
-            })
-            .catch(function(error) {
-
-                console.error(
-                    '❌ Configuración:',
-                    error
-                );
-            });
-    }
-
-
-    if (intervaloIntento) {
-        clearInterval(intervaloIntento);
-    }
-
-
-    var intentos = 0;
-
-
-    intervaloIntento =
-        setInterval(function() {
-
-            intentos++;
-
-            var config =
-                obtenerDatosConfig();
-
-
-            if (
-                config &&
-                config.comerciales &&
-                config.comerciales.length > 0
-            ) {
-
-                clearInterval(
-                    intervaloIntento
-                );
-
-                intervaloIntento =
-                    null;
-
-                datosCargados =
-                    true;
-
-                cargarDatosFormulario();
-
-            } else if (
-                intentos > 30
-            ) {
-
-                clearInterval(
-                    intervaloIntento
-                );
-
-                intervaloIntento =
-                    null;
-
-                console.warn(
-                    '⚠️ Timeout cargando configuración'
-                );
-            }
-
-        }, 500);
-}
-
-
-// ==========================================
-// DOM
-// ==========================================
-
-document.addEventListener(
-    'DOMContentLoaded',
-    function() {
 
         console.log(
-            '🚀 DOMContentLoaded requisición'
+            '✅ Nueva Requisición Fase 3 inicializada'
         );
 
 
-        var user =
-            getCurrentUser();
+    } catch (error) {
+
+        console.error(
+            '❌ Error inicializando Nueva Requisición:',
+            error
+        );
 
 
-        if (!user) {
+        alert(
+            'No se pudieron cargar los catálogos de configuración.'
+        );
+    }
+}
 
-            window.location.href =
-                '/login.html';
+
+// ============================================================
+// EVENTO CONFIGURACIÓN
+// ============================================================
+
+window.addEventListener(
+    'datosConfiguracionListos',
+    function() {
+
+        console.log(
+            '📢 Configuración actualizada'
+        );
+
+
+        cargarDatosFormulario();
+    }
+);
+
+
+// ============================================================
+// EXPORTAR FUNCIONES PARA HTML
+// ============================================================
+
+window.showStep =
+    showStep;
+
+window.nextStep =
+    nextStep;
+
+window.prevStep =
+    prevStep;
+
+window.updateSummary =
+    updateSummary;
+
+window.saveDraft =
+    saveDraft;
+
+window.submitRequisicion =
+    submitRequisicion;
+
+window.closeModal =
+    closeModal;
+
+window.filtrarTiendasPorComercial =
+    filtrarTiendasPorComercial;
+
+
+// ============================================================
+// DOM READY
+// ============================================================
+
+document.addEventListener(
+    'DOMContentLoaded',
+    async function() {
+
+        console.log(
+            '🚀 DOMContentLoaded Nueva Requisición Fase 3'
+        );
+
+
+        // ====================================================
+        // PERMISO
+        // ====================================================
+
+        var user = null;
+
+
+        try {
+
+            if (
+                typeof requireAuth ===
+                'function'
+            ) {
+
+                user =
+                    await requireAuth();
+
+            } else if (
+                typeof getCurrentUser ===
+                'function'
+            ) {
+
+                user =
+                    getCurrentUser();
+            }
+
+
+        } catch (error) {
+
+            console.error(
+                '❌ Error verificando sesión:',
+                error
+            );
 
             return;
         }
 
 
+        if (!user) {
+            return;
+        }
+
+
         if (
+            typeof tienePermiso ===
+                'function' &&
             !tienePermiso(
                 'crear_requisicion'
             )
         ) {
 
             console.warn(
-                '⛔ Acceso denegado'
+                '⛔ Sin permiso para crear requisiciones'
             );
+
 
             window.location.href =
                 '/dashboard.html';
+
 
             return;
         }
@@ -898,126 +1687,61 @@ document.addEventListener(
         );
 
 
-        window.addEventListener(
-            'datosConfiguracionListos',
-            function() {
+        // ====================================================
+        // CENTRO → TIENDAS
+        // ====================================================
 
-                datosCargados =
-                    true;
-
-                cargarDatosFormulario();
-            }
-        );
-
-
-        iniciarNuevaRequisicion();
-
-
-        var centroSelect =
-            document.getElementById(
+        var centro =
+            obtenerElemento(
                 'centroComercial'
             );
 
 
-        if (centroSelect) {
+        if (centro) {
 
-            centroSelect.addEventListener(
+            centro.addEventListener(
                 'change',
                 filtrarTiendasPorComercial
             );
         }
 
 
-        var fechaInput =
-            document.getElementById(
-                'fecha'
+        // ====================================================
+        // FORM
+        // ====================================================
+
+        var formulario =
+            obtenerElemento(
+                'requisicionForm'
             );
 
 
-        if (fechaInput) {
+        if (formulario) {
 
-            fechaInput.value =
-                new Date()
-                    .toISOString()
-                    .split('T')[0];
-        }
+            formulario.addEventListener(
+                'submit',
+                function(event) {
 
+                    event.preventDefault();
 
-        var modal =
-            document.getElementById(
-                'successModal'
-            );
-
-
-        if (modal) {
-
-            modal.addEventListener(
-                'click',
-                function(e) {
-
-                    if (
-                        e.target === this
-                    ) {
-
-                        closeModal();
-                    }
+                    submitRequisicion();
                 }
             );
         }
 
 
+        // ====================================================
+        // INICIAR
+        // ====================================================
+
+        await iniciarNuevaRequisicion();
+
+
         showStep(1);
-
-
-        console.log(
-            '✅ Nueva requisición Fase 2 inicializada'
-        );
     }
 );
 
 
-// ==========================================
-// ACTUALIZACIÓN CONFIGURACIÓN
-// ==========================================
-
-window.addEventListener(
-    'storage',
-    function(e) {
-
-        if (
-            e.key ===
-            'siman_config_data'
-        ) {
-
-            if (datosCargados) {
-                cargarDatosFormulario();
-            }
-        }
-    }
+console.log(
+    '✅ nueva-requisicion.js Fase 3 cargado'
 );
-
-
-// ==========================================
-// EXPORTAR
-// ==========================================
-
-window.cargarDatosFormulario =
-    cargarDatosFormulario;
-
-window.filtrarTiendasPorComercial =
-    filtrarTiendasPorComercial;
-
-window.nextStep =
-    nextStep;
-
-window.prevStep =
-    prevStep;
-
-window.submitRequisicion =
-    submitRequisicion;
-
-window.saveDraft =
-    saveDraft;
-
-window.closeModal =
-    closeModal;
