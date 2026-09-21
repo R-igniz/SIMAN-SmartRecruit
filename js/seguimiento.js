@@ -1,14 +1,23 @@
 // ============================================================
 // SIMAN SMARTRECRUIT
-// SEGUIMIENTO.JS - FASE 3
-// SUPABASE + RLS + REALTIME
+// seguimiento.js
+// FASE 3
+// SUPABASE + AUTH + RLS + REALTIME
 // ============================================================
 
 console.log('📋 seguimiento.js Fase 3 cargando...');
 
+
+// ============================================================
+// VARIABLES
+// ============================================================
+
 var seguimientoRequisiciones = [];
+
 var seguimientoUsuario = null;
+
 var seguimientoRealtimeIniciado = false;
+
 var seguimientoCargando = false;
 
 
@@ -17,7 +26,10 @@ var seguimientoCargando = false;
 // ============================================================
 
 function escapeSeguimiento(valor) {
-    return String(valor == null ? '' : valor)
+
+    return String(
+        valor == null ? '' : valor
+    )
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
@@ -31,6 +43,7 @@ function escapeSeguimiento(valor) {
 // ============================================================
 
 function normalizarSeguimiento(valor) {
+
     return String(valor || '')
         .trim()
         .toLowerCase();
@@ -38,13 +51,16 @@ function normalizarSeguimiento(valor) {
 
 
 // ============================================================
-// ESTADO CERRADO
+// VERIFICAR SI ESTÁ CERRADO
 // ============================================================
 
 function esProcesoCerrado(estado) {
 
     var valor =
-        normalizarSeguimiento(estado);
+        normalizarSeguimiento(
+            estado
+        );
+
 
     return [
         'cerrado',
@@ -58,30 +74,63 @@ function esProcesoCerrado(estado) {
 
 
 // ============================================================
-// PROGRESO
+// CALCULAR PROGRESO
 // ============================================================
 
 function calcularProgreso(estado) {
 
     var estados = {
+
         'nueva': 10,
+
         'revisando': 20,
+
         'publicada': 35,
+
         'en proceso': 50,
+
+        'preselección': 55,
+
+        'preseleccion': 55,
+
         'entrevistas': 70,
+
+        'entrevista': 70,
+
         'oferta': 90,
+
+        'contratado': 100,
+
+        'contratada': 100,
+
         'cerrado': 100,
+
         'cerrada': 100,
+
         'finalizado': 100,
+
         'finalizada': 100
     };
 
-    var estadoNormalizado =
-        normalizarSeguimiento(estado);
 
-    return estados[estadoNormalizado] !== undefined
-        ? estados[estadoNormalizado]
-        : 10;
+    var estadoNormalizado =
+        normalizarSeguimiento(
+            estado
+        );
+
+
+    if (
+        estados[estadoNormalizado] !==
+        undefined
+    ) {
+
+        return estados[
+            estadoNormalizado
+        ];
+    }
+
+
+    return 10;
 }
 
 
@@ -92,20 +141,29 @@ function calcularProgreso(estado) {
 function colorPrioridad(prioridad) {
 
     switch (
-        normalizarSeguimiento(prioridad)
+        normalizarSeguimiento(
+            prioridad
+        )
     ) {
 
         case 'alta':
         case 'urgente':
+
             return 'var(--danger)';
 
+
         case 'media':
+
             return 'var(--warning)';
 
+
         case 'baja':
+
             return 'var(--success)';
 
+
         default:
+
             return 'var(--primary)';
     }
 }
@@ -118,25 +176,79 @@ function colorPrioridad(prioridad) {
 function colorProgreso(progreso) {
 
     if (progreso >= 80) {
+
         return 'var(--success)';
     }
 
+
     if (progreso >= 50) {
+
         return 'var(--primary)';
     }
+
 
     return 'var(--warning)';
 }
 
 
 // ============================================================
-// OBTENER REQUISICIONES
+// CLASE BADGE ESTADO
+// ============================================================
+
+function claseEstado(estado) {
+
+    var valor =
+        normalizarSeguimiento(
+            estado
+        );
+
+
+    if (
+        valor === 'cerrado' ||
+        valor === 'cerrada' ||
+        valor === 'contratado' ||
+        valor === 'contratada' ||
+        valor === 'finalizado' ||
+        valor === 'finalizada'
+    ) {
+
+        return 'badge-green';
+    }
+
+
+    if (
+        valor === 'entrevista' ||
+        valor === 'entrevistas' ||
+        valor === 'preselección' ||
+        valor === 'preseleccion'
+    ) {
+
+        return 'badge-yellow';
+    }
+
+
+    if (
+        valor === 'cancelado' ||
+        valor === 'cancelada'
+    ) {
+
+        return 'badge-red';
+    }
+
+
+    return 'badge-blue';
+}
+
+
+// ============================================================
+// OBTENER REQUISICIONES DE SUPABASE
 // ============================================================
 
 async function obtenerRequisicionesSeguimiento() {
 
     var client =
         await initSupabase();
+
 
     var consulta =
         client
@@ -150,16 +262,15 @@ async function obtenerRequisicionesSeguimiento() {
             );
 
 
-    /*
-     * IMPORTANTE:
-     *
-     * RLS continúa siendo la seguridad real.
-     *
-     * Además filtramos para Reclutadora desde
-     * frontend para evitar mostrar registros
-     * que no le corresponden si la política
-     * actual todavía permite SELECT general.
-     */
+    // ========================================================
+    // RECLUTADORA
+    //
+    // Administrador:
+    // ve lo permitido por RLS.
+    //
+    // Reclutadora:
+    // adicionalmente filtramos por reclutador_id.
+    // ========================================================
 
     if (
         seguimientoUsuario &&
@@ -182,6 +293,11 @@ async function obtenerRequisicionesSeguimiento() {
 
     if (resultado.error) {
 
+        console.error(
+            '❌ Error Supabase requisiciones:',
+            resultado.error
+        );
+
         throw resultado.error;
     }
 
@@ -191,7 +307,7 @@ async function obtenerRequisicionesSeguimiento() {
 
 
 // ============================================================
-// FILTRAR ACTIVAS
+// OBTENER PROCESOS ACTIVOS
 // ============================================================
 
 function obtenerProcesosActivos() {
@@ -209,7 +325,41 @@ function obtenerProcesosActivos() {
 
 
 // ============================================================
-// ESTADO VACÍO
+// ACTUALIZAR CONTADOR
+// ============================================================
+
+function actualizarContadorSeguimiento(
+    cantidad
+) {
+
+    var contador =
+        document.getElementById(
+            'seguimientoContador'
+        );
+
+
+    if (!contador) {
+
+        console.warn(
+            '⚠️ seguimientoContador no existe'
+        );
+
+        return;
+    }
+
+
+    contador.textContent =
+        cantidad +
+        (
+            cantidad === 1
+                ? ' activo'
+                : ' activos'
+        );
+}
+
+
+// ============================================================
+// MOSTRAR ESTADO VACÍO
 // ============================================================
 
 function mostrarSeguimientoVacio(
@@ -222,30 +372,47 @@ function mostrarSeguimientoVacio(
             'seguimientoContainer'
         );
 
+
     if (!container) {
+
         return;
     }
 
 
-    container.innerHTML =
-        '<div class="empty-state">' +
-            '<i class="fas ' +
-                escapeSeguimiento(
+    container.innerHTML = `
+
+        <div
+            style="
+                padding:45px 20px;
+                text-align:center;
+                color:var(--text-muted);
+            "
+        >
+
+            <i
+                class="fas ${escapeSeguimiento(
                     icono ||
                     'fa-inbox'
-                ) +
-            '"></i>' +
-            '<div>' +
-                escapeSeguimiento(
+                )}"
+                style="
+                    font-size:30px;
+                    margin-bottom:15px;
+                "
+            ></i>
+
+            <div>
+                ${escapeSeguimiento(
                     mensaje
-                ) +
-            '</div>' +
-        '</div>';
+                )}
+            </div>
+
+        </div>
+    `;
 }
 
 
 // ============================================================
-// RENDER
+// RENDERIZAR SEGUIMIENTO
 // ============================================================
 
 function renderSeguimiento() {
@@ -266,8 +433,21 @@ function renderSeguimiento() {
     }
 
 
+    // ========================================================
+    // PROCESOS ACTIVOS
+    // ========================================================
+
     var requisiciones =
         obtenerProcesosActivos();
+
+
+    // ========================================================
+    // ACTUALIZAR CONTADOR
+    // ========================================================
+
+    actualizarContadorSeguimiento(
+        requisiciones.length
+    );
 
 
     console.log(
@@ -275,6 +455,10 @@ function renderSeguimiento() {
         requisiciones.length
     );
 
+
+    // ========================================================
+    // SIN REQUISICIONES
+    // ========================================================
 
     if (
         seguimientoRequisiciones.length ===
@@ -290,6 +474,10 @@ function renderSeguimiento() {
     }
 
 
+    // ========================================================
+    // TODAS CERRADAS
+    // ========================================================
+
     if (
         requisiciones.length ===
         0
@@ -304,8 +492,16 @@ function renderSeguimiento() {
     }
 
 
+    // ========================================================
+    // LIMPIAR CONTENEDOR
+    // ========================================================
+
     container.innerHTML = '';
 
+
+    // ========================================================
+    // CREAR TARJETAS
+    // ========================================================
 
     requisiciones.forEach(
         function(r) {
@@ -325,8 +521,12 @@ function renderSeguimiento() {
                 colorPrioridad(
                     r.prioridad
                 ) +
-                ';margin-bottom:12px;';
+                ';margin-bottom:0;';
 
+
+            // =================================================
+            // DATOS
+            // =================================================
 
             var progreso =
                 calcularProgreso(
@@ -336,7 +536,10 @@ function renderSeguimiento() {
 
             var codigo =
                 r.codigo ||
-                ('REQ-' + r.id);
+                (
+                    'REQ-' +
+                    r.id
+                );
 
 
             var puesto =
@@ -346,7 +549,7 @@ function renderSeguimiento() {
 
             var centro =
                 r.centro ||
-                '-';
+                'Sin centro comercial';
 
 
             var tienda =
@@ -356,6 +559,7 @@ function renderSeguimiento() {
 
             var reclutador =
                 r.reclutador ||
+                r.reclutadora ||
                 'No asignado';
 
 
@@ -364,83 +568,151 @@ function renderSeguimiento() {
                 'Nueva';
 
 
+            var prioridad =
+                r.prioridad ||
+                'Sin prioridad';
+
+
             var fecha =
                 r.fecha ||
                 (
                     r.created_at
                         ? String(
                             r.created_at
-                        ).slice(0, 10)
+                        ).slice(
+                            0,
+                            10
+                        )
                         : 'Sin fecha'
                 );
 
 
-            var prioridad =
-                r.prioridad ||
-                'Sin prioridad';
-
+            // =================================================
+            // HTML TARJETA
+            // =================================================
 
             card.innerHTML = `
+
                 <div
                     style="
                         display:flex;
                         justify-content:space-between;
-                        align-items:center;
+                        align-items:flex-start;
                         flex-wrap:wrap;
-                        gap:8px;
+                        gap:15px;
                     "
                 >
 
-                    <div>
+                    <!-- INFORMACIÓN PRINCIPAL -->
 
-                        <strong>
-                            ${escapeSeguimiento(codigo)}
-                        </strong>
+                    <div
+                        style="
+                            flex:1;
+                            min-width:250px;
+                        "
+                    >
 
-                        -
-                        ${escapeSeguimiento(puesto)}
-
-                        <span
+                        <div
                             style="
-                                color:var(--text-muted);
-                                font-size:13px;
-                                margin-left:8px;
+                                display:flex;
+                                align-items:center;
+                                flex-wrap:wrap;
+                                gap:8px;
                             "
                         >
 
-                            <i class="fas fa-store"></i>
+                            <strong
+                                style="
+                                    font-size:15px;
+                                "
+                            >
+                                ${escapeSeguimiento(
+                                    codigo
+                                )}
+                            </strong>
 
-                            ${escapeSeguimiento(centro)}
+
+                            <span>
+                                -
+                                ${escapeSeguimiento(
+                                    puesto
+                                )}
+                            </span>
+
+                        </div>
+
+
+                        <div
+                            style="
+                                margin-top:7px;
+                                color:var(--text-muted);
+                                font-size:13px;
+                            "
+                        >
+
+                            <i
+                                class="fas fa-store"
+                            ></i>
+
+                            ${escapeSeguimiento(
+                                centro
+                            )}
 
                             ${
                                 tienda
                                     ? ' · ' +
-                                      escapeSeguimiento(tienda)
+                                      escapeSeguimiento(
+                                          tienda
+                                      )
                                     : ''
                             }
 
-                        </span>
+                        </div>
 
                     </div>
 
 
-                    <div>
+                    <!-- ESTADO / RECLUTADOR -->
 
-                        <span class="badge badge-blue">
-                            ${escapeSeguimiento(estado)}
+                    <div
+                        style="
+                            display:flex;
+                            align-items:center;
+                            flex-wrap:wrap;
+                            gap:10px;
+                        "
+                    >
+
+                        <span
+                            class="
+                                badge
+                                ${claseEstado(
+                                    estado
+                                )}
+                            "
+                        >
+
+                            ${escapeSeguimiento(
+                                estado
+                            )}
+
                         </span>
+
 
                         <span
                             style="
                                 font-size:12px;
                                 color:var(--text-muted);
-                                margin-left:8px;
                             "
                         >
 
-                            <i class="fas fa-user-tie"></i>
+                            <i
+                                class="fas fa-user-tie"
+                            ></i>
 
-                            ${escapeSeguimiento(reclutador)}
+                            ${escapeSeguimiento(
+                                reclutador
+                            )}
 
                         </span>
 
@@ -449,14 +721,21 @@ function renderSeguimiento() {
                 </div>
 
 
-                <div style="margin-top:12px;">
+                <!-- =========================================
+                     PROGRESO
+                ========================================== -->
+
+                <div
+                    style="
+                        margin-top:18px;
+                    "
+                >
 
                     <div
                         style="
                             display:flex;
-                            gap:8px;
-                            flex-wrap:wrap;
                             align-items:center;
+                            gap:10px;
                         "
                     >
 
@@ -473,10 +752,10 @@ function renderSeguimiento() {
                         <div
                             style="
                                 flex:1;
-                                height:6px;
+                                height:7px;
                                 background:var(--bg-body);
-                                border-radius:10px;
-                                min-width:100px;
+                                border-radius:20px;
+                                overflow:hidden;
                             "
                         >
 
@@ -484,9 +763,12 @@ function renderSeguimiento() {
                                 style="
                                     width:${progreso}%;
                                     height:100%;
-                                    background:${colorProgreso(progreso)};
-                                    border-radius:10px;
-                                    transition:width .3s ease;
+                                    background:${colorProgreso(
+                                        progreso
+                                    )};
+                                    border-radius:20px;
+                                    transition:
+                                        width .3s ease;
                                 "
                             ></div>
 
@@ -496,97 +778,127 @@ function renderSeguimiento() {
                         <span
                             style="
                                 font-size:12px;
-                                font-weight:500;
+                                font-weight:600;
+                                min-width:35px;
+                                text-align:right;
                             "
                         >
+
                             ${progreso}%
-                        </span>
-
-                    </div>
-
-
-                    <div
-                        style="
-                            display:flex;
-                            gap:8px;
-                            margin-top:8px;
-                            flex-wrap:wrap;
-                            align-items:center;
-                        "
-                    >
-
-                        <span
-                            class="badge ${
-                                normalizarSeguimiento(estado) ===
-                                'nueva'
-                                    ? 'badge-blue'
-                                    : 'badge-green'
-                            }"
-                        >
-
-                            <i
-                                class="fas ${
-                                    normalizarSeguimiento(estado) ===
-                                    'nueva'
-                                        ? 'fa-spinner'
-                                        : 'fa-check'
-                                }"
-                            ></i>
-
-                            ${escapeSeguimiento(estado)}
 
                         </span>
-
-
-                        <span
-                            style="
-                                font-size:12px;
-                                color:var(--text-muted);
-                            "
-                        >
-
-                            <i class="far fa-calendar-alt"></i>
-
-                            ${escapeSeguimiento(fecha)}
-
-                        </span>
-
-
-                        <span
-                            style="
-                                font-size:12px;
-                                color:var(--text-muted);
-                            "
-                        >
-
-                            <i class="fas fa-flag"></i>
-
-                            ${escapeSeguimiento(prioridad)}
-
-                        </span>
-
-
-                        <button
-                            type="button"
-                            class="btn btn-outline"
-                            style="
-                                padding:4px 12px;
-                                font-size:12px;
-                                margin-left:auto;
-                            "
-                            data-requisicion-id="${escapeSeguimiento(r.id)}"
-                        >
-
-                            <i class="fas fa-arrow-right"></i>
-                            Gestionar
-
-                        </button>
 
                     </div>
 
                 </div>
+
+
+                <!-- =========================================
+                     INFORMACIÓN INFERIOR
+                ========================================== -->
+
+                <div
+                    style="
+                        display:flex;
+                        gap:10px;
+                        margin-top:14px;
+                        flex-wrap:wrap;
+                        align-items:center;
+                    "
+                >
+
+                    <!-- ESTADO -->
+
+                    <span
+                        class="
+                            badge
+                            ${claseEstado(
+                                estado
+                            )}
+                        "
+                    >
+
+                        <i
+                            class="fas fa-circle-notch"
+                        ></i>
+
+                        ${escapeSeguimiento(
+                            estado
+                        )}
+
+                    </span>
+
+
+                    <!-- FECHA -->
+
+                    <span
+                        style="
+                            font-size:12px;
+                            color:var(--text-muted);
+                        "
+                    >
+
+                        <i
+                            class="far fa-calendar-alt"
+                        ></i>
+
+                        ${escapeSeguimiento(
+                            fecha
+                        )}
+
+                    </span>
+
+
+                    <!-- PRIORIDAD -->
+
+                    <span
+                        style="
+                            font-size:12px;
+                            color:var(--text-muted);
+                        "
+                    >
+
+                        <i
+                            class="fas fa-flag"
+                        ></i>
+
+                        ${escapeSeguimiento(
+                            prioridad
+                        )}
+
+                    </span>
+
+
+                    <!-- BOTÓN -->
+
+                    <button
+                        type="button"
+                        class="btn btn-outline"
+                        style="
+                            padding:6px 14px;
+                            font-size:12px;
+                            margin-left:auto;
+                        "
+                        data-requisicion-id="${escapeSeguimiento(
+                            r.id
+                        )}"
+                    >
+
+                        <i
+                            class="fas fa-arrow-right"
+                        ></i>
+
+                        Gestionar
+
+                    </button>
+
+                </div>
             `;
 
+
+            // =================================================
+            // BOTÓN GESTIONAR
+            // =================================================
 
             var boton =
                 card.querySelector(
@@ -605,9 +917,17 @@ function renderSeguimiento() {
                                 .requisicionId;
 
 
+                        console.log(
+                            '➡️ Gestionando requisición:',
+                            id
+                        );
+
+
                         var destino =
-                            '/administrar-requisicion.html?id=' +
-                            encodeURIComponent(id);
+                            'administrar-requisicion.html?id=' +
+                            encodeURIComponent(
+                                id
+                            );
 
 
                         if (
@@ -615,7 +935,9 @@ function renderSeguimiento() {
                             'function'
                         ) {
 
-                            navigateTo(destino);
+                            navigateTo(
+                                destino
+                            );
 
                         } else {
 
@@ -636,17 +958,19 @@ function renderSeguimiento() {
 
 
 // ============================================================
-// CARGAR
+// CARGAR DATOS
 // ============================================================
 
 async function cargarSeguimiento() {
 
     if (seguimientoCargando) {
+
         return;
     }
 
 
-    seguimientoCargando = true;
+    seguimientoCargando =
+        true;
 
 
     try {
@@ -677,6 +1001,11 @@ async function cargarSeguimiento() {
         );
 
 
+        actualizarContadorSeguimiento(
+            0
+        );
+
+
         mostrarSeguimientoVacio(
             'No se pudo cargar el seguimiento.',
             'fa-exclamation-triangle'
@@ -685,7 +1014,8 @@ async function cargarSeguimiento() {
 
     } finally {
 
-        seguimientoCargando = false;
+        seguimientoCargando =
+            false;
     }
 }
 
@@ -696,7 +1026,10 @@ async function cargarSeguimiento() {
 
 async function iniciarRealtimeSeguimiento() {
 
-    if (seguimientoRealtimeIniciado) {
+    if (
+        seguimientoRealtimeIniciado
+    ) {
+
         return;
     }
 
@@ -707,7 +1040,7 @@ async function iniciarRealtimeSeguimiento() {
     ) {
 
         console.warn(
-            '⚠️ Realtime no disponible para seguimiento'
+            '⚠️ suscribirseATabla no está disponible'
         );
 
         return;
@@ -720,29 +1053,23 @@ async function iniciarRealtimeSeguimiento() {
 
     await suscribirseATabla(
         'requisiciones',
+
         function(payload) {
 
             console.log(
-                '📡 Cambio en requisiciones:',
+                '📡 Cambio Realtime requisiciones:',
                 payload
                     ? payload.eventType
                     : 'evento'
             );
 
 
-            /*
-             * Volvemos a consultar Supabase.
-             *
-             * Esto garantiza que se respeten
-             * RLS, filtros y asignaciones.
-             */
-
             cargarSeguimiento()
                 .catch(
                     function(error) {
 
                         console.error(
-                            '❌ Error actualizando seguimiento:',
+                            '❌ Error refrescando seguimiento:',
                             error
                         );
                     }
@@ -758,7 +1085,7 @@ async function iniciarRealtimeSeguimiento() {
 
 
 // ============================================================
-// INICIALIZACIÓN
+// INICIALIZAR
 // ============================================================
 
 async function iniciarSeguimiento() {
@@ -770,9 +1097,9 @@ async function iniciarSeguimiento() {
         );
 
 
-        // ----------------------------------------------------
-        // AUTENTICACIÓN
-        // ----------------------------------------------------
+        // ====================================================
+        // USUARIO
+        // ====================================================
 
         if (
             typeof requireAuth ===
@@ -792,18 +1119,26 @@ async function iniciarSeguimiento() {
         }
 
 
-        if (!seguimientoUsuario) {
+        if (
+            !seguimientoUsuario
+        ) {
+
+            console.warn(
+                '⚠️ Usuario no autenticado'
+            );
+
 
             window.location.href =
-                '/login.html';
+                'login.html';
+
 
             return;
         }
 
 
-        // ----------------------------------------------------
-        // PERMISO
-        // ----------------------------------------------------
+        // ====================================================
+        // PERMISOS
+        // ====================================================
 
         if (
             typeof tienePermiso ===
@@ -814,12 +1149,13 @@ async function iniciarSeguimiento() {
         ) {
 
             console.warn(
-                '⛔ Sin permiso ver_seguimiento'
+                '⛔ Usuario sin permiso ver_seguimiento'
             );
 
 
             window.location.href =
-                '/dashboard.html';
+                'dashboard.html';
+
 
             return;
         }
@@ -835,23 +1171,23 @@ async function iniciarSeguimiento() {
         );
 
 
-        // ----------------------------------------------------
-        // SUPABASE
-        // ----------------------------------------------------
+        // ====================================================
+        // INICIAR SUPABASE
+        // ====================================================
 
         await initSupabase();
 
 
-        // ----------------------------------------------------
-        // DATOS
-        // ----------------------------------------------------
+        // ====================================================
+        // CARGAR REQUISICIONES
+        // ====================================================
 
         await cargarSeguimiento();
 
 
-        // ----------------------------------------------------
+        // ====================================================
         // REALTIME
-        // ----------------------------------------------------
+        // ====================================================
 
         await iniciarRealtimeSeguimiento();
 
@@ -869,8 +1205,13 @@ async function iniciarSeguimiento() {
         );
 
 
+        actualizarContadorSeguimiento(
+            0
+        );
+
+
         mostrarSeguimientoVacio(
-            'No se pudo inicializar el módulo.',
+            'No se pudo inicializar el módulo de seguimiento.',
             'fa-exclamation-triangle'
         );
     }
@@ -878,7 +1219,7 @@ async function iniciarSeguimiento() {
 
 
 // ============================================================
-// EXPORTAR
+// EXPORTAR FUNCIONES
 // ============================================================
 
 window.cargarSeguimiento =
@@ -894,6 +1235,7 @@ window.renderSeguimiento =
 
 document.addEventListener(
     'DOMContentLoaded',
+
     function() {
 
         iniciarSeguimiento();
