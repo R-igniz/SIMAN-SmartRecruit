@@ -1,300 +1,841 @@
-// ==========================================
-// SUPABASE CLIENT - CONFIGURACIÓN
-// ==========================================
+// ============================================================
+// SIMAN SMARTRECRUIT
+// SUPABASE CLIENT - FASE 3
+// SUPABASE = ÚNICA FUENTE DE VERDAD
+// ============================================================
 
-var SUPABASE_URL = 'https://kmqantnfueparuwycgdz.supabase.co';
-var SUPABASE_KEY = 'sb_publishable_FOF12VLnddzD-V52S2h--g_EqZEvQ_s';
+var SUPABASE_URL =
+    'https://kmqantnfueparuwycgdz.supabase.co';
 
-var supabaseInitialized = false;
+var SUPABASE_KEY =
+    'sb_publishable_FOF12VLnddzD-V52S2h--g_EqZEvQ_s';
+
 var supabaseClient = null;
+var supabaseInitPromise = null;
 
-function initSupabase() {
-    return new Promise(function(resolve, reject) {
-        if (supabaseInitialized && supabaseClient) {
-            resolve(supabaseClient);
-            return;
-        }
+var realtimeChannels = {};
 
-        var script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-        script.onload = function() {
-            try {
-                var supabase = window.supabase;
-                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                supabaseInitialized = true;
-                console.log('✅ Supabase inicializado correctamente');
-                resolve(supabaseClient);
-            } catch (error) {
-                console.error('❌ Error al inicializar Supabase:', error);
-                reject(error);
-            }
-        };
-        script.onerror = function() {
-            reject(new Error('Error al cargar la librería de Supabase'));
-        };
-        document.head.appendChild(script);
-    });
-}
 
-// ==========================================
-// CRUD - Guardar
-// ==========================================
-async function guardarEnSupabase(tabla, datos) {
-    try {
-        var client = await initSupabase();
-        var { data, error } = await client
-            .from(tabla)
-            .upsert(datos, { onConflict: 'id' });
-        if (error) throw error;
-        return { success: true, data: data };
-    } catch (error) {
-        console.error('Error guardando en Supabase:', error);
-        return { success: false, error: error.message };
+// ============================================================
+// INICIALIZAR SUPABASE
+// ============================================================
+
+async function initSupabase() {
+
+    if (supabaseClient) {
+        return supabaseClient;
     }
-}
 
-
-// ==========================================
-// CRUD - Insertar nuevo registro
-// ==========================================
-async function insertarEnSupabase(tabla, datos) {
-    try {
-        var client = await initSupabase();
-        var result = await client.from(tabla).insert(datos).select();
-        if (result.error) throw result.error;
-        return { success: true, data: result.data || [] };
-    } catch (error) {
-        console.error('Error insertando en Supabase:', error);
-        return { success: false, error: error.message, data: [] };
+    if (supabaseInitPromise) {
+        return supabaseInitPromise;
     }
-}
 
-async function actualizarEnSupabase(tabla, id, cambios) {
-    try {
-        var client = await initSupabase();
-        var result = await client.from(tabla).update(cambios).eq('id', id).select();
-        if (result.error) throw result.error;
-        return { success: true, data: result.data || [] };
-    } catch (error) {
-        console.error('Error actualizando en Supabase:', error);
-        return { success: false, error: error.message, data: [] };
-    }
-}
+    supabaseInitPromise =
+        new Promise(function (resolve, reject) {
 
-// ==========================================
-// CRUD - Obtener
-// ==========================================
-async function obtenerDeSupabase(tabla, filtros, orden) {
-    try {
-        var client = await initSupabase();
-        var query = client.from(tabla).select('*');
-        if (filtros) {
-            Object.keys(filtros).forEach(function(key) {
-                query = query.eq(key, filtros[key]);
-            });
-        }
-        if (orden) {
-            query = query.order(orden.campo, { ascending: orden.ascendente !== false });
-        }
-        var { data, error } = await query;
-        if (error) throw error;
-        return { success: true, data: data };
-    } catch (error) {
-        console.error('Error obteniendo de Supabase:', error);
-        return { success: false, error: error.message, data: [] };
-    }
-}
+            function crearCliente() {
 
-// ==========================================
-// CRUD - Eliminar
-// ==========================================
-async function eliminarDeSupabase(tabla, id) {
-    try {
-        var client = await initSupabase();
-        var { data, error } = await client
-            .from(tabla)
-            .delete()
-            .eq('id', id);
-        if (error) throw error;
-        return { success: true, data: data };
-    } catch (error) {
-        console.error('Error eliminando de Supabase:', error);
-        return { success: false, error: error.message };
-    }
-}
+                try {
 
-// ==========================================
-// SUSCRIPCIÓN EN TIEMPO REAL
-// ==========================================
-function suscribirseATabla(tabla, callback) {
-    initSupabase().then(function(client) {
-        client
-            .channel('tabla_changes_' + tabla)
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: tabla
-                },
-                function(payload) {
-                    console.log('🔄 Cambio detectado en', tabla, ':', payload);
-                    callback(payload);
+                    if (
+                        !window.supabase ||
+                        typeof window.supabase.createClient !== 'function'
+                    ) {
+                        throw new Error(
+                            'La librería Supabase JS no está disponible.'
+                        );
+                    }
+
+                    supabaseClient =
+                        window.supabase.createClient(
+                            SUPABASE_URL,
+                            SUPABASE_KEY,
+                            {
+                                auth: {
+                                    persistSession: true,
+                                    autoRefreshToken: true,
+                                    detectSessionInUrl: true
+                                }
+                            }
+                        );
+
+                    console.log(
+                        '✅ Supabase inicializado correctamente'
+                    );
+
+                    resolve(supabaseClient);
+
+                } catch (error) {
+
+                    supabaseInitPromise = null;
+
+                    console.error(
+                        '❌ Error inicializando Supabase:',
+                        error
+                    );
+
+                    reject(error);
                 }
-            )
-            .subscribe();
-    }).catch(function(error) {
-        console.error('Error al suscribirse:', error);
-    });
+            }
+
+
+            // La librería ya fue cargada por HTML
+            if (
+                window.supabase &&
+                typeof window.supabase.createClient === 'function'
+            ) {
+
+                crearCliente();
+                return;
+            }
+
+
+            // Evitar cargar varias veces el CDN
+            var scriptExistente =
+                document.querySelector(
+                    'script[data-siman-supabase="true"]'
+                );
+
+
+            if (scriptExistente) {
+
+                scriptExistente.addEventListener(
+                    'load',
+                    crearCliente,
+                    { once: true }
+                );
+
+                scriptExistente.addEventListener(
+                    'error',
+                    function () {
+
+                        supabaseInitPromise = null;
+
+                        reject(
+                            new Error(
+                                'No se pudo cargar Supabase JS.'
+                            )
+                        );
+                    },
+                    { once: true }
+                );
+
+                return;
+            }
+
+
+            var script =
+                document.createElement('script');
+
+            script.src =
+                'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+
+            script.async = true;
+
+            script.dataset.simanSupabase =
+                'true';
+
+            script.onload =
+                crearCliente;
+
+            script.onerror =
+                function () {
+
+                    supabaseInitPromise = null;
+
+                    reject(
+                        new Error(
+                            'No se pudo cargar Supabase JS.'
+                        )
+                    );
+                };
+
+            document.head.appendChild(
+                script
+            );
+        });
+
+
+    return supabaseInitPromise;
 }
 
-// ==========================================
-// SINCRONIZACIÓN SEGURA
-// Supabase es la fuente principal. Esta función NO elimina datos remotos.
-// ==========================================
-async function sincronizarConSupabase() {
-    console.log('🔄 Sincronización segura con Supabase...');
+
+// ============================================================
+// OBTENER CLIENTE
+// ============================================================
+
+async function getSupabaseClient() {
+
+    return await initSupabase();
+}
+
+
+// ============================================================
+// INSERTAR
+// ============================================================
+
+async function insertarEnSupabase(
+    tabla,
+    datos
+) {
+
     try {
-        if (!navigator.onLine) return { error: 'Sin conexión a Internet' };
-        await initSupabase();
-        var resultado = await initSupabaseData();
-        console.log('✅ Datos locales actualizados desde Supabase');
-        return { success: true, data: resultado };
+
+        var client =
+            await initSupabase();
+
+        var resultado =
+            await client
+                .from(tabla)
+                .insert(datos)
+                .select();
+
+
+        if (resultado.error) {
+            throw resultado.error;
+        }
+
+
+        return {
+            success: true,
+            data: resultado.data || []
+        };
+
+
     } catch (error) {
-        console.error('❌ Error en sincronización:', error);
-        return { error: error.message };
+
+        console.error(
+            '❌ Error insertando en ' +
+            tabla + ':',
+            error
+        );
+
+        return {
+            success: false,
+            error:
+                error.message ||
+                String(error),
+            data: []
+        };
     }
 }
 
-// ==========================================
-// CARGAR DATOS DESDE SUPABASE (FUSIONAR)
-// ==========================================
-async function cargarDesdeSupabase(tabla) {
-    var result = await obtenerDeSupabase(tabla);
-    if (result.success) return result.data;
-    return [];
-}
 
-function fusionarDatos(datosLocales, datosRemotos, claveUnica) {
-    var mapaLocal = {};
-    datosLocales.forEach(function(item) {
-        mapaLocal[item[claveUnica]] = item;
-    });
-    datosRemotos.forEach(function(item) {
-        var key = item[claveUnica];
-        if (!mapaLocal[key]) {
-            mapaLocal[key] = item;
-        }
-    });
-    return Object.values(mapaLocal);
-}
+// ============================================================
+// ACTUALIZAR
+// ============================================================
 
-async function initSupabaseData() {
-    console.log('🔄 Cargando datos desde Supabase...');
+async function actualizarEnSupabase(
+    tabla,
+    id,
+    cambios
+) {
+
     try {
-        if (!navigator.onLine) {
-            if (typeof agregarNotificacion === 'function') {
-                agregarNotificacion('warning', '⚠️ Sin conexión a Internet. Usando datos locales.', '#');
-            }
-            return null;
+
+        var client =
+            await initSupabase();
+
+
+        var resultado =
+            await client
+                .from(tabla)
+                .update(cambios)
+                .eq('id', id)
+                .select();
+
+
+        if (resultado.error) {
+            throw resultado.error;
         }
-        await initSupabase();
-        
-        var [usuariosRemotos, rolesRemotos, comercialesRemotos, tiendasRemotos, 
-             departamentosRemotos, estadosRemotos, prioridadesRemotos, 
-             motivosRemotos, tiposContratacionRemotos, requisicionesRemotos] = await Promise.all([
-            cargarDesdeSupabase('usuarios'),
-            cargarDesdeSupabase('roles'),
-            cargarDesdeSupabase('comerciales'),
-            cargarDesdeSupabase('tiendas'),
-            cargarDesdeSupabase('departamentos'),
-            cargarDesdeSupabase('estados'),
-            cargarDesdeSupabase('prioridades'),
-            cargarDesdeSupabase('motivos'),
-            cargarDesdeSupabase('tiposContratacion'),
-            cargarDesdeSupabase('requisiciones')
-        ]);
-        
-        var dataLocal = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
-        
-        dataLocal.usuarios = fusionarDatos(dataLocal.usuarios || [], usuariosRemotos, 'email');
-        dataLocal.roles = fusionarDatos(dataLocal.roles || [], rolesRemotos, 'id');
-        dataLocal.comerciales = fusionarDatos(dataLocal.comerciales || [], comercialesRemotos, 'id');
-        dataLocal.tiendas = fusionarDatos(dataLocal.tiendas || [], tiendasRemotos, 'id');
-        dataLocal.departamentos = fusionarDatos(dataLocal.departamentos || [], departamentosRemotos, 'id');
-        dataLocal.estados = fusionarDatos(dataLocal.estados || [], estadosRemotos, 'id');
-        dataLocal.prioridades = fusionarDatos(dataLocal.prioridades || [], prioridadesRemotos, 'id');
-        dataLocal.motivos = fusionarDatos(dataLocal.motivos || [], motivosRemotos, 'id');
-        dataLocal.tiposContratacion = fusionarDatos(dataLocal.tiposContratacion || [], tiposContratacionRemotos, 'id');
-        
-        localStorage.setItem('siman_config_data', JSON.stringify(dataLocal));
-        localStorage.setItem('requisiciones_data', JSON.stringify(requisicionesRemotos));
-        
-        console.log('✅ Datos cargados y fusionados desde Supabase');
-        console.log('👥 Usuarios totales:', dataLocal.usuarios.length);
-        
-        if (typeof actualizarContadores === 'function') actualizarContadores();
-        if (typeof cargarUsuarios === 'function') cargarUsuarios();
-        if (typeof cargarRequisiciones === 'function') cargarRequisiciones();
-        if (typeof refreshAuthUsers === 'function') refreshAuthUsers();
-        if (typeof agregarNotificacion === 'function') {
-            agregarNotificacion('success', 
-                '✅ Datos cargados: ' + dataLocal.usuarios.length + ' usuarios, ' + 
-                dataLocal.roles.length + ' roles, ' + 
-                dataLocal.comerciales.length + ' comerciales', 
-                '#'
-            );
-        }
-        return dataLocal;
+
+
+        return {
+            success: true,
+            data: resultado.data || []
+        };
+
+
     } catch (error) {
-        console.error('❌ Error cargando datos:', error);
-        if (typeof agregarNotificacion === 'function') {
-            agregarNotificacion('danger', '❌ Error al cargar datos: ' + error.message, '#');
+
+        console.error(
+            '❌ Error actualizando ' +
+            tabla + ':',
+            error
+        );
+
+
+        return {
+            success: false,
+            error:
+                error.message ||
+                String(error),
+            data: []
+        };
+    }
+}
+
+
+// ============================================================
+// UPSERT
+// ============================================================
+
+async function guardarEnSupabase(
+    tabla,
+    datos,
+    conflicto
+) {
+
+    try {
+
+        var client =
+            await initSupabase();
+
+
+        var query =
+            client
+                .from(tabla)
+                .upsert(
+                    datos,
+                    conflicto
+                        ? {
+                            onConflict:
+                                conflicto
+                        }
+                        : undefined
+                )
+                .select();
+
+
+        var resultado =
+            await query;
+
+
+        if (resultado.error) {
+            throw resultado.error;
         }
+
+
+        return {
+            success: true,
+            data: resultado.data || []
+        };
+
+
+    } catch (error) {
+
+        console.error(
+            '❌ Error guardando en ' +
+            tabla + ':',
+            error
+        );
+
+
+        return {
+            success: false,
+            error:
+                error.message ||
+                String(error),
+            data: []
+        };
+    }
+}
+
+
+// ============================================================
+// OBTENER DATOS
+// ============================================================
+
+async function obtenerDeSupabase(
+    tabla,
+    filtros,
+    orden
+) {
+
+    try {
+
+        var client =
+            await initSupabase();
+
+
+        var query =
+            client
+                .from(tabla)
+                .select('*');
+
+
+        if (filtros) {
+
+            Object.keys(filtros)
+                .forEach(function (campo) {
+
+                    var valor =
+                        filtros[campo];
+
+
+                    if (
+                        valor !== undefined &&
+                        valor !== null &&
+                        valor !== ''
+                    ) {
+
+                        query =
+                            query.eq(
+                                campo,
+                                valor
+                            );
+                    }
+                });
+        }
+
+
+        if (
+            orden &&
+            orden.campo
+        ) {
+
+            query =
+                query.order(
+                    orden.campo,
+                    {
+                        ascending:
+                            orden.ascendente !==
+                            false
+                    }
+                );
+        }
+
+
+        var resultado =
+            await query;
+
+
+        if (resultado.error) {
+            throw resultado.error;
+        }
+
+
+        return {
+            success: true,
+            data: resultado.data || []
+        };
+
+
+    } catch (error) {
+
+        console.error(
+            '❌ Error obteniendo ' +
+            tabla + ':',
+            error
+        );
+
+
+        return {
+            success: false,
+            error:
+                error.message ||
+                String(error),
+            data: []
+        };
+    }
+}
+
+
+// ============================================================
+// OBTENER POR ID
+// ============================================================
+
+async function obtenerPorId(
+    tabla,
+    id
+) {
+
+    try {
+
+        var client =
+            await initSupabase();
+
+
+        var resultado =
+            await client
+                .from(tabla)
+                .select('*')
+                .eq('id', id)
+                .maybeSingle();
+
+
+        if (resultado.error) {
+            throw resultado.error;
+        }
+
+
+        return {
+            success: true,
+            data:
+                resultado.data ||
+                null
+        };
+
+
+    } catch (error) {
+
+        console.error(
+            '❌ Error obteniendo registro:',
+            error
+        );
+
+
+        return {
+            success: false,
+            error:
+                error.message ||
+                String(error),
+            data: null
+        };
+    }
+}
+
+
+// ============================================================
+// ELIMINAR
+// ============================================================
+
+async function eliminarDeSupabase(
+    tabla,
+    id
+) {
+
+    try {
+
+        var client =
+            await initSupabase();
+
+
+        var resultado =
+            await client
+                .from(tabla)
+                .delete()
+                .eq('id', id)
+                .select();
+
+
+        if (resultado.error) {
+            throw resultado.error;
+        }
+
+
+        return {
+            success: true,
+            data: resultado.data || []
+        };
+
+
+    } catch (error) {
+
+        console.error(
+            '❌ Error eliminando de ' +
+            tabla + ':',
+            error
+        );
+
+
+        return {
+            success: false,
+            error:
+                error.message ||
+                String(error),
+            data: []
+        };
+    }
+}
+
+
+// ============================================================
+// CARGAR TABLA
+// ============================================================
+
+async function cargarDesdeSupabase(
+    tabla,
+    filtros,
+    orden
+) {
+
+    var resultado =
+        await obtenerDeSupabase(
+            tabla,
+            filtros,
+            orden
+        );
+
+
+    if (!resultado.success) {
+
+        throw new Error(
+            resultado.error ||
+            'No se pudo cargar ' +
+            tabla
+        );
+    }
+
+
+    return resultado.data;
+}
+
+
+// ============================================================
+// REALTIME
+// ============================================================
+
+async function suscribirseATabla(
+    tabla,
+    callback
+) {
+
+    try {
+
+        var client =
+            await initSupabase();
+
+
+        // Evitar múltiples canales de la misma tabla
+        if (realtimeChannels[tabla]) {
+
+            console.log(
+                'ℹ️ Realtime ya activo:',
+                tabla
+            );
+
+            return realtimeChannels[
+                tabla
+            ];
+        }
+
+
+        var nombreCanal =
+            'siman_' +
+            tabla +
+            '_' +
+            Date.now();
+
+
+        var canal =
+            client
+                .channel(nombreCanal)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: tabla
+                    },
+                    function (payload) {
+
+                        console.log(
+                            '🔄 Realtime:',
+                            tabla,
+                            payload.eventType
+                        );
+
+
+                        if (
+                            typeof callback ===
+                            'function'
+                        ) {
+
+                            callback(
+                                payload
+                            );
+                        }
+                    }
+                )
+                .subscribe(
+                    function (estado) {
+
+                        if (
+                            estado ===
+                            'SUBSCRIBED'
+                        ) {
+
+                            console.log(
+                                '📡 Realtime activo:',
+                                tabla
+                            );
+                        }
+                    }
+                );
+
+
+        realtimeChannels[tabla] =
+            canal;
+
+
+        return canal;
+
+
+    } catch (error) {
+
+        console.error(
+            '❌ Error activando Realtime:',
+            tabla,
+            error
+        );
+
         return null;
     }
 }
 
-function suscribirseATodas() {
-    var tablas = ['usuarios', 'roles', 'comerciales', 'tiendas', 'departamentos', 
-                  'estados', 'prioridades', 'motivos', 'tiposContratacion', 'requisiciones'];
-    tablas.forEach(function(tabla) {
-        suscribirseATabla(tabla, function(payload) {
-            console.log('🔄 Cambio en ' + tabla + ':', payload);
-            cargarDesdeSupabase(tabla).then(function(data) {
-                var dataLocal = JSON.parse(localStorage.getItem('siman_config_data') || '{}');
-                if (tabla === 'usuarios') {
-                    dataLocal.usuarios = fusionarDatos(dataLocal.usuarios || [], data, 'email');
-                } else if (tabla === 'requisiciones') {
-                    localStorage.setItem('requisiciones_data', JSON.stringify(data));
-                    if (typeof cargarRequisiciones === 'function') cargarRequisiciones();
-                } else {
-                    dataLocal[tabla] = fusionarDatos(dataLocal[tabla] || [], data, 'id');
-                }
-                localStorage.setItem('siman_config_data', JSON.stringify(dataLocal));
-                if (typeof actualizarContadores === 'function') actualizarContadores();
-                if (typeof agregarNotificacion === 'function') {
-                    agregarNotificacion('info', '🔄 Actualización automática: ' + tabla, '#');
-                }
-            });
-        });
-    });
+
+// ============================================================
+// CANCELAR REALTIME
+// ============================================================
+
+async function cancelarSuscripcion(
+    tabla
+) {
+
+    try {
+
+        if (!realtimeChannels[tabla]) {
+            return;
+        }
+
+
+        var client =
+            await initSupabase();
+
+
+        await client.removeChannel(
+            realtimeChannels[tabla]
+        );
+
+
+        delete realtimeChannels[
+            tabla
+        ];
+
+
+        console.log(
+            '📴 Realtime detenido:',
+            tabla
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            '❌ Error cerrando Realtime:',
+            error
+        );
+    }
 }
 
-// ==========================================
-// EXPORTAR FUNCIONES GLOBALMENTE
-// ==========================================
-window.initSupabase = initSupabase;
-window.guardarEnSupabase = guardarEnSupabase;
-window.insertarEnSupabase = insertarEnSupabase;
-window.actualizarEnSupabase = actualizarEnSupabase;
-window.obtenerDeSupabase = obtenerDeSupabase;
-window.eliminarDeSupabase = eliminarDeSupabase;
-window.sincronizarConSupabase = sincronizarConSupabase;
-window.cargarDesdeSupabase = cargarDesdeSupabase;
-window.initSupabaseData = initSupabaseData;
-window.suscribirseATodas = suscribirseATodas;
-window.suscribirseATabla = suscribirseATabla;
-window.fusionarDatos = fusionarDatos;
 
-console.log('✅ Supabase client cargado correctamente');
+// ============================================================
+// SUSCRIBIR VARIAS TABLAS
+// ============================================================
+
+async function suscribirseATodas(
+    tablas,
+    callback
+) {
+
+    tablas =
+        Array.isArray(tablas)
+            ? tablas
+            : [
+                'requisiciones',
+                'candidatos'
+            ];
+
+
+    for (
+        var i = 0;
+        i < tablas.length;
+        i++
+    ) {
+
+        await suscribirseATabla(
+            tablas[i],
+            callback
+        );
+    }
+}
+
+
+// ============================================================
+// ESTADO DE CONEXIÓN
+// ============================================================
+
+function estaOnline() {
+
+    return navigator.onLine;
+}
+
+
+// ============================================================
+// COMPATIBILIDAD TEMPORAL
+// ============================================================
+
+async function sincronizarConSupabase() {
+
+    console.log(
+        'ℹ️ Supabase es ahora la fuente principal.'
+    );
+
+
+    return {
+        success: true
+    };
+}
+
+
+// ============================================================
+// EXPORTAR
+// ============================================================
+
+window.initSupabase =
+    initSupabase;
+
+window.getSupabaseClient =
+    getSupabaseClient;
+
+window.insertarEnSupabase =
+    insertarEnSupabase;
+
+window.actualizarEnSupabase =
+    actualizarEnSupabase;
+
+window.guardarEnSupabase =
+    guardarEnSupabase;
+
+window.obtenerDeSupabase =
+    obtenerDeSupabase;
+
+window.obtenerPorId =
+    obtenerPorId;
+
+window.eliminarDeSupabase =
+    eliminarDeSupabase;
+
+window.cargarDesdeSupabase =
+    cargarDesdeSupabase;
+
+window.suscribirseATabla =
+    suscribirseATabla;
+
+window.cancelarSuscripcion =
+    cancelarSuscripcion;
+
+window.suscribirseATodas =
+    suscribirseATodas;
+
+window.sincronizarConSupabase =
+    sincronizarConSupabase;
+
+window.estaOnline =
+    estaOnline;
+
+
+console.log(
+    '✅ Supabase Client Fase 3 cargado'
+);
