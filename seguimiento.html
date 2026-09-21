@@ -9,40 +9,29 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>
-        Seguimiento | SIMAN SmartRecruit
-    </title>
+    <title>SIMAN SmartRecruit - Seguimiento</title>
 
-    <!-- =====================================================
-         FONT AWESOME
-    ====================================================== -->
+    <!-- CSS PRINCIPAL -->
     <link
         rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        href="css/global.css"
     >
 
-    <!-- =====================================================
-         ESTILOS DEL SISTEMA
-    ====================================================== -->
+    <!-- FUENTE INTER -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- FONT AWESOME -->
     <link
         rel="stylesheet"
-        href="css/styles.css"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
     >
-
 </head>
 
 
 <body>
-
-    <!-- =====================================================
-         SIDEBAR
-         Se genera desde auth.js / componentes del sistema
-    ====================================================== -->
-
-    <div
-        id="sidebar-container"
-    ></div>
-
 
     <!-- =====================================================
          CONTENIDO PRINCIPAL
@@ -51,23 +40,20 @@
     <main class="main-content">
 
         <!-- =================================================
-             HEADER
+             ENCABEZADO
         ================================================== -->
 
         <div class="page-header">
 
             <div>
-
                 <h1>
                     <i class="fas fa-chart-line"></i>
                     Seguimiento
                 </h1>
 
                 <p class="text-muted">
-                    Seguimiento en tiempo real de los procesos
-                    de reclutamiento.
+                    Seguimiento en tiempo real de los procesos de reclutamiento.
                 </p>
-
             </div>
 
         </div>
@@ -79,32 +65,14 @@
 
         <div class="card">
 
-            <!-- =============================================
-                 ENCABEZADO
-            ============================================== -->
-
             <div class="card-header">
 
                 <span>
-
                     <i class="fas fa-tasks"></i>
-
                     Seguimiento de Procesos
-
                 </span>
 
-
-                <!--
-                    IMPORTANTE:
-                    Este contador ya NO es estático.
-
-                    seguimiento.js actualizará:
-                    0 activos
-                    1 activo
-                    2 activos
-                    etc.
-                -->
-
+                <!-- CONTADOR DINÁMICO -->
                 <span
                     id="seguimientoContador"
                     class="badge badge-blue"
@@ -115,12 +83,9 @@
             </div>
 
 
-            <!-- =============================================
-                 CONTENEDOR DINÁMICO
-
-                 seguimiento.js Fase 3 insertará aquí las
-                 requisiciones obtenidas desde Supabase.
-            ============================================== -->
+            <!-- =================================================
+                 AQUÍ seguimiento.js INSERTA LOS DATOS DE SUPABASE
+            ================================================== -->
 
             <div
                 id="seguimientoContainer"
@@ -131,10 +96,6 @@
                 "
             >
 
-                <!-- =========================================
-                     ESTADO INICIAL
-                ========================================== -->
-
                 <div
                     style="
                         padding:40px 20px;
@@ -143,19 +104,13 @@
                     "
                 >
 
-                    <div
+                    <i
+                        class="fas fa-spinner fa-spin"
                         style="
+                            font-size:24px;
                             margin-bottom:12px;
-                            font-size:26px;
                         "
-                    >
-
-                        <i
-                            class="fas fa-spinner fa-spin"
-                        ></i>
-
-                    </div>
-
+                    ></i>
 
                     <div>
                         Cargando procesos desde Supabase...
@@ -171,47 +126,24 @@
 
 
     <!-- =====================================================
-         SCRIPTS
-
-         IMPORTANTE:
-         mantener este orden.
+         JAVASCRIPT
+         IMPORTANTE: CONSERVAR ESTE ORDEN
     ====================================================== -->
 
+    <!-- SUPABASE SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- Supabase SDK -->
+    <!-- CLIENTE SUPABASE -->
+    <script src="js/supabase-client.js"></script>
 
-    <script
-        src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
-    ></script>
+    <!-- AUTENTICACIÓN / SIDEBAR / PERMISOS -->
+    <script src="js/auth.js"></script>
 
+    <!-- MODO OSCURO -->
+    <script src="js/darkmode.js"></script>
 
-    <!-- Cliente Supabase Fase 3 -->
-
-    <script
-        src="js/supabase-client.js"
-    ></script>
-
-
-    <!-- Autenticación / Roles / Sidebar -->
-
-    <script
-        src="js/auth.js"
-    ></script>
-
-
-    <!-- Modo oscuro -->
-
-    <script
-        src="js/darkmode.js"
-    ></script>
-
-
-    <!-- Seguimiento Fase 3 -->
-
-    <script
-        src="js/seguimiento.js"
-    ></script>
-
+    <!-- SEGUIMIENTO -->
+    <script src="js/seguimiento.js"></script>
 
 </body>
 
