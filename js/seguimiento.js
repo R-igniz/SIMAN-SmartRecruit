@@ -1,1086 +1,651 @@
-// ============================================================
-// SIMAN SMARTRECRUIT
-// seguimiento.js
-// FASE 3
-// SUPABASE + AUTH + RLS + REALTIME
-// ============================================================
+/* ============================================================
+   SIMAN SMARTRECRUIT
+   seguimiento.js
+   FASE 4 - SUPABASE + REALTIME
+============================================================ */
 
-console.log('📋 seguimiento.js Fase 3 cargando...');
-
+console.log("📋 seguimiento.js Fase 4 cargando...");
 
 // ============================================================
 // VARIABLES
 // ============================================================
 
-var seguimientoRequisiciones = [];
-
-var seguimientoUsuario = null;
-
-var seguimientoRealtimeIniciado = false;
-
-var seguimientoCargando = false;
-
+let supabaseSeguimiento = null;
+let usuarioSeguimiento = null;
+let requisicionesSeguimiento = [];
+let realtimeSeguimiento = null;
 
 // ============================================================
-// ESCAPAR HTML
+// ESTADOS Y PROGRESO
 // ============================================================
 
-function escapeSeguimiento(valor) {
+const ESTADOS_PROCESO = [
+    "Nueva",
+    "Revisando",
+    "Publicada",
+    "Recibiendo CV",
+    "Entrevistas",
+    "Evaluaciones",
+    "Oferta",
+    "Contratado",
+    "Cerrado"
+];
 
-    return String(
-        valor == null ? '' : valor
-    )
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+const PROGRESO_ESTADOS = {
+    "Nueva": 10,
+    "Revisando": 20,
+    "Publicada": 30,
+    "Recibiendo CV": 40,
+    "Entrevistas": 55,
+    "Evaluaciones": 70,
+    "Oferta": 85,
+    "Contratado": 100,
+    "Cerrado": 100
+};
+
+// ============================================================
+// HELPERS
+// ============================================================
+
+function $(id) {
+    return document.getElementById(id);
 }
 
+function escaparHTML(valor) {
+    return String(valor ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
 
-// ============================================================
-// NORMALIZAR TEXTO
-// ============================================================
+function texto(valor, defecto = "—") {
+    if (
+        valor === null ||
+        valor === undefined ||
+        String(valor).trim() === ""
+    ) {
+        return defecto;
+    }
 
-function normalizarSeguimiento(valor) {
+    return String(valor);
+}
 
-    return String(valor || '')
+function normalizarEstado(estado) {
+    const valor = String(estado || "")
         .trim()
         .toLowerCase();
+
+    const encontrado = ESTADOS_PROCESO.find(
+        item => item.toLowerCase() === valor
+    );
+
+    return encontrado || "Nueva";
 }
 
+function obtenerProgreso(estado) {
+    const estadoNormalizado = normalizarEstado(estado);
 
-// ============================================================
-// VERIFICAR SI ESTÁ CERRADO
-// ============================================================
-
-function esProcesoCerrado(estado) {
-
-    var valor =
-        normalizarSeguimiento(
-            estado
-        );
-
-
-    return [
-        'cerrado',
-        'cerrada',
-        'cancelado',
-        'cancelada',
-        'finalizado',
-        'finalizada'
-    ].indexOf(valor) !== -1;
+    return PROGRESO_ESTADOS[estadoNormalizado] || 10;
 }
 
+function formatearFecha(fecha) {
+    if (!fecha) {
+        return "Sin fecha";
+    }
 
-// ============================================================
-// CALCULAR PROGRESO
-// ============================================================
+    let date;
 
-function calcularProgreso(estado) {
+    // Evitar problemas de zona horaria con columnas DATE
+    if (/^\d{4}-\d{2}-\d{2}$/.test(String(fecha))) {
+        const [year, month, day] = String(fecha)
+            .split("-")
+            .map(Number);
 
-    var estados = {
+        date = new Date(year, month - 1, day);
+    } else {
+        date = new Date(fecha);
+    }
 
-        'nueva': 10,
+    if (Number.isNaN(date.getTime())) {
+        return "Sin fecha";
+    }
 
-        'revisando': 20,
+    return new Intl.DateTimeFormat("es-GT", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+    }).format(date);
+}
 
-        'publicada': 35,
-
-        'en proceso': 50,
-
-        'preselección': 55,
-
-        'preseleccion': 55,
-
-        'entrevistas': 70,
-
-        'entrevista': 70,
-
-        'oferta': 90,
-
-        'contratado': 100,
-
-        'contratada': 100,
-
-        'cerrado': 100,
-
-        'cerrada': 100,
-
-        'finalizado': 100,
-
-        'finalizada': 100
-    };
-
-
-    var estadoNormalizado =
-        normalizarSeguimiento(
-            estado
-        );
-
+function clasePrioridad(prioridad) {
+    const valor = String(prioridad || "")
+        .trim()
+        .toLowerCase();
 
     if (
-        estados[estadoNormalizado] !==
-        undefined
+        valor === "alta" ||
+        valor === "urgente"
     ) {
-
-        return estados[
-            estadoNormalizado
-        ];
+        return "priority-high";
     }
 
+    if (valor === "media") {
+        return "priority-medium";
+    }
 
-    return 10;
+    return "priority-low";
 }
-
-
-// ============================================================
-// COLOR PRIORIDAD
-// ============================================================
-
-function colorPrioridad(prioridad) {
-
-    switch (
-        normalizarSeguimiento(
-            prioridad
-        )
-    ) {
-
-        case 'alta':
-        case 'urgente':
-
-            return 'var(--danger)';
-
-
-        case 'media':
-
-            return 'var(--warning)';
-
-
-        case 'baja':
-
-            return 'var(--success)';
-
-
-        default:
-
-            return 'var(--primary)';
-    }
-}
-
-
-// ============================================================
-// COLOR PROGRESO
-// ============================================================
-
-function colorProgreso(progreso) {
-
-    if (progreso >= 80) {
-
-        return 'var(--success)';
-    }
-
-
-    if (progreso >= 50) {
-
-        return 'var(--primary)';
-    }
-
-
-    return 'var(--warning)';
-}
-
-
-// ============================================================
-// CLASE BADGE ESTADO
-// ============================================================
 
 function claseEstado(estado) {
-
-    var valor =
-        normalizarSeguimiento(
-            estado
-        );
-
+    const valor = normalizarEstado(estado);
 
     if (
-        valor === 'cerrado' ||
-        valor === 'cerrada' ||
-        valor === 'contratado' ||
-        valor === 'contratada' ||
-        valor === 'finalizado' ||
-        valor === 'finalizada'
+        valor === "Contratado" ||
+        valor === "Cerrado"
     ) {
-
-        return 'badge-green';
+        return "status-success";
     }
-
 
     if (
-        valor === 'entrevista' ||
-        valor === 'entrevistas' ||
-        valor === 'preselección' ||
-        valor === 'preseleccion'
+        valor === "Entrevistas" ||
+        valor === "Evaluaciones" ||
+        valor === "Oferta"
     ) {
-
-        return 'badge-yellow';
+        return "status-warning";
     }
 
+    return "status-blue";
+}
+
+// ============================================================
+// CLIENTE SUPABASE
+// ============================================================
+
+async function obtenerClienteSupabaseSeguimiento() {
+
+    if (typeof window.getSupabase === "function") {
+        const cliente = await window.getSupabase();
+
+        if (cliente) {
+            return cliente;
+        }
+    }
+
+    if (typeof window.getSupabaseClient === "function") {
+        const cliente = await window.getSupabaseClient();
+
+        if (cliente) {
+            return cliente;
+        }
+    }
+
+    if (window.supabaseClient) {
+        return window.supabaseClient;
+    }
 
     if (
-        valor === 'cancelado' ||
-        valor === 'cancelada'
+        window.supabase &&
+        typeof window.supabase.from === "function"
     ) {
-
-        return 'badge-red';
+        return window.supabase;
     }
 
-
-    return 'badge-blue';
-}
-
-
-// ============================================================
-// OBTENER REQUISICIONES DE SUPABASE
-// ============================================================
-
-async function obtenerRequisicionesSeguimiento() {
-
-    var client =
-        await initSupabase();
-
-
-    var consulta =
-        client
-            .from('requisiciones')
-            .select('*')
-            .order(
-                'created_at',
-                {
-                    ascending: false
-                }
-            );
-
-
-    // ========================================================
-    // RECLUTADORA
-    //
-    // Administrador:
-    // ve lo permitido por RLS.
-    //
-    // Reclutadora:
-    // adicionalmente filtramos por reclutador_id.
-    // ========================================================
-
-    if (
-        seguimientoUsuario &&
-        seguimientoUsuario.role ===
-            'Reclutadora' &&
-        seguimientoUsuario.id
-    ) {
-
-        consulta =
-            consulta.eq(
-                'reclutador_id',
-                seguimientoUsuario.id
-            );
-    }
-
-
-    var resultado =
-        await consulta;
-
-
-    if (resultado.error) {
-
-        console.error(
-            '❌ Error Supabase requisiciones:',
-            resultado.error
-        );
-
-        throw resultado.error;
-    }
-
-
-    return resultado.data || [];
-}
-
-
-// ============================================================
-// OBTENER PROCESOS ACTIVOS
-// ============================================================
-
-function obtenerProcesosActivos() {
-
-    return seguimientoRequisiciones
-        .filter(
-            function(requisicion) {
-
-                return !esProcesoCerrado(
-                    requisicion.estado
-                );
-            }
-        );
-}
-
-
-// ============================================================
-// ACTUALIZAR CONTADOR
-// ============================================================
-
-function actualizarContadorSeguimiento(
-    cantidad
-) {
-
-    var contador =
-        document.getElementById(
-            'seguimientoContador'
-        );
-
-
-    if (!contador) {
-
-        console.warn(
-            '⚠️ seguimientoContador no existe'
-        );
-
-        return;
-    }
-
-
-    contador.textContent =
-        cantidad +
-        (
-            cantidad === 1
-                ? ' activo'
-                : ' activos'
-        );
-}
-
-
-// ============================================================
-// MOSTRAR ESTADO VACÍO
-// ============================================================
-
-function mostrarSeguimientoVacio(
-    mensaje,
-    icono
-) {
-
-    var container =
-        document.getElementById(
-            'seguimientoContainer'
-        );
-
-
-    if (!container) {
-
-        return;
-    }
-
-
-    container.innerHTML = `
-
-        <div
-            style="
-                padding:45px 20px;
-                text-align:center;
-                color:var(--text-muted);
-            "
-        >
-
-            <i
-                class="fas ${escapeSeguimiento(
-                    icono ||
-                    'fa-inbox'
-                )}"
-                style="
-                    font-size:30px;
-                    margin-bottom:15px;
-                "
-            ></i>
-
-            <div>
-                ${escapeSeguimiento(
-                    mensaje
-                )}
-            </div>
-
-        </div>
-    `;
-}
-
-
-// ============================================================
-// RENDERIZAR SEGUIMIENTO
-// ============================================================
-
-function renderSeguimiento() {
-
-    var container =
-        document.getElementById(
-            'seguimientoContainer'
-        );
-
-
-    if (!container) {
-
-        console.warn(
-            '⚠️ seguimientoContainer no existe'
-        );
-
-        return;
-    }
-
-
-    // ========================================================
-    // PROCESOS ACTIVOS
-    // ========================================================
-
-    var requisiciones =
-        obtenerProcesosActivos();
-
-
-    // ========================================================
-    // ACTUALIZAR CONTADOR
-    // ========================================================
-
-    actualizarContadorSeguimiento(
-        requisiciones.length
+    throw new Error(
+        "No se encontró el cliente Supabase."
     );
+}
 
+// ============================================================
+// USUARIO ACTUAL
+// ============================================================
+
+async function obtenerUsuarioSeguimiento() {
+
+    const {
+        data: authData,
+        error: authError
+    } = await supabaseSeguimiento.auth.getUser();
+
+    if (authError) {
+        throw authError;
+    }
+
+    if (!authData?.user) {
+        throw new Error(
+            "No existe una sesión activa."
+        );
+    }
+
+    const authUser = authData.user;
+
+    let perfil = null;
+
+    const {
+        data: profileData,
+        error: profileError
+    } = await supabaseSeguimiento
+        .from("profiles")
+        .select("id,email,nombre,role_code,activo")
+        .eq("id", authUser.id)
+        .maybeSingle();
+
+    if (profileError) {
+        console.warn(
+            "⚠️ No se pudo cargar el perfil:",
+            profileError
+        );
+    } else {
+        perfil = profileData;
+    }
+
+    usuarioSeguimiento = {
+        id: authUser.id,
+
+        email:
+            perfil?.email ||
+            authUser.email ||
+            "",
+
+        nombre:
+            perfil?.nombre ||
+            authUser.email ||
+            "Usuario",
+
+        role_code:
+            perfil?.role_code ||
+            "usuario",
+
+        activo:
+            perfil?.activo ?? true
+    };
 
     console.log(
-        '📊 Procesos activos:',
-        requisiciones.length
-    );
-
-
-    // ========================================================
-    // SIN REQUISICIONES
-    // ========================================================
-
-    if (
-        seguimientoRequisiciones.length ===
-        0
-    ) {
-
-        mostrarSeguimientoVacio(
-            'No hay requisiciones registradas.',
-            'fa-inbox'
-        );
-
-        return;
-    }
-
-
-    // ========================================================
-    // TODAS CERRADAS
-    // ========================================================
-
-    if (
-        requisiciones.length ===
-        0
-    ) {
-
-        mostrarSeguimientoVacio(
-            'Todos los procesos están cerrados.',
-            'fa-check-circle'
-        );
-
-        return;
-    }
-
-
-    // ========================================================
-    // LIMPIAR CONTENEDOR
-    // ========================================================
-
-    container.innerHTML = '';
-
-
-    // ========================================================
-    // CREAR TARJETAS
-    // ========================================================
-
-    requisiciones.forEach(
-        function(r) {
-
-            var card =
-                document.createElement(
-                    'div'
-                );
-
-
-            card.className =
-                'card';
-
-
-            card.style.cssText =
-                'border-left:4px solid ' +
-                colorPrioridad(
-                    r.prioridad
-                ) +
-                ';margin-bottom:0;';
-
-
-            // =================================================
-            // DATOS
-            // =================================================
-
-            var progreso =
-                calcularProgreso(
-                    r.estado
-                );
-
-
-            var codigo =
-                r.codigo ||
-                (
-                    'REQ-' +
-                    r.id
-                );
-
-
-            var puesto =
-                r.puesto ||
-                'Sin título';
-
-
-            var centro =
-                r.centro ||
-                'Sin centro comercial';
-
-
-            var tienda =
-                r.tienda ||
-                '';
-
-
-            var reclutador =
-                r.reclutador ||
-                r.reclutadora ||
-                'No asignado';
-
-
-            var estado =
-                r.estado ||
-                'Nueva';
-
-
-            var prioridad =
-                r.prioridad ||
-                'Sin prioridad';
-
-
-            var fecha =
-                r.fecha ||
-                (
-                    r.created_at
-                        ? String(
-                            r.created_at
-                        ).slice(
-                            0,
-                            10
-                        )
-                        : 'Sin fecha'
-                );
-
-
-            // =================================================
-            // HTML TARJETA
-            // =================================================
-
-            card.innerHTML = `
-
-                <div
-                    style="
-                        display:flex;
-                        justify-content:space-between;
-                        align-items:flex-start;
-                        flex-wrap:wrap;
-                        gap:15px;
-                    "
-                >
-
-                    <!-- INFORMACIÓN PRINCIPAL -->
-
-                    <div
-                        style="
-                            flex:1;
-                            min-width:250px;
-                        "
-                    >
-
-                        <div
-                            style="
-                                display:flex;
-                                align-items:center;
-                                flex-wrap:wrap;
-                                gap:8px;
-                            "
-                        >
-
-                            <strong
-                                style="
-                                    font-size:15px;
-                                "
-                            >
-                                ${escapeSeguimiento(
-                                    codigo
-                                )}
-                            </strong>
-
-
-                            <span>
-                                -
-                                ${escapeSeguimiento(
-                                    puesto
-                                )}
-                            </span>
-
-                        </div>
-
-
-                        <div
-                            style="
-                                margin-top:7px;
-                                color:var(--text-muted);
-                                font-size:13px;
-                            "
-                        >
-
-                            <i
-                                class="fas fa-store"
-                            ></i>
-
-                            ${escapeSeguimiento(
-                                centro
-                            )}
-
-                            ${
-                                tienda
-                                    ? ' · ' +
-                                      escapeSeguimiento(
-                                          tienda
-                                      )
-                                    : ''
-                            }
-
-                        </div>
-
-                    </div>
-
-
-                    <!-- ESTADO / RECLUTADOR -->
-
-                    <div
-                        style="
-                            display:flex;
-                            align-items:center;
-                            flex-wrap:wrap;
-                            gap:10px;
-                        "
-                    >
-
-                        <span
-                            class="
-                                badge
-                                ${claseEstado(
-                                    estado
-                                )}
-                            "
-                        >
-
-                            ${escapeSeguimiento(
-                                estado
-                            )}
-
-                        </span>
-
-
-                        <span
-                            style="
-                                font-size:12px;
-                                color:var(--text-muted);
-                            "
-                        >
-
-                            <i
-                                class="fas fa-user-tie"
-                            ></i>
-
-                            ${escapeSeguimiento(
-                                reclutador
-                            )}
-
-                        </span>
-
-                    </div>
-
-                </div>
-
-
-                <!-- =========================================
-                     PROGRESO
-                ========================================== -->
-
-                <div
-                    style="
-                        margin-top:18px;
-                    "
-                >
-
-                    <div
-                        style="
-                            display:flex;
-                            align-items:center;
-                            gap:10px;
-                        "
-                    >
-
-                        <span
-                            style="
-                                font-size:12px;
-                                color:var(--text-muted);
-                            "
-                        >
-                            Progreso:
-                        </span>
-
-
-                        <div
-                            style="
-                                flex:1;
-                                height:7px;
-                                background:var(--bg-body);
-                                border-radius:20px;
-                                overflow:hidden;
-                            "
-                        >
-
-                            <div
-                                style="
-                                    width:${progreso}%;
-                                    height:100%;
-                                    background:${colorProgreso(
-                                        progreso
-                                    )};
-                                    border-radius:20px;
-                                    transition:
-                                        width .3s ease;
-                                "
-                            ></div>
-
-                        </div>
-
-
-                        <span
-                            style="
-                                font-size:12px;
-                                font-weight:600;
-                                min-width:35px;
-                                text-align:right;
-                            "
-                        >
-
-                            ${progreso}%
-
-                        </span>
-
-                    </div>
-
-                </div>
-
-
-                <!-- =========================================
-                     INFORMACIÓN INFERIOR
-                ========================================== -->
-
-                <div
-                    style="
-                        display:flex;
-                        gap:10px;
-                        margin-top:14px;
-                        flex-wrap:wrap;
-                        align-items:center;
-                    "
-                >
-
-                    <!-- ESTADO -->
-
-                    <span
-                        class="
-                            badge
-                            ${claseEstado(
-                                estado
-                            )}
-                        "
-                    >
-
-                        <i
-                            class="fas fa-circle-notch"
-                        ></i>
-
-                        ${escapeSeguimiento(
-                            estado
-                        )}
-
-                    </span>
-
-
-                    <!-- FECHA -->
-
-                    <span
-                        style="
-                            font-size:12px;
-                            color:var(--text-muted);
-                        "
-                    >
-
-                        <i
-                            class="far fa-calendar-alt"
-                        ></i>
-
-                        ${escapeSeguimiento(
-                            fecha
-                        )}
-
-                    </span>
-
-
-                    <!-- PRIORIDAD -->
-
-                    <span
-                        style="
-                            font-size:12px;
-                            color:var(--text-muted);
-                        "
-                    >
-
-                        <i
-                            class="fas fa-flag"
-                        ></i>
-
-                        ${escapeSeguimiento(
-                            prioridad
-                        )}
-
-                    </span>
-
-
-                    <!-- BOTÓN -->
-
-                    <button
-                        type="button"
-                        class="btn btn-outline"
-                        style="
-                            padding:6px 14px;
-                            font-size:12px;
-                            margin-left:auto;
-                        "
-                        data-requisicion-id="${escapeSeguimiento(
-                            r.id
-                        )}"
-                    >
-
-                        <i
-                            class="fas fa-arrow-right"
-                        ></i>
-
-                        Gestionar
-
-                    </button>
-
-                </div>
-            `;
-
-
-            // =================================================
-            // BOTÓN GESTIONAR
-            // =================================================
-
-            var boton =
-                card.querySelector(
-                    '[data-requisicion-id]'
-                );
-
-
-            if (boton) {
-
-                boton.addEventListener(
-                    'click',
-                    function() {
-
-                        var id =
-                            this.dataset
-                                .requisicionId;
-
-
-                        console.log(
-                            '➡️ Gestionando requisición:',
-                            id
-                        );
-
-
-                        var destino =
-                            'administrar-requisicion.html?id=' +
-                            encodeURIComponent(
-                                id
-                            );
-
-
-                        if (
-                            typeof navigateTo ===
-                            'function'
-                        ) {
-
-                            navigateTo(
-                                destino
-                            );
-
-                        } else {
-
-                            window.location.href =
-                                destino;
-                        }
-                    }
-                );
-            }
-
-
-            container.appendChild(
-                card
-            );
-        }
+        "👤 Seguimiento:",
+        usuarioSeguimiento.email,
+        "|",
+        usuarioSeguimiento.nombre,
+        "|",
+        usuarioSeguimiento.id
     );
 }
 
+// ============================================================
+// CONTROL POR ROL
+// ============================================================
+
+function esAdministrador() {
+    const role = String(
+        usuarioSeguimiento?.role_code || ""
+    ).toLowerCase();
+
+    return role === "admin" ||
+           role === "administrador";
+}
+
+function esReclutadora() {
+    const role = String(
+        usuarioSeguimiento?.role_code || ""
+    ).toLowerCase();
+
+    return role === "reclutadora" ||
+           role === "reclutador";
+}
 
 // ============================================================
-// CARGAR DATOS
+// CARGAR REQUISICIONES
 // ============================================================
 
 async function cargarSeguimiento() {
 
-    if (seguimientoCargando) {
-
-        return;
-    }
-
-
-    seguimientoCargando =
-        true;
-
+    console.log(
+        "🔄 Cargando seguimiento desde Supabase..."
+    );
 
     try {
 
+        let consulta = supabaseSeguimiento
+            .from("requisiciones")
+            .select("*")
+            .order("created_at", {
+                ascending: false
+            });
+
+        /*
+         * Administrador:
+         * ve todas.
+         *
+         * Reclutadora:
+         * ve las asignadas a su UUID.
+         */
+
+        if (
+            esReclutadora() &&
+            usuarioSeguimiento?.id
+        ) {
+            consulta = consulta.eq(
+                "reclutador_id",
+                usuarioSeguimiento.id
+            );
+        }
+
+        const {
+            data,
+            error
+        } = await consulta;
+
+        if (error) {
+            throw error;
+        }
+
+        requisicionesSeguimiento =
+            Array.isArray(data)
+                ? data
+                : [];
+
         console.log(
-            '🔄 Cargando seguimiento desde Supabase...'
+            "✅ Requisiciones cargadas:",
+            requisicionesSeguimiento.length
         );
-
-
-        seguimientoRequisiciones =
-            await obtenerRequisicionesSeguimiento();
-
-
-        console.log(
-            '✅ Requisiciones cargadas:',
-            seguimientoRequisiciones.length
-        );
-
 
         renderSeguimiento();
-
 
     } catch (error) {
 
         console.error(
-            '❌ Error cargando seguimiento:',
+            "❌ Error cargando seguimiento:",
             error
         );
 
-
-        actualizarContadorSeguimiento(
-            0
+        mostrarErrorSeguimiento(
+            error.message ||
+            "No fue posible cargar las requisiciones."
         );
-
-
-        mostrarSeguimientoVacio(
-            'No se pudo cargar el seguimiento.',
-            'fa-exclamation-triangle'
-        );
-
-
-    } finally {
-
-        seguimientoCargando =
-            false;
     }
 }
 
-
 // ============================================================
-// REALTIME
+// PROCESOS ACTIVOS
 // ============================================================
 
-async function iniciarRealtimeSeguimiento() {
+function obtenerProcesosActivos() {
 
-    if (
-        seguimientoRealtimeIniciado
-    ) {
+    return requisicionesSeguimiento.filter(
+        requisicion => {
 
-        return;
-    }
-
-
-    if (
-        typeof suscribirseATabla !==
-        'function'
-    ) {
-
-        console.warn(
-            '⚠️ suscribirseATabla no está disponible'
-        );
-
-        return;
-    }
-
-
-    seguimientoRealtimeIniciado =
-        true;
-
-
-    await suscribirseATabla(
-        'requisiciones',
-
-        function(payload) {
-
-            console.log(
-                '📡 Cambio Realtime requisiciones:',
-                payload
-                    ? payload.eventType
-                    : 'evento'
-            );
-
-
-            cargarSeguimiento()
-                .catch(
-                    function(error) {
-
-                        console.error(
-                            '❌ Error refrescando seguimiento:',
-                            error
-                        );
-                    }
+            const estado =
+                normalizarEstado(
+                    requisicion.estado
                 );
+
+            return estado !== "Cerrado";
         }
     );
+}
 
+// ============================================================
+// RENDER PRINCIPAL
+// ============================================================
+
+function renderSeguimiento() {
+
+    const container =
+        $("seguimientoContainer");
+
+    if (!container) {
+        console.error(
+            "❌ seguimientoContainer no existe en seguimiento.html"
+        );
+        return;
+    }
+
+    const procesos =
+        obtenerProcesosActivos();
 
     console.log(
-        '📡 Realtime Seguimiento activo'
+        "📊 Procesos activos:",
+        procesos.length
     );
+
+    actualizarContadores(procesos);
+
+    if (!procesos.length) {
+
+        container.innerHTML = `
+            <div class="seguimiento-empty">
+
+                <div class="seguimiento-empty-icon">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+
+                <h3>No hay procesos activos</h3>
+
+                <p>
+                    Actualmente no existen requisiciones
+                    pendientes de seguimiento.
+                </p>
+
+            </div>
+        `;
+
+        return;
+    }
+
+    container.innerHTML =
+        procesos
+            .map(renderTarjetaSeguimiento)
+            .join("");
+}
+
+// ============================================================
+// TARJETA
+// ============================================================
+
+function renderTarjetaSeguimiento(req) {
+
+    const estado =
+        normalizarEstado(req.estado);
+
+    const progreso =
+        obtenerProgreso(estado);
+
+    const prioridad =
+        texto(req.prioridad, "Media");
+
+    const responsable =
+        texto(
+            req.reclutador,
+            "Sin asignar"
+        );
+
+    const ubicacion =
+        texto(
+            req.tienda ||
+            req.centro,
+            "Sin ubicación"
+        );
+
+    const centro =
+        req.centro &&
+        req.tienda &&
+        req.centro !== req.tienda
+            ? ` · ${escaparHTML(req.centro)}`
+            : "";
+
+    return `
+        <article
+            class="seguimiento-card ${clasePrioridad(prioridad)}"
+            data-id="${req.id}"
+        >
+
+            <div class="seguimiento-card-header">
+
+                <div class="seguimiento-title">
+
+                    <div class="seguimiento-code-row">
+
+                        <strong class="seguimiento-code">
+                            ${escaparHTML(
+                                texto(req.codigo, `#${req.id}`)
+                            )}
+                        </strong>
+
+                        <span class="seguimiento-divider">
+                            -
+                        </span>
+
+                        <span class="seguimiento-position">
+                            ${escaparHTML(
+                                texto(req.puesto)
+                            )}
+                        </span>
+
+                    </div>
+
+                    <div class="seguimiento-location">
+
+                        <i class="fas fa-store"></i>
+
+                        <span>
+                            ${escaparHTML(ubicacion)}
+                            ${centro}
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="seguimiento-owner">
+
+                    <span class="estado-badge ${claseEstado(estado)}">
+                        ${escaparHTML(estado.toUpperCase())}
+                    </span>
+
+                    <span class="owner-name">
+                        <i class="fas fa-user-tie"></i>
+                        ${escaparHTML(responsable)}
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="seguimiento-progress">
+
+                <div class="seguimiento-progress-head">
+
+                    <span>Progreso:</span>
+
+                    <strong>
+                        ${progreso}%
+                    </strong>
+
+                </div>
+
+
+                <div class="progress-track">
+
+                    <div
+                        class="progress-value"
+                        style="width:${progreso}%"
+                    ></div>
+
+                </div>
+
+            </div>
+
+
+            <div class="seguimiento-card-footer">
+
+                <div class="seguimiento-meta">
+
+                    <span class="meta-badge status-blue">
+
+                        <i class="fas fa-spinner"></i>
+
+                        ${escaparHTML(
+                            estado.toUpperCase()
+                        )}
+
+                    </span>
+
+
+                    <span>
+
+                        <i class="far fa-calendar-alt"></i>
+
+                        ${escaparHTML(
+                            formatearFecha(
+                                req.fecha ||
+                                req.created_at
+                            )
+                        )}
+
+                    </span>
+
+
+                    <span>
+
+                        <i class="fas fa-flag"></i>
+
+                        ${escaparHTML(prioridad)}
+
+                    </span>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="btn-gestionar"
+                    data-requisicion-id="${req.id}"
+                    onclick="gestionarRequisicion(${req.id})"
+                >
+                    <i class="fas fa-arrow-right"></i>
+                    Gestionar
+                </button>
+
+            </div>
+
+        </article>
+    `;
+}
+
+// ============================================================
+// CONTADORES
+// ============================================================
+
+function actualizarContadores(procesos) {
+
+    const total =
+        procesos.length;
+
+    const contador =
+        $("contadorProcesos");
+
+    if (contador) {
+
+        contador.textContent =
+            `${total} ${
+                total === 1
+                    ? "ACTIVO"
+                    : "ACTIVOS"
+            }`;
+    }
+
+    const titulo =
+        $("tituloSeguimiento");
+
+    if (titulo) {
+
+        titulo.innerHTML = `
+            <i class="fas fa-list-check"></i>
+            Seguimiento de Procesos
+        `;
+    }
 }
 
 // ============================================================
@@ -1089,188 +654,338 @@ async function iniciarRealtimeSeguimiento() {
 
 function gestionarRequisicion(id) {
 
-    console.log("🔎 gestionarRequisicion() recibió:", id);
+    console.log(
+        "➡️ Gestionar requisición:",
+        id
+    );
 
-    const requisicionId = Number(id);
+    const requisicionId =
+        Number(id);
 
-    if (!Number.isInteger(requisicionId) || requisicionId <= 0) {
-        console.error("❌ ID de requisición inválido:", id);
-        alert("No se pudo identificar la requisición.");
+    if (
+        !Number.isInteger(requisicionId) ||
+        requisicionId <= 0
+    ) {
+
+        console.error(
+            "❌ ID de requisición inválido:",
+            id
+        );
+
+        alert(
+            "No se pudo identificar la requisición."
+        );
+
         return;
     }
 
     const url =
-        `/administrar-requisicion.html?id=${encodeURIComponent(requisicionId)}`;
+        `/administrar-requisicion.html?id=${encodeURIComponent(
+            requisicionId
+        )}`;
 
-    console.log("➡️ Abriendo:", url);
+    console.log(
+        "🔗 Abriendo:",
+        url
+    );
 
     window.location.href = url;
 }
 
-// Necesario porque las tarjetas se generan dinámicamente
-window.gestionarRequisicion = gestionarRequisicion;
+// MUY IMPORTANTE:
+// Las tarjetas se crean dinámicamente,
+// por eso exponemos la función globalmente.
 
-
+window.gestionarRequisicion =
+    gestionarRequisicion;
 
 // ============================================================
-// INICIALIZAR
+// ERROR
+// ============================================================
+
+function mostrarErrorSeguimiento(mensaje) {
+
+    const container =
+        $("seguimientoContainer");
+
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="seguimiento-error">
+
+            <i class="fas fa-triangle-exclamation"></i>
+
+            <h3>
+                No se pudo cargar Seguimiento
+            </h3>
+
+            <p>
+                ${escaparHTML(mensaje)}
+            </p>
+
+            <button
+                type="button"
+                class="btn-gestionar"
+                onclick="window.location.reload()"
+            >
+                <i class="fas fa-rotate-right"></i>
+                Reintentar
+            </button>
+
+        </div>
+    `;
+}
+
+// ============================================================
+// REALTIME
+// ============================================================
+
+function iniciarRealtimeSeguimiento() {
+
+    if (
+        !supabaseSeguimiento ||
+        !usuarioSeguimiento
+    ) {
+        return;
+    }
+
+    if (realtimeSeguimiento) {
+
+        try {
+
+            supabaseSeguimiento
+                .removeChannel(
+                    realtimeSeguimiento
+                );
+
+        } catch (error) {
+
+            console.warn(
+                "⚠️ No se pudo cerrar canal anterior:",
+                error
+            );
+        }
+    }
+
+    realtimeSeguimiento =
+        supabaseSeguimiento
+            .channel(
+                `seguimiento-${usuarioSeguimiento.id}`
+            )
+
+            .on(
+                "postgres_changes",
+                {
+                    event: "*",
+                    schema: "public",
+                    table: "requisiciones"
+                },
+                async payload => {
+
+                    console.log(
+                        "📡 Cambio en requisiciones:",
+                        payload.eventType
+                    );
+
+                    await cargarSeguimiento();
+                }
+            )
+
+            .on(
+                "postgres_changes",
+                {
+                    event: "*",
+                    schema: "public",
+                    table: "candidatos"
+                },
+                async payload => {
+
+                    console.log(
+                        "📡 Cambio en candidatos:",
+                        payload.eventType
+                    );
+
+                    /*
+                     * Por ahora recargamos seguimiento.
+                     * Más adelante podremos mostrar cantidad
+                     * de candidatos por requisición.
+                     */
+
+                    await cargarSeguimiento();
+                }
+            )
+
+            .subscribe(status => {
+
+                console.log(
+                    "📡 Realtime Seguimiento:",
+                    status
+                );
+            });
+}
+
+// ============================================================
+// INICIALIZACIÓN
 // ============================================================
 
 async function iniciarSeguimiento() {
 
+    console.log(
+        "🚀 Inicializando Seguimiento Fase 4..."
+    );
+
     try {
 
+        // ----------------------------------------------------
+        // SUPABASE
+        // ----------------------------------------------------
+
+        supabaseSeguimiento =
+            await obtenerClienteSupabaseSeguimiento();
+
         console.log(
-            '🚀 Inicializando Seguimiento Fase 3'
+            "✅ Supabase disponible en Seguimiento"
         );
 
+        // ----------------------------------------------------
+        // SESIÓN
+        // ----------------------------------------------------
 
-        // ====================================================
+        const {
+            data: sessionData,
+            error: sessionError
+        } =
+            await supabaseSeguimiento
+                .auth
+                .getSession();
+
+        if (sessionError) {
+            throw sessionError;
+        }
+
+        if (!sessionData?.session) {
+
+            console.warn(
+                "⚠️ No existe sesión activa"
+            );
+
+            window.location.href =
+                "/index.html";
+
+            return;
+        }
+
+        // ----------------------------------------------------
+        // PERMISO
+        // ----------------------------------------------------
+
+        if (
+            typeof window.tienePermiso ===
+            "function"
+        ) {
+
+            const permitido =
+                await window.tienePermiso(
+                    "ver_seguimiento"
+                );
+
+            if (!permitido) {
+
+                console.warn(
+                    "⛔ Sin permiso ver_seguimiento"
+                );
+
+                window.location.href =
+                    "/dashboard.html";
+
+                return;
+            }
+        }
+
+        // ----------------------------------------------------
         // USUARIO
-        // ====================================================
+        // ----------------------------------------------------
 
-        if (
-            typeof requireAuth ===
-            'function'
-        ) {
+        await obtenerUsuarioSeguimiento();
 
-            seguimientoUsuario =
-                await requireAuth();
-
-        } else if (
-            typeof getCurrentUser ===
-            'function'
-        ) {
-
-            seguimientoUsuario =
-                getCurrentUser();
-        }
-
-
-        if (
-            !seguimientoUsuario
-        ) {
-
-            console.warn(
-                '⚠️ Usuario no autenticado'
-            );
-
-
-            window.location.href =
-                'login.html';
-
-
-            return;
-        }
-
-
-        // ====================================================
-        // PERMISOS
-        // ====================================================
-
-        if (
-            typeof tienePermiso ===
-                'function' &&
-            !tienePermiso(
-                'ver_seguimiento'
-            )
-        ) {
-
-            console.warn(
-                '⛔ Usuario sin permiso ver_seguimiento'
-            );
-
-
-            window.location.href =
-                'dashboard.html';
-
-
-            return;
-        }
-
-
-        console.log(
-            '👤 Seguimiento:',
-            seguimientoUsuario.email,
-            '|',
-            seguimientoUsuario.role,
-            '|',
-            seguimientoUsuario.id
-        );
-
-
-        // ====================================================
-        // INICIAR SUPABASE
-        // ====================================================
-
-        await initSupabase();
-
-
-        // ====================================================
-        // CARGAR REQUISICIONES
-        // ====================================================
+        // ----------------------------------------------------
+        // DATOS
+        // ----------------------------------------------------
 
         await cargarSeguimiento();
 
-
-        // ====================================================
+        // ----------------------------------------------------
         // REALTIME
-        // ====================================================
+        // ----------------------------------------------------
 
-        await iniciarRealtimeSeguimiento();
-
+        iniciarRealtimeSeguimiento();
 
         console.log(
-            '✅ Seguimiento Fase 3 inicializado'
+            "✅ Seguimiento Fase 4 inicializado"
         );
-
 
     } catch (error) {
 
         console.error(
-            '❌ Error inicializando seguimiento:',
+            "❌ Error inicializando Seguimiento:",
             error
         );
 
-
-        actualizarContadorSeguimiento(
-            0
-        );
-
-
-        mostrarSeguimientoVacio(
-            'No se pudo inicializar el módulo de seguimiento.',
-            'fa-exclamation-triangle'
+        mostrarErrorSeguimiento(
+            error.message ||
+            "Error desconocido."
         );
     }
 }
 
-
 // ============================================================
-// EXPORTAR FUNCIONES
+// LIMPIEZA REALTIME
 // ============================================================
 
-window.cargarSeguimiento =
-    cargarSeguimiento;
+window.addEventListener(
+    "beforeunload",
+    () => {
 
-window.renderSeguimiento =
-    renderSeguimiento;
+        if (
+            realtimeSeguimiento &&
+            supabaseSeguimiento
+        ) {
 
+            try {
+
+                supabaseSeguimiento
+                    .removeChannel(
+                        realtimeSeguimiento
+                    );
+
+            } catch (error) {
+
+                console.warn(
+                    "⚠️ Error cerrando Realtime:",
+                    error
+                );
+            }
+        }
+    }
+);
 
 // ============================================================
 // DOM READY
 // ============================================================
 
 document.addEventListener(
-    'DOMContentLoaded',
+    "DOMContentLoaded",
+    () => {
 
-    function() {
-
-        iniciarSeguimiento();
+        setTimeout(
+            iniciarSeguimiento,
+            250
+        );
     }
 );
 
-
 console.log(
-    '✅ seguimiento.js Fase 3 cargado'
+    "✅ seguimiento.js Fase 4 cargado"
 );
