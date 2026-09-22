@@ -1083,6 +1083,34 @@ async function iniciarRealtimeSeguimiento() {
     );
 }
 
+// ============================================================
+// GESTIONAR REQUISICIÓN
+// ============================================================
+
+function gestionarRequisicion(id) {
+
+    console.log("🔎 gestionarRequisicion() recibió:", id);
+
+    const requisicionId = Number(id);
+
+    if (!Number.isInteger(requisicionId) || requisicionId <= 0) {
+        console.error("❌ ID de requisición inválido:", id);
+        alert("No se pudo identificar la requisición.");
+        return;
+    }
+
+    const url =
+        `/administrar-requisicion.html?id=${encodeURIComponent(requisicionId)}`;
+
+    console.log("➡️ Abriendo:", url);
+
+    window.location.href = url;
+}
+
+// Necesario porque las tarjetas se generan dinámicamente
+window.gestionarRequisicion = gestionarRequisicion;
+
+
 
 // ============================================================
 // INICIALIZAR
