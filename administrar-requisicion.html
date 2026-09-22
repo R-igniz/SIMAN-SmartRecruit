@@ -1,1150 +1,2686 @@
-<!DOCTYPE html>
-<html lang="es">
+/* ============================================================
+   SIMAN SMARTRECRUIT
+   administrar-requisicion.js
+   FASE 3 - SUPABASE + REALTIME
+============================================================ */
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+console.log("🚀 administrar-requisicion.js Fase 3 cargando...");
 
-    <title>SIMAN SmartRecruit - Administrar Requisición</title>
 
-    <!-- ESTILOS -->
-    <link rel="stylesheet" href="css/global.css">
-    <link rel="stylesheet" href="css/detalle.css">
+// ============================================================
+// VARIABLES
+// ============================================================
 
-    <!-- FUENTE -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-    >
+let supabaseAdminReq = null;
 
-    <!-- ICONOS -->
-    <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-    >
-</head>
+let requisicionActual = null;
+let requisicionId = null;
 
+let usuarioActual = null;
 
-<body>
+let candidatosActuales = [];
+let historialActual = [];
+let comentariosActuales = [];
 
-    <!-- =====================================================
-         SIDEBAR GLOBAL
-    ====================================================== -->
+let realtimeChannel = null;
 
-    <div id="sidebar-container"></div>
 
+// ============================================================
+// FLUJO DE ESTADOS
+// ============================================================
 
-    <!-- =====================================================
-         CONTENIDO PRINCIPAL
-    ====================================================== -->
+const ESTADOS_REQUISICION = [
+    "Nueva",
+    "Revisando",
+    "Publicada",
+    "Recibiendo CV",
+    "Entrevistas",
+    "Evaluaciones",
+    "Oferta",
+    "Contratado",
+    "Cerrado"
+];
 
-    <main class="main-content">
 
-        <!-- TOPBAR -->
-        <div id="topbar-container"></div>
+const PROGRESO_ESTADOS = {
+    "Nueva": 10,
+    "Revisando": 20,
+    "Publicada": 30,
+    "Recibiendo CV": 40,
+    "Entrevistas": 55,
+    "Evaluaciones": 70,
+    "Oferta": 85,
+    "Contratado": 100,
+    "Cerrado": 100
+};
 
 
-        <!-- =================================================
-             PÁGINA
-        ================================================== -->
+// ============================================================
+// HELPERS
+// ============================================================
 
-        <div class="detail-page">
+function $(id) {
+    return document.getElementById(id);
+}
 
 
-            <!-- =============================================
-                 VOLVER
-            ============================================== -->
+function texto(valor, defecto = "—") {
+    if (
+        valor === null ||
+        valor === undefined ||
+        String(valor).trim() === ""
+    ) {
+        return defecto;
+    }
 
-            <div class="detail-back">
+    return String(valor);
+}
 
-                <a
-                    href="seguimiento.html"
-                    class="btn-back"
-                >
-                    <i class="fas fa-arrow-left"></i>
-                    Volver a Seguimiento
-                </a>
 
-            </div>
+function escaparHTML(valor) {
 
+    return String(valor ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
 
-            <!-- =============================================
-                 ENCABEZADO
-            ============================================== -->
 
-            <section class="detail-header">
+function normalizarEstado(estado) {
 
-                <div class="detail-title-area">
+    const valor = String(estado || "")
+        .trim()
+        .toLowerCase();
 
-                    <div class="detail-title-line">
+    const encontrado = ESTADOS_REQUISICION.find(
+        e => e.toLowerCase() === valor
+    );
 
-                        <h1 id="tituloRequisicion">
-                            Cargando requisición...
-                        </h1>
+    return encontrado || "Nueva";
+}
 
-                        <span
-                            id="estadoRequisicion"
-                            class="status-badge"
-                        >
-                            CARGANDO
-                        </span>
 
-                    </div>
+function formatearFecha(fecha) {
 
+    if (!fecha) {
+        return "—";
+    }
 
-                    <div class="detail-meta">
+    const date = new Date(fecha);
 
-                        <span>
-                            <i class="fas fa-store"></i>
-                            <span id="tiendaRequisicion">
-                                —
-                            </span>
-                        </span>
+    if (Number.isNaN(date.getTime())) {
+        return "—";
+    }
 
+    return new Intl.DateTimeFormat(
+        "es-GT",
+        {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric"
+        }
+    ).format(date);
+}
 
-                        <span>
-                            <i class="fas fa-briefcase"></i>
-                            <span id="puestoRequisicion">
-                                —
-                            </span>
-                        </span>
 
+function formatearFechaHora(fecha) {
 
-                        <span>
-                            <i class="fas fa-user-tie"></i>
-                            <span id="reclutadorRequisicion">
-                                —
-                            </span>
-                        </span>
+    if (!fecha) {
+        return "—";
+    }
 
-                    </div>
+    const date = new Date(fecha);
+
+    if (Number.isNaN(date.getTime())) {
+        return "—";
+    }
+
+    return new Intl.DateTimeFormat(
+        "es-GT",
+        {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+        }
+    ).format(date);
+}
 
-                </div>
 
+function calcularDiasAbierta(fecha) {
 
-                <!-- ACCIONES SUPERIORES -->
+    if (!fecha) {
+        return 0;
+    }
 
-                <div class="detail-actions">
+    const inicio = new Date(fecha);
 
-                    <button
-                        type="button"
-                        class="btn btn-outline"
-                        id="btnEnviarCorreo"
-                    >
-                        <i class="fas fa-envelope"></i>
-                        Enviar Correo
-                    </button>
+    if (Number.isNaN(inicio.getTime())) {
+        return 0;
+    }
 
+    const hoy = new Date();
 
-                    <button
-                        type="button"
-                        class="btn btn-primary"
-                        id="btnRegistrarCandidato"
-                    >
-                        <i class="fas fa-user-plus"></i>
-                        Registrar Candidato
-                    </button>
+    const diferencia =
+        hoy.getTime() - inicio.getTime();
 
-                </div>
+    return Math.max(
+        0,
+        Math.floor(
+            diferencia / (1000 * 60 * 60 * 24)
+        )
+    );
+}
 
-            </section>
 
+function obtenerIniciales(nombre) {
 
+    const partes = String(nombre || "")
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
 
-            <!-- =============================================
-                 RESUMEN / KPI
-            ============================================== -->
+    if (!partes.length) {
+        return "?";
+    }
 
-            <section class="detail-kpis">
+    if (partes.length === 1) {
+        return partes[0]
+            .substring(0, 2)
+            .toUpperCase();
+    }
 
+    return (
+        partes[0][0] +
+        partes[1][0]
+    ).toUpperCase();
+}
 
-                <article class="detail-kpi">
 
-                    <div class="detail-kpi-icon">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
+// ============================================================
+// NOTIFICACIONES
+// ============================================================
 
-                    <div>
-                        <span>Progreso</span>
+function mostrarMensaje(
+    mensaje,
+    tipo = "info"
+) {
 
-                        <strong id="kpiProgreso">
-                            0%
-                        </strong>
-                    </div>
+    console.log(
+        `[${tipo.toUpperCase()}] ${mensaje}`
+    );
 
-                </article>
+    if (
+        typeof window.mostrarNotificacion ===
+        "function"
+    ) {
+        window.mostrarNotificacion(
+            mensaje,
+            tipo
+        );
 
+        return;
+    }
 
-                <article class="detail-kpi">
+    if (
+        typeof window.showNotification ===
+        "function"
+    ) {
+        window.showNotification(
+            mensaje,
+            tipo
+        );
 
-                    <div class="detail-kpi-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
+        return;
+    }
 
-                    <div>
-                        <span>Candidatos</span>
+    // Fallback
+    if (tipo === "error") {
+        alert(mensaje);
+    }
+}
 
-                        <strong id="kpiCandidatos">
-                            0
-                        </strong>
-                    </div>
 
-                </article>
+// ============================================================
+// OBTENER ID DE URL
+// ============================================================
 
+function obtenerRequisicionId() {
 
-                <article class="detail-kpi">
+    const params =
+        new URLSearchParams(
+            window.location.search
+        );
 
-                    <div class="detail-kpi-icon">
-                        <i class="fas fa-calendar-days"></i>
-                    </div>
+    const id =
+        params.get("id") ||
+        params.get("requisicion_id");
 
-                    <div>
-                        <span>Días abierta</span>
+    if (!id) {
+        return null;
+    }
 
-                        <strong id="kpiDiasAbierta">
-                            0
-                        </strong>
-                    </div>
+    const numero = Number(id);
 
-                </article>
+    if (!Number.isInteger(numero)) {
+        return null;
+    }
 
+    return numero;
+}
 
-                <article class="detail-kpi">
 
-                    <div class="detail-kpi-icon">
-                        <i class="fas fa-flag"></i>
-                    </div>
+// ============================================================
+// OBTENER CLIENTE SUPABASE
+// ============================================================
 
-                    <div>
-                        <span>Prioridad</span>
+async function obtenerClienteSupabase() {
 
-                        <strong id="kpiPrioridad">
-                            —
-                        </strong>
-                    </div>
+    /*
+       Intentamos respetar las funciones que ya existen
+       en tu supabase-client.js.
+    */
 
-                </article>
+    if (
+        typeof window.getSupabase ===
+        "function"
+    ) {
+        const cliente =
+            await window.getSupabase();
 
-            </section>
+        if (cliente) {
+            return cliente;
+        }
+    }
 
 
+    if (
+        typeof window.getSupabaseClient ===
+        "function"
+    ) {
+        const cliente =
+            await window.getSupabaseClient();
 
-            <!-- =============================================
-                 PROGRESO GENERAL
-            ============================================== -->
+        if (cliente) {
+            return cliente;
+        }
+    }
 
-            <section class="card process-progress-card">
 
-                <div class="card-header">
+    if (window.supabaseClient) {
+        return window.supabaseClient;
+    }
 
-                    <div>
-                        <i class="fas fa-route"></i>
-                        Progreso del Proceso
-                    </div>
 
-                    <strong id="porcentajeProceso">
-                        0%
-                    </strong>
+    if (
+        window.supabase &&
+        typeof window.supabase.from ===
+        "function"
+    ) {
+        return window.supabase;
+    }
 
-                </div>
 
+    throw new Error(
+        "No se encontró el cliente Supabase."
+    );
+}
 
-                <div class="process-progress">
 
-                    <div class="progress-track">
+// ============================================================
+// OBTENER USUARIO
+// ============================================================
 
+async function cargarUsuarioActual() {
+
+    const {
+        data,
+        error
+    } =
+        await supabaseAdminReq.auth.getUser();
+
+
+    if (error) {
+        throw error;
+    }
+
+
+    if (!data?.user) {
+        throw new Error(
+            "No existe una sesión activa."
+        );
+    }
+
+
+    const authUser = data.user;
+
+
+    let perfil = null;
+
+
+    const {
+        data: profileData,
+        error: profileError
+    } =
+        await supabaseAdminReq
+            .from("profiles")
+            .select(
+                "id,email,nombre,role_code,activo"
+            )
+            .eq("id", authUser.id)
+            .maybeSingle();
+
+
+    if (profileError) {
+
+        console.warn(
+            "⚠️ No se pudo cargar profile:",
+            profileError
+        );
+
+    } else {
+
+        perfil = profileData;
+    }
+
+
+    usuarioActual = {
+
+        id: authUser.id,
+
+        email:
+            perfil?.email ||
+            authUser.email,
+
+        nombre:
+            perfil?.nombre ||
+            authUser.email ||
+            "Usuario",
+
+        role_code:
+            perfil?.role_code ||
+            "usuario",
+
+        activo:
+            perfil?.activo ?? true
+    };
+
+
+    console.log(
+        "👤 Usuario administrar requisición:",
+        usuarioActual.nombre,
+        "|",
+        usuarioActual.email,
+        "|",
+        usuarioActual.id
+    );
+}
+
+
+// ============================================================
+// CARGAR REQUISICIÓN
+// ============================================================
+
+async function cargarRequisicion() {
+
+    console.log(
+        "🔄 Cargando requisición:",
+        requisicionId
+    );
+
+
+    const {
+        data,
+        error
+    } =
+        await supabaseAdminReq
+            .from("requisiciones")
+            .select("*")
+            .eq("id", requisicionId)
+            .single();
+
+
+    if (error) {
+
+        console.error(
+            "❌ Error requisición:",
+            error
+        );
+
+        throw error;
+    }
+
+
+    requisicionActual = data;
+
+
+    console.log(
+        "✅ Requisición cargada:",
+        requisicionActual.codigo
+    );
+
+
+    renderRequisicion();
+}
+
+
+// ============================================================
+// RENDER REQUISICIÓN
+// ============================================================
+
+function renderRequisicion() {
+
+    if (!requisicionActual) {
+        return;
+    }
+
+
+    const r = requisicionActual;
+
+    const estado =
+        normalizarEstado(r.estado);
+
+    const progreso =
+        PROGRESO_ESTADOS[estado] || 10;
+
+
+    // --------------------------------------------------------
+    // ENCABEZADO
+    // --------------------------------------------------------
+
+    if ($("tituloRequisicion")) {
+
+        $("tituloRequisicion").textContent =
+            `Administrar Requisición #${texto(
+                r.codigo,
+                r.id
+            )}`;
+    }
+
+
+    if ($("estadoRequisicion")) {
+
+        $("estadoRequisicion").textContent =
+            estado.toUpperCase();
+    }
+
+
+    if ($("badgeEstadoActual")) {
+
+        $("badgeEstadoActual").textContent =
+            estado.toUpperCase();
+    }
+
+
+    if ($("puestoRequisicion")) {
+
+        $("puestoRequisicion").textContent =
+            texto(r.puesto);
+    }
+
+
+    if ($("tiendaRequisicion")) {
+
+        $("tiendaRequisicion").textContent =
+            texto(
+                r.tienda ||
+                r.centro
+            );
+    }
+
+
+    if ($("reclutadorRequisicion")) {
+
+        $("reclutadorRequisicion")
+            .textContent =
+            texto(
+                r.reclutador,
+                "Sin asignar"
+            );
+    }
+
+
+    // --------------------------------------------------------
+    // KPI
+    // --------------------------------------------------------
+
+    if ($("kpiProgreso")) {
+
+        $("kpiProgreso").textContent =
+            `${progreso}%`;
+    }
+
+
+    if ($("porcentajeProceso")) {
+
+        $("porcentajeProceso").textContent =
+            `${progreso}%`;
+    }
+
+
+    if ($("barraProgreso")) {
+
+        $("barraProgreso").style.width =
+            `${progreso}%`;
+    }
+
+
+    if ($("kpiDiasAbierta")) {
+
+        $("kpiDiasAbierta").textContent =
+            calcularDiasAbierta(
+                r.created_at ||
+                r.fecha
+            );
+    }
+
+
+    if ($("kpiPrioridad")) {
+
+        $("kpiPrioridad").textContent =
+            texto(r.prioridad);
+    }
+
+
+    // --------------------------------------------------------
+    // INFORMACIÓN
+    // --------------------------------------------------------
+
+    if ($("infoCodigo")) {
+
+        $("infoCodigo").textContent =
+            texto(r.codigo);
+    }
+
+
+    if ($("infoDepartamento")) {
+
+        $("infoDepartamento").textContent =
+            texto(r.departamento);
+    }
+
+
+    if ($("infoCentro")) {
+
+        $("infoCentro").textContent =
+            texto(r.centro);
+    }
+
+
+    if ($("infoTienda")) {
+
+        $("infoTienda").textContent =
+            texto(r.tienda);
+    }
+
+
+    if ($("infoContratacion")) {
+
+        $("infoContratacion").textContent =
+            texto(r.tipo_contratacion);
+    }
+
+
+    if ($("infoMotivo")) {
+
+        $("infoMotivo").textContent =
+            texto(r.motivo);
+    }
+
+
+    if ($("infoCantidad")) {
+
+        $("infoCantidad").textContent =
+            r.cantidad ?? 0;
+    }
+
+
+    if ($("infoFechaLimite")) {
+
+        $("infoFechaLimite").textContent =
+            formatearFecha(
+                r.fecha_limite
+            );
+    }
+
+
+    if ($("infoDescripcion")) {
+
+        $("infoDescripcion").textContent =
+            texto(
+                r.descripcion,
+                "Sin descripción."
+            );
+    }
+
+
+    if ($("infoRequisitos")) {
+
+        $("infoRequisitos").textContent =
+            texto(
+                r.requisitos,
+                "Sin requisitos registrados."
+            );
+    }
+
+
+    if ($("infoObservaciones")) {
+
+        $("infoObservaciones").textContent =
+            texto(
+                r.observaciones,
+                "Sin observaciones."
+            );
+    }
+
+
+    // --------------------------------------------------------
+    // RESPONSABLE
+    // --------------------------------------------------------
+
+    const responsable =
+        texto(
+            r.reclutador,
+            "Sin asignar"
+        );
+
+
+    if ($("responsableNombre")) {
+
+        $("responsableNombre").textContent =
+            responsable;
+    }
+
+
+    if ($("responsableAvatar")) {
+
+        $("responsableAvatar").textContent =
+            obtenerIniciales(responsable);
+    }
+
+
+    // --------------------------------------------------------
+    // MODAL CANDIDATO
+    // --------------------------------------------------------
+
+    if ($("modalCandidatoRequisicion")) {
+
+        $("modalCandidatoRequisicion")
+            .textContent =
+            `${texto(r.codigo)} · ${texto(
+                r.puesto
+            )}`;
+    }
+
+
+    renderStepper();
+    renderTimeline();
+    actualizarBotonAvanzar();
+}
+
+
+// ============================================================
+// STEPPER
+// ============================================================
+
+function renderStepper() {
+
+    const container =
+        $("stepperEstados");
+
+    if (
+        !container ||
+        !requisicionActual
+    ) {
+        return;
+    }
+
+
+    const actual =
+        normalizarEstado(
+            requisicionActual.estado
+        );
+
+    const actualIndex =
+        ESTADOS_REQUISICION
+            .indexOf(actual);
+
+
+    container.innerHTML =
+        ESTADOS_REQUISICION
+            .map(
+                (estado, index) => {
+
+                    let clase = "";
+
+                    if (index < actualIndex) {
+                        clase = "completed";
+                    }
+
+                    if (index === actualIndex) {
+                        clase = "active";
+                    }
+
+
+                    return `
                         <div
-                            id="barraProgreso"
-                            class="progress-fill"
-                            style="width: 0%;"
-                        ></div>
-
-                    </div>
-
-                </div>
-
-
-                <!-- STEPPER -->
-
-                <div
-                    id="stepperEstados"
-                    class="process-stepper"
-                >
-                    <!-- administrar-requisicion.js -->
-                </div>
-
-            </section>
-
-
-
-            <!-- =============================================
-                 GRID PRINCIPAL
-            ============================================== -->
-
-            <div class="detail-grid">
-
-
-                <!-- =========================================
-                     COLUMNA IZQUIERDA
-                ========================================== -->
-
-                <div class="detail-main-column">
-
-
-                    <!-- =====================================
-                         SEGUIMIENTO / TIMELINE
-                    ====================================== -->
-
-                    <section class="card">
-
-                        <div class="card-header">
-
-                            <div>
-                                <i class="fas fa-list-check"></i>
-                                Estados de la Requisición
+                            class="process-step ${clase}"
+                        >
+                            <div class="process-step-circle">
+                                ${
+                                    index < actualIndex
+                                        ? '<i class="fas fa-check"></i>'
+                                        : index + 1
+                                }
                             </div>
 
-                            <span
-                                id="badgeEstadoActual"
-                                class="badge badge-blue"
-                            >
-                                CARGANDO
+                            <span>
+                                ${escaparHTML(estado)}
                             </span>
-
                         </div>
+                    `;
+                }
+            )
+            .join("");
+}
 
 
+// ============================================================
+// TIMELINE
+// ============================================================
+
+function renderTimeline() {
+
+    const container =
+        $("timelineEstados");
+
+    if (
+        !container ||
+        !requisicionActual
+    ) {
+        return;
+    }
+
+
+    const actual =
+        normalizarEstado(
+            requisicionActual.estado
+        );
+
+    const actualIndex =
+        ESTADOS_REQUISICION
+            .indexOf(actual);
+
+
+    container.innerHTML =
+        ESTADOS_REQUISICION
+            .map(
+                (estado, index) => {
+
+                    let clase = "pending";
+                    let detalle = "Pendiente";
+
+
+                    if (index < actualIndex) {
+
+                        clase = "completed";
+
+                        detalle =
+                            buscarFechaEstado(
+                                estado
+                            ) ||
+                            "Completado";
+                    }
+
+
+                    if (index === actualIndex) {
+
+                        clase = "current";
+
+                        detalle = "Actual";
+                    }
+
+
+                    return `
                         <div
-                            id="timelineEstados"
-                            class="timeline"
+                            class="timeline-item ${clase}"
                         >
-
-                            <div class="detail-loading">
-
-                                <i class="fas fa-spinner fa-spin"></i>
-
-                                Cargando estados...
-
-                            </div>
-
-                        </div>
-
-                    </section>
-
-
-
-                    <!-- =====================================
-                         INFORMACIÓN DE REQUISICIÓN
-                    ====================================== -->
-
-                    <section class="card">
-
-                        <div class="card-header">
-
-                            <div>
-                                <i class="fas fa-circle-info"></i>
-                                Información de la Requisición
-                            </div>
-
-                        </div>
-
-
-                        <div class="detail-info">
-
-
-                            <div class="info-row">
-                                <span class="info-label">
-                                    Código
-                                </span>
-
-                                <span
-                                    class="info-value"
-                                    id="infoCodigo"
-                                >
-                                    —
-                                </span>
-                            </div>
-
-
-                            <div class="info-row">
-                                <span class="info-label">
-                                    Departamento
-                                </span>
-
-                                <span
-                                    class="info-value"
-                                    id="infoDepartamento"
-                                >
-                                    —
-                                </span>
-                            </div>
-
-
-                            <div class="info-row">
-                                <span class="info-label">
-                                    Centro
-                                </span>
-
-                                <span
-                                    class="info-value"
-                                    id="infoCentro"
-                                >
-                                    —
-                                </span>
-                            </div>
-
-
-                            <div class="info-row">
-                                <span class="info-label">
-                                    Tienda
-                                </span>
-
-                                <span
-                                    class="info-value"
-                                    id="infoTienda"
-                                >
-                                    —
-                                </span>
-                            </div>
-
-
-                            <div class="info-row">
-                                <span class="info-label">
-                                    Contratación
-                                </span>
-
-                                <span
-                                    class="info-value"
-                                    id="infoContratacion"
-                                >
-                                    —
-                                </span>
-                            </div>
-
-
-                            <div class="info-row">
-                                <span class="info-label">
-                                    Motivo
-                                </span>
-
-                                <span
-                                    class="info-value"
-                                    id="infoMotivo"
-                                >
-                                    —
-                                </span>
-                            </div>
-
-
-                            <div class="info-row">
-                                <span class="info-label">
-                                    Plazas
-                                </span>
-
-                                <span
-                                    class="info-value"
-                                    id="infoCantidad"
-                                >
-                                    0
-                                </span>
-                            </div>
-
-
-                            <div class="info-row">
-                                <span class="info-label">
-                                    Fecha límite
-                                </span>
-
-                                <span
-                                    class="info-value"
-                                    id="infoFechaLimite"
-                                >
-                                    —
-                                </span>
-                            </div>
-
-                        </div>
-
-
-                        <!-- DESCRIPCIÓN -->
-
-                        <div class="detail-text-section">
-
-                            <h4>Descripción</h4>
-
-                            <p id="infoDescripcion">
-                                Sin descripción.
-                            </p>
-
-                        </div>
-
-
-                        <!-- REQUISITOS -->
-
-                        <div class="detail-text-section">
-
-                            <h4>Requisitos</h4>
-
-                            <p id="infoRequisitos">
-                                Sin requisitos registrados.
-                            </p>
-
-                        </div>
-
-
-                        <!-- OBSERVACIONES -->
-
-                        <div class="detail-text-section">
-
-                            <h4>Observaciones</h4>
-
-                            <p id="infoObservaciones">
-                                Sin observaciones.
-                            </p>
-
-                        </div>
-
-                    </section>
-
-
-
-                    <!-- =====================================
-                         CANDIDATOS ASOCIADOS
-                    ====================================== -->
-
-                    <section class="card">
-
-                        <div class="card-header">
-
-                            <div>
-                                <i class="fas fa-users"></i>
-                                Candidatos Asociados
-                            </div>
-
-                            <span
-                                id="contadorCandidatos"
-                                class="badge badge-blue"
-                            >
-                                0 CANDIDATOS
-                            </span>
-
-                        </div>
-
-
-                        <div
-                            id="listaCandidatos"
-                            class="requisition-candidates"
-                        >
-
-                            <div class="detail-loading">
-
-                                <i class="fas fa-spinner fa-spin"></i>
-
-                                Cargando candidatos...
-
-                            </div>
-
-                        </div>
-
-                    </section>
-
-
-
-                    <!-- =====================================
-                         COMENTARIOS
-                    ====================================== -->
-
-                    <section class="card">
-
-                        <div class="card-header">
-
-                            <div>
-                                <i class="fas fa-comments"></i>
-                                Comentarios
-                            </div>
-
-                            <span
-                                id="contadorComentarios"
-                                class="badge badge-blue"
-                            >
-                                0
-                            </span>
-
-                        </div>
-
-
-                        <!-- NUEVO COMENTARIO -->
-
-                        <form
-                            id="formComentario"
-                            class="comment-form"
-                        >
-
-                            <div class="comment-input">
-
-                                <input
-                                    type="text"
-                                    id="nuevoComentario"
-                                    placeholder="Escribe un comentario..."
-                                    maxlength="1000"
-                                    autocomplete="off"
-                                    required
-                                >
-
-
-                                <button
-                                    type="submit"
-                                    class="btn btn-primary"
-                                    id="btnPublicarComentario"
-                                >
-                                    <i class="fas fa-paper-plane"></i>
-                                    Publicar
-                                </button>
-
-                            </div>
-
-                        </form>
-
-
-                        <!-- LISTA -->
-
-                        <div
-                            id="listaComentarios"
-                            class="comments"
-                        >
-
-                            <div class="detail-loading">
-
-                                <i class="fas fa-spinner fa-spin"></i>
-
-                                Cargando comentarios...
-
-                            </div>
-
-                        </div>
-
-                    </section>
-
-                </div>
-
-
-
-                <!-- =========================================
-                     COLUMNA DERECHA
-                ========================================== -->
-
-                <aside class="detail-sidebar-column">
-
-
-                    <!-- =====================================
-                         ACCIONES
-                    ====================================== -->
-
-                    <section class="card">
-
-                        <div class="card-header">
-
-                            <div>
-                                <i class="fas fa-circle-info"></i>
-                                Acciones
-                            </div>
-
-                        </div>
-
-
-                        <div class="detail-action-list">
-
-
-                            <button
-                                type="button"
-                                id="btnAvanzarEstado"
-                                class="btn btn-primary btn-block"
-                            >
-                                <i class="fas fa-forward"></i>
-                                Avanzar Estado
-                            </button>
-
-
-                            <button
-                                type="button"
-                                id="btnGenerarReporte"
-                                class="btn btn-outline btn-block"
-                            >
-                                <i class="fas fa-file-lines"></i>
-                                Generar Reporte
-                            </button>
-
-
-                            <button
-                                type="button"
-                                id="btnRegistrarCandidatoLateral"
-                                class="btn btn-outline btn-block"
-                            >
-                                <i class="fas fa-user-plus"></i>
-                                Registrar Candidato
-                            </button>
-
-
-                            <button
-                                type="button"
-                                id="btnAdjuntarDocumento"
-                                class="btn btn-outline btn-block"
-                            >
-                                <i class="fas fa-paperclip"></i>
-                                Adjuntar Documento
-                            </button>
-
-                        </div>
-
-                    </section>
-
-
-
-                    <!-- =====================================
-                         RESPONSABLE
-                    ====================================== -->
-
-                    <section class="card">
-
-                        <div class="card-header">
-
-                            <div>
-                                <i class="fas fa-user-tie"></i>
-                                Responsable
-                            </div>
-
-                        </div>
-
-
-                        <div class="responsable-info">
+                            <div
+                                class="timeline-marker"
+                            ></div>
 
                             <div
-                                id="responsableAvatar"
-                                class="responsable-avatar"
+                                class="timeline-content"
                             >
-                                —
+                                <strong>
+                                    ${escaparHTML(estado)}
+                                </strong>
+
+                                <span>
+                                    ${escaparHTML(detalle)}
+                                </span>
                             </div>
+                        </div>
+                    `;
+                }
+            )
+            .join("");
+}
 
 
-                            <div>
+function buscarFechaEstado(estado) {
 
-                                <div
-                                    id="responsableNombre"
-                                    class="responsable-name"
-                                >
-                                    Sin asignar
-                                </div>
+    const evento =
+        historialActual.find(
+            item =>
+                normalizarEstado(
+                    item.estado_nuevo
+                ) === estado
+        );
 
-                                <div
-                                    id="responsableRol"
-                                    class="responsable-role"
-                                >
-                                    Reclutador
-                                </div>
 
-                            </div>
+    if (!evento) {
+        return null;
+    }
 
+
+    return formatearFecha(
+        evento.created_at
+    );
+}
+
+
+// ============================================================
+// CANDIDATOS
+// ============================================================
+
+async function cargarCandidatos() {
+
+    const {
+        data,
+        error
+    } =
+        await supabaseAdminReq
+            .from("candidatos")
+            .select("*")
+            .eq(
+                "requisicion_id",
+                requisicionId
+            )
+            .order(
+                "created_at",
+                {
+                    ascending: false
+                }
+            );
+
+
+    if (error) {
+
+        console.error(
+            "❌ Error candidatos:",
+            error
+        );
+
+        return;
+    }
+
+
+    candidatosActuales =
+        data || [];
+
+
+    console.log(
+        "👥 Candidatos:",
+        candidatosActuales.length
+    );
+
+
+    renderCandidatos();
+}
+
+
+// ============================================================
+// RENDER CANDIDATOS
+// ============================================================
+
+function renderCandidatos() {
+
+    const total =
+        candidatosActuales.length;
+
+
+    if ($("kpiCandidatos")) {
+
+        $("kpiCandidatos")
+            .textContent =
+            total;
+    }
+
+
+    if ($("contadorCandidatos")) {
+
+        $("contadorCandidatos")
+            .textContent =
+            `${total} ${
+                total === 1
+                    ? "CANDIDATO"
+                    : "CANDIDATOS"
+            }`;
+    }
+
+
+    const container =
+        $("listaCandidatos");
+
+
+    if (!container) {
+        return;
+    }
+
+
+    if (!total) {
+
+        container.innerHTML = `
+            <div class="empty-state">
+
+                <i class="fas fa-users"></i>
+
+                <h4>
+                    Sin candidatos
+                </h4>
+
+                <p>
+                    Esta requisición todavía
+                    no tiene candidatos asociados.
+                </p>
+
+            </div>
+        `;
+
+        return;
+    }
+
+
+    container.innerHTML =
+        candidatosActuales
+            .map(
+                candidato => `
+                    <article class="candidate-row">
+
+                        <div class="candidate-avatar">
+                            ${escaparHTML(
+                                obtenerIniciales(
+                                    candidato.nombre
+                                )
+                            )}
                         </div>
 
-                    </section>
+                        <div class="candidate-info">
 
+                            <strong>
+                                ${escaparHTML(
+                                    candidato.nombre
+                                )}
+                            </strong>
 
-
-                    <!-- =====================================
-                         HISTORIAL
-                    ====================================== -->
-
-                    <section class="card">
-
-                        <div class="card-header">
-
-                            <div>
-                                <i class="fas fa-clock-rotate-left"></i>
-                                Historial Completo
-                            </div>
-
-                            <span
-                                id="contadorHistorial"
-                                class="badge badge-blue"
-                            >
-                                0
+                            <span>
+                                ${
+                                    escaparHTML(
+                                        candidato.email ||
+                                        candidato.telefono ||
+                                        "Sin contacto"
+                                    )
+                                }
                             </span>
 
                         </div>
 
+                        <div class="candidate-status">
 
-                        <div
-                            id="historialRequisicion"
-                            class="history-list"
-                        >
-
-                            <div class="detail-loading">
-
-                                <i class="fas fa-spinner fa-spin"></i>
-
-                                Cargando historial...
-
-                            </div>
+                            <span class="badge badge-blue">
+                                ${escaparHTML(
+                                    candidato.estado
+                                )}
+                            </span>
 
                         </div>
 
-                    </section>
+                    </article>
+                `
+            )
+            .join("");
+}
 
-                </aside>
+
+// ============================================================
+// HISTORIAL
+// ============================================================
+
+async function cargarHistorial() {
+
+    const {
+        data,
+        error
+    } =
+        await supabaseAdminReq
+            .from(
+                "requisicion_historial"
+            )
+            .select("*")
+            .eq(
+                "requisicion_id",
+                requisicionId
+            )
+            .order(
+                "created_at",
+                {
+                    ascending: false
+                }
+            );
+
+
+    if (error) {
+
+        console.error(
+            "❌ Error historial:",
+            error
+        );
+
+        historialActual = [];
+
+        renderHistorial();
+
+        return;
+    }
+
+
+    historialActual =
+        data || [];
+
+
+    console.log(
+        "🕘 Historial:",
+        historialActual.length
+    );
+
+
+    renderHistorial();
+
+    // El timeline usa las fechas
+    renderTimeline();
+}
+
+
+// ============================================================
+// RENDER HISTORIAL
+// ============================================================
+
+function renderHistorial() {
+
+    const container =
+        $("historialRequisicion");
+
+
+    if ($("contadorHistorial")) {
+
+        $("contadorHistorial")
+            .textContent =
+            historialActual.length;
+    }
+
+
+    if (!container) {
+        return;
+    }
+
+
+    if (!historialActual.length) {
+
+        container.innerHTML = `
+            <div class="empty-state">
+
+                <i class="fas fa-clock-rotate-left"></i>
+
+                <p>
+                    Todavía no hay movimientos
+                    registrados.
+                </p>
 
             </div>
+        `;
 
-        </div>
-
-    </main>
-
-
-
-    <!-- =====================================================
-         MODAL REGISTRAR CANDIDATO
-    ====================================================== -->
-
-    <div
-        id="modalCandidato"
-        class="modal-overlay"
-        hidden
-    >
-
-        <div class="modal-card">
+        return;
+    }
 
 
-            <div class="modal-header">
+    container.innerHTML =
+        historialActual
+            .map(
+                item => `
 
-                <div>
+                    <div class="history-item">
 
-                    <h2>
-                        <i class="fas fa-user-plus"></i>
-                        Registrar Candidato
-                    </h2>
+                        <div class="history-date">
 
-                    <p id="modalCandidatoRequisicion">
-                        Asociado a la requisición actual
-                    </p>
+                            ${escaparHTML(
+                                formatearFechaHora(
+                                    item.created_at
+                                )
+                            )}
 
-                </div>
+                        </div>
 
 
-                <button
-                    type="button"
-                    id="cerrarModalCandidato"
-                    class="modal-close"
-                    aria-label="Cerrar"
-                >
-                    &times;
-                </button>
+                        <div class="history-content">
+
+                            <strong>
+                                ${escaparHTML(
+                                    item.usuario_nombre ||
+                                    "Sistema"
+                                )}
+                            </strong>
+
+                            <span>
+                                ${escaparHTML(
+                                    item.descripcion
+                                )}
+                            </span>
+
+                            ${
+                                item.estado_anterior &&
+                                item.estado_nuevo
+                                    ? `
+                                        <small>
+                                            ${escaparHTML(
+                                                item.estado_anterior
+                                            )}
+                                            →
+                                            ${escaparHTML(
+                                                item.estado_nuevo
+                                            )}
+                                        </small>
+                                    `
+                                    : ""
+                            }
+
+                        </div>
+
+                    </div>
+                `
+            )
+            .join("");
+}
+
+
+// ============================================================
+// REGISTRAR HISTORIAL
+// ============================================================
+
+async function registrarHistorial({
+
+    tipo = "evento",
+    estadoAnterior = null,
+    estadoNuevo = null,
+    descripcion
+
+}) {
+
+    const {
+        error
+    } =
+        await supabaseAdminReq
+            .from(
+                "requisicion_historial"
+            )
+            .insert({
+
+                requisicion_id:
+                    requisicionId,
+
+                tipo,
+
+                estado_anterior:
+                    estadoAnterior,
+
+                estado_nuevo:
+                    estadoNuevo,
+
+                descripcion,
+
+                usuario_id:
+                    usuarioActual.id,
+
+                usuario_nombre:
+                    usuarioActual.nombre
+            });
+
+
+    if (error) {
+
+        console.error(
+            "❌ Error registrando historial:",
+            error
+        );
+
+        throw error;
+    }
+}
+
+
+// ============================================================
+// COMENTARIOS
+// ============================================================
+
+async function cargarComentarios() {
+
+    const {
+        data,
+        error
+    } =
+        await supabaseAdminReq
+            .from(
+                "requisicion_comentarios"
+            )
+            .select("*")
+            .eq(
+                "requisicion_id",
+                requisicionId
+            )
+            .order(
+                "created_at",
+                {
+                    ascending: false
+                }
+            );
+
+
+    if (error) {
+
+        console.error(
+            "❌ Error comentarios:",
+            error
+        );
+
+        comentariosActuales = [];
+
+        renderComentarios();
+
+        return;
+    }
+
+
+    comentariosActuales =
+        data || [];
+
+
+    console.log(
+        "💬 Comentarios:",
+        comentariosActuales.length
+    );
+
+
+    renderComentarios();
+}
+
+
+// ============================================================
+// RENDER COMENTARIOS
+// ============================================================
+
+function renderComentarios() {
+
+    if ($("contadorComentarios")) {
+
+        $("contadorComentarios")
+            .textContent =
+            comentariosActuales.length;
+    }
+
+
+    const container =
+        $("listaComentarios");
+
+
+    if (!container) {
+        return;
+    }
+
+
+    if (!comentariosActuales.length) {
+
+        container.innerHTML = `
+            <div class="empty-state">
+
+                <i class="fas fa-comments"></i>
+
+                <p>
+                    Todavía no hay comentarios.
+                </p>
 
             </div>
+        `;
 
+        return;
+    }
 
-            <form id="formCandidato">
 
+    container.innerHTML =
+        comentariosActuales
+            .map(
+                item => `
 
-                <div class="form-grid">
+                    <article class="comment">
 
+                        <div class="comment-avatar">
 
-                    <label>
+                            ${escaparHTML(
+                                obtenerIniciales(
+                                    item.usuario_nombre
+                                )
+                            )}
 
-                        <span>Nombre completo *</span>
+                        </div>
 
-                        <input
-                            type="text"
-                            id="candNombre"
-                            required
-                        >
 
-                    </label>
+                        <div class="comment-body">
 
+                            <div class="comment-head">
 
-                    <label>
+                                <strong>
+                                    ${escaparHTML(
+                                        item.usuario_nombre ||
+                                        "Usuario"
+                                    )}
+                                </strong>
 
-                        <span>Correo</span>
+                                <span>
+                                    ${escaparHTML(
+                                        formatearFechaHora(
+                                            item.created_at
+                                        )
+                                    )}
+                                </span>
 
-                        <input
-                            type="email"
-                            id="candEmail"
-                        >
+                            </div>
 
-                    </label>
 
+                            <p>
+                                ${escaparHTML(
+                                    item.comentario
+                                )}
+                            </p>
 
-                    <label>
+                        </div>
 
-                        <span>Teléfono</span>
+                    </article>
+                `
+            )
+            .join("");
+}
 
-                        <input
-                            type="tel"
-                            id="candTelefono"
-                        >
 
-                    </label>
+// ============================================================
+// GUARDAR COMENTARIO
+// ============================================================
 
+async function guardarComentario(event) {
 
-                    <label>
+    event.preventDefault();
 
-                        <span>Fuente</span>
 
-                        <input
-                            type="text"
-                            id="candFuente"
-                            placeholder="LinkedIn, referido..."
-                        >
+    const input =
+        $("nuevoComentario");
 
-                    </label>
 
+    if (!input) {
+        return;
+    }
 
-                    <label>
 
-                        <span>Estado</span>
+    const comentario =
+        input.value.trim();
 
-                        <select id="candEstado">
 
-                            <option value="Nuevo">
-                                Nuevo
-                            </option>
+    if (!comentario) {
 
-                            <option value="Preselección">
-                                Preselección
-                            </option>
+        mostrarMensaje(
+            "Escribe un comentario.",
+            "error"
+        );
 
-                            <option value="Entrevista RH">
-                                Entrevista RH
-                            </option>
+        return;
+    }
 
-                            <option value="Evaluación">
-                                Evaluación
-                            </option>
 
-                            <option value="Oferta">
-                                Oferta
-                            </option>
+    const boton =
+        $("btnPublicarComentario");
 
-                            <option value="Contratado">
-                                Contratado
-                            </option>
 
-                            <option value="Descartado">
-                                Descartado
-                            </option>
+    try {
 
-                        </select>
+        if (boton) {
+            boton.disabled = true;
+        }
 
-                    </label>
 
+        const {
+            error
+        } =
+            await supabaseAdminReq
+                .from(
+                    "requisicion_comentarios"
+                )
+                .insert({
 
-                    <label>
+                    requisicion_id:
+                        requisicionId,
 
-                        <span>Pretensión salarial</span>
+                    comentario,
 
-                        <input
-                            type="number"
-                            id="candSalario"
-                            min="0"
-                            step="0.01"
-                        >
+                    usuario_id:
+                        usuarioActual.id,
 
-                    </label>
+                    usuario_nombre:
+                        usuarioActual.nombre
+                });
 
 
-                    <label>
+        if (error) {
+            throw error;
+        }
 
-                        <span>Fecha de entrevista</span>
 
-                        <input
-                            type="datetime-local"
-                            id="candEntrevista"
-                        >
+        input.value = "";
 
-                    </label>
 
-                </div>
+        console.log(
+            "✅ Comentario registrado"
+        );
 
 
-                <label class="form-full">
+        await registrarHistorial({
 
-                    <span>Notas</span>
+            tipo: "comentario",
 
-                    <textarea
-                        id="candNotas"
-                        rows="4"
-                    ></textarea>
+            descripcion:
+                `${usuarioActual.nombre} agregó un comentario.`
+        });
 
-                </label>
 
+        await Promise.all([
+            cargarComentarios(),
+            cargarHistorial()
+        ]);
 
-                <div class="modal-actions">
 
-                    <button
-                        type="button"
-                        class="btn btn-outline"
-                        id="cancelarCandidato"
-                    >
-                        Cancelar
-                    </button>
+        mostrarMensaje(
+            "Comentario publicado.",
+            "success"
+        );
 
 
-                    <button
-                        type="submit"
-                        class="btn btn-primary"
-                        id="guardarCandidato"
-                    >
-                        <i class="fas fa-save"></i>
-                        Guardar Candidato
-                    </button>
+    } catch (error) {
 
-                </div>
+        console.error(
+            "❌ Error guardando comentario:",
+            error
+        );
 
-            </form>
 
-        </div>
+        mostrarMensaje(
+            "No se pudo guardar el comentario.",
+            "error"
+        );
 
-    </div>
 
+    } finally {
 
+        if (boton) {
+            boton.disabled = false;
+        }
+    }
+}
 
-    <!-- =====================================================
-         MODAL ENVIAR CORREO
-    ====================================================== -->
 
-    <div
-        id="modalCorreo"
-        class="modal-overlay"
-        hidden
-    >
+// ============================================================
+// AVANZAR ESTADO
+// ============================================================
 
-        <div class="modal-card modal-small">
+function obtenerSiguienteEstado() {
 
+    if (!requisicionActual) {
+        return null;
+    }
 
-            <div class="modal-header">
 
-                <div>
+    const actual =
+        normalizarEstado(
+            requisicionActual.estado
+        );
 
-                    <h2>
-                        <i class="fas fa-envelope"></i>
-                        Enviar Correo
-                    </h2>
 
-                    <p>
-                        Comunicación relacionada con la requisición.
-                    </p>
+    const indice =
+        ESTADOS_REQUISICION
+            .indexOf(actual);
 
-                </div>
 
+    if (
+        indice === -1 ||
+        indice >=
+        ESTADOS_REQUISICION.length - 1
+    ) {
+        return null;
+    }
 
-                <button
-                    type="button"
-                    id="cerrarModalCorreo"
-                    class="modal-close"
-                >
-                    &times;
-                </button>
 
-            </div>
+    return ESTADOS_REQUISICION[
+        indice + 1
+    ];
+}
 
 
-            <form id="formCorreo">
+function actualizarBotonAvanzar() {
 
+    const boton =
+        $("btnAvanzarEstado");
 
-                <label class="form-full">
 
-                    <span>Destinatario</span>
+    if (!boton) {
+        return;
+    }
 
-                    <input
-                        type="email"
-                        id="correoDestinatario"
-                        required
-                    >
 
-                </label>
+    const siguiente =
+        obtenerSiguienteEstado();
 
 
-                <label class="form-full">
+    if (!siguiente) {
 
-                    <span>Asunto</span>
+        boton.disabled = true;
 
-                    <input
-                        type="text"
-                        id="correoAsunto"
-                        required
-                    >
+        boton.innerHTML = `
+            <i class="fas fa-check-circle"></i>
+            Proceso finalizado
+        `;
 
-                </label>
+        return;
+    }
 
 
-                <label class="form-full">
+    boton.disabled = false;
 
-                    <span>Mensaje</span>
+    boton.innerHTML = `
+        <i class="fas fa-forward"></i>
+        Avanzar a ${escaparHTML(siguiente)}
+    `;
+}
 
-                    <textarea
-                        id="correoMensaje"
-                        rows="7"
-                        required
-                    ></textarea>
 
-                </label>
+// ============================================================
+// CAMBIAR ESTADO
+// ============================================================
 
+async function avanzarEstado() {
 
-                <div class="modal-actions">
+    if (!requisicionActual) {
+        return;
+    }
 
-                    <button
-                        type="button"
-                        class="btn btn-outline"
-                        id="cancelarCorreo"
-                    >
-                        Cancelar
-                    </button>
 
+    const anterior =
+        normalizarEstado(
+            requisicionActual.estado
+        );
 
-                    <button
-                        type="submit"
-                        class="btn btn-primary"
-                    >
-                        <i class="fas fa-paper-plane"></i>
-                        Preparar Correo
-                    </button>
 
-                </div>
+    const siguiente =
+        obtenerSiguienteEstado();
 
-            </form>
 
-        </div>
+    if (!siguiente) {
 
-    </div>
+        mostrarMensaje(
+            "La requisición ya se encuentra finalizada.",
+            "info"
+        );
 
+        return;
+    }
 
 
-    <!-- =====================================================
-         SUPABASE
-    ====================================================== -->
+    const confirmar =
+        window.confirm(
+            `¿Deseas avanzar la requisición de "${anterior}" a "${siguiente}"?`
+        );
 
-    <script
-        src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-    </script>
 
+    if (!confirmar) {
+        return;
+    }
 
-    <!-- =====================================================
-         CORE SMARTRECRUIT
-    ====================================================== -->
 
-    <script src="js/supabase-client.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/router.js"></script>
-    <script src="js/sidebar.js"></script>
-    <script src="js/darkmode.js"></script>
-    <script src="js/notifications.js"></script>
-    <script src="js/configuracion.js"></script>
+    const boton =
+        $("btnAvanzarEstado");
 
 
-    <!-- =====================================================
-         ADMINISTRAR REQUISICIÓN FASE 3
-    ====================================================== -->
+    try {
 
-    <script src="js/administrar-requisicion.js"></script>
+        if (boton) {
+            boton.disabled = true;
+        }
 
-</body>
 
-</html>
+        const cambios = {
+
+            estado:
+                siguiente,
+
+            updated_at:
+                new Date().toISOString(),
+
+            updated_by:
+                usuarioActual.email
+        };
+
+
+        if (
+            siguiente === "Publicada" &&
+            !requisicionActual.fecha_publicacion
+        ) {
+
+            cambios.fecha_publicacion =
+                new Date().toISOString();
+        }
+
+
+        if (
+            siguiente === "Cerrado"
+        ) {
+
+            cambios.fecha_cierre =
+                new Date().toISOString();
+        }
+
+
+        const {
+            data,
+            error
+        } =
+            await supabaseAdminReq
+                .from("requisiciones")
+                .update(cambios)
+                .eq(
+                    "id",
+                    requisicionId
+                )
+                .select()
+                .single();
+
+
+        if (error) {
+            throw error;
+        }
+
+
+        requisicionActual =
+            data;
+
+
+        await registrarHistorial({
+
+            tipo:
+                "cambio_estado",
+
+            estadoAnterior:
+                anterior,
+
+            estadoNuevo:
+                siguiente,
+
+            descripcion:
+                `Estado actualizado de ${anterior} a ${siguiente}.`
+        });
+
+
+        renderRequisicion();
+
+
+        await cargarHistorial();
+
+
+        mostrarMensaje(
+            `Estado actualizado a ${siguiente}.`,
+            "success"
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ Error avanzando estado:",
+            error
+        );
+
+
+        mostrarMensaje(
+            "No se pudo actualizar el estado.",
+            "error"
+        );
+
+
+    } finally {
+
+        actualizarBotonAvanzar();
+    }
+}
+
+
+// ============================================================
+// MODAL CANDIDATO
+// ============================================================
+
+function abrirModalCandidato() {
+
+    const modal =
+        $("modalCandidato");
+
+
+    if (!modal) {
+        return;
+    }
+
+
+    modal.hidden = false;
+
+    document.body.classList.add(
+        "modal-open"
+    );
+
+
+    setTimeout(
+        () =>
+            $("candNombre")?.focus(),
+        50
+    );
+}
+
+
+function cerrarModalCandidato() {
+
+    const modal =
+        $("modalCandidato");
+
+
+    if (!modal) {
+        return;
+    }
+
+
+    modal.hidden = true;
+
+    document.body.classList.remove(
+        "modal-open"
+    );
+
+
+    $("formCandidato")?.reset();
+}
+
+
+// ============================================================
+// GUARDAR CANDIDATO
+// ============================================================
+
+async function guardarCandidato(event) {
+
+    event.preventDefault();
+
+
+    const nombre =
+        $("candNombre")
+            ?.value
+            .trim();
+
+
+    if (!nombre) {
+
+        mostrarMensaje(
+            "Ingresa el nombre del candidato.",
+            "error"
+        );
+
+        return;
+    }
+
+
+    const boton =
+        $("guardarCandidato");
+
+
+    try {
+
+        if (boton) {
+            boton.disabled = true;
+        }
+
+
+        const salarioTexto =
+            $("candSalario")
+                ?.value
+                .trim();
+
+
+        const entrevistaTexto =
+            $("candEntrevista")
+                ?.value;
+
+
+        const candidato = {
+
+            requisicion_id:
+                requisicionId,
+
+            nombre,
+
+            email:
+                $("candEmail")
+                    ?.value
+                    .trim() ||
+                null,
+
+            telefono:
+                $("candTelefono")
+                    ?.value
+                    .trim() ||
+                null,
+
+            fuente:
+                $("candFuente")
+                    ?.value
+                    .trim() ||
+                null,
+
+            estado:
+                $("candEstado")
+                    ?.value ||
+                "Nuevo",
+
+            pretension_salarial:
+                salarioTexto
+                    ? Number(
+                        salarioTexto
+                    )
+                    : null,
+
+            fecha_entrevista:
+                entrevistaTexto
+                    ? new Date(
+                        entrevistaTexto
+                    ).toISOString()
+                    : null,
+
+            notas:
+                $("candNotas")
+                    ?.value
+                    .trim() ||
+                null,
+
+            reclutador_id:
+                requisicionActual
+                    ?.reclutador_id ||
+                usuarioActual.id,
+
+            created_by:
+                usuarioActual.id
+        };
+
+
+        const {
+            data,
+            error
+        } =
+            await supabaseAdminReq
+                .from("candidatos")
+                .insert(candidato)
+                .select()
+                .single();
+
+
+        if (error) {
+            throw error;
+        }
+
+
+        console.log(
+            "✅ Candidato creado:",
+            data
+        );
+
+
+        await registrarHistorial({
+
+            tipo:
+                "candidato",
+
+            descripcion:
+                `Candidato registrado: ${nombre}.`
+        });
+
+
+        cerrarModalCandidato();
+
+
+        await Promise.all([
+            cargarCandidatos(),
+            cargarHistorial()
+        ]);
+
+
+        mostrarMensaje(
+            "Candidato registrado correctamente.",
+            "success"
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ Error registrando candidato:",
+            error
+        );
+
+
+        mostrarMensaje(
+            `No se pudo registrar el candidato: ${
+                error.message ||
+                "Error desconocido"
+            }`,
+            "error"
+        );
+
+
+    } finally {
+
+        if (boton) {
+            boton.disabled = false;
+        }
+    }
+}
+
+
+// ============================================================
+// MODAL CORREO
+// ============================================================
+
+function abrirModalCorreo() {
+
+    const modal =
+        $("modalCorreo");
+
+
+    if (!modal) {
+        return;
+    }
+
+
+    modal.hidden = false;
+
+    document.body.classList.add(
+        "modal-open"
+    );
+
+
+    if ($("correoAsunto")) {
+
+        $("correoAsunto").value =
+            `Requisición ${
+                requisicionActual?.codigo || ""
+            } - ${
+                requisicionActual?.puesto || ""
+            }`;
+    }
+}
+
+
+function cerrarModalCorreo() {
+
+    const modal =
+        $("modalCorreo");
+
+
+    if (!modal) {
+        return;
+    }
+
+
+    modal.hidden = true;
+
+    document.body.classList.remove(
+        "modal-open"
+    );
+}
+
+
+// ============================================================
+// PREPARAR CORREO
+// ============================================================
+
+function prepararCorreo(event) {
+
+    event.preventDefault();
+
+
+    const destinatario =
+        $("correoDestinatario")
+            ?.value
+            .trim();
+
+
+    const asunto =
+        $("correoAsunto")
+            ?.value
+            .trim();
+
+
+    const mensaje =
+        $("correoMensaje")
+            ?.value
+            .trim();
+
+
+    if (
+        !destinatario ||
+        !asunto ||
+        !mensaje
+    ) {
+        return;
+    }
+
+
+    /*
+       No ponemos credenciales SMTP
+       en JavaScript del navegador.
+
+       Por ahora abrimos el cliente
+       de correo del usuario.
+    */
+
+    const mailto =
+        `mailto:${encodeURIComponent(
+            destinatario
+        )}` +
+        `?subject=${encodeURIComponent(
+            asunto
+        )}` +
+        `&body=${encodeURIComponent(
+            mensaje
+        )}`;
+
+
+    window.location.href =
+        mailto;
+
+
+    cerrarModalCorreo();
+}
+
+
+// ============================================================
+// GENERAR REPORTE
+// ============================================================
+
+function generarReporte() {
+
+    if (!requisicionActual) {
+        return;
+    }
+
+
+    /*
+       Fase inicial:
+       versión imprimible.
+
+       Después podemos convertir
+       este módulo a PDF real.
+    */
+
+    window.print();
+}
+
+
+// ============================================================
+// ADJUNTAR DOCUMENTO
+// ============================================================
+
+function adjuntarDocumento() {
+
+    mostrarMensaje(
+        "El módulo de documentos será conectado a Supabase Storage en la siguiente fase.",
+        "info"
+    );
+}
+
+
+// ============================================================
+// REALTIME
+// ============================================================
+
+function iniciarRealtime() {
+
+    if (
+        !supabaseAdminReq ||
+        !requisicionId
+    ) {
+        return;
+    }
+
+
+    if (realtimeChannel) {
+
+        try {
+
+            supabaseAdminReq
+                .removeChannel(
+                    realtimeChannel
+                );
+
+        } catch (error) {
+
+            console.warn(
+                "⚠️ Error removiendo canal anterior:",
+                error
+            );
+        }
+    }
+
+
+    realtimeChannel =
+        supabaseAdminReq
+            .channel(
+                `administrar-requisicion-${requisicionId}`
+            )
+
+
+            // REQUISICIÓN
+            .on(
+                "postgres_changes",
+                {
+                    event: "*",
+                    schema: "public",
+                    table: "requisiciones",
+                    filter:
+                        `id=eq.${requisicionId}`
+                },
+                async payload => {
+
+                    console.log(
+                        "📡 Realtime requisición:",
+                        payload.eventType
+                    );
+
+                    await cargarRequisicion();
+                }
+            )
+
+
+            // CANDIDATOS
+            .on(
+                "postgres_changes",
+                {
+                    event: "*",
+                    schema: "public",
+                    table: "candidatos",
+                    filter:
+                        `requisicion_id=eq.${requisicionId}`
+                },
+                async payload => {
+
+                    console.log(
+                        "📡 Realtime candidatos:",
+                        payload.eventType
+                    );
+
+                    await cargarCandidatos();
+                }
+            )
+
+
+            // HISTORIAL
+            .on(
+                "postgres_changes",
+                {
+                    event: "*",
+                    schema: "public",
+                    table:
+                        "requisicion_historial",
+                    filter:
+                        `requisicion_id=eq.${requisicionId}`
+                },
+                async payload => {
+
+                    console.log(
+                        "📡 Realtime historial:",
+                        payload.eventType
+                    );
+
+                    await cargarHistorial();
+                }
+            )
+
+
+            // COMENTARIOS
+            .on(
+                "postgres_changes",
+                {
+                    event: "*",
+                    schema: "public",
+                    table:
+                        "requisicion_comentarios",
+                    filter:
+                        `requisicion_id=eq.${requisicionId}`
+                },
+                async payload => {
+
+                    console.log(
+                        "📡 Realtime comentarios:",
+                        payload.eventType
+                    );
+
+                    await cargarComentarios();
+                }
+            )
+
+
+            .subscribe(status => {
+
+                console.log(
+                    "📡 Realtime Administrar Requisición:",
+                    status
+                );
+            });
+}
+
+
+// ============================================================
+// EVENTOS
+// ============================================================
+
+function configurarEventos() {
+
+    $("btnAvanzarEstado")
+        ?.addEventListener(
+            "click",
+            avanzarEstado
+        );
+
+
+    $("btnRegistrarCandidato")
+        ?.addEventListener(
+            "click",
+            abrirModalCandidato
+        );
+
+
+    $("btnRegistrarCandidatoLateral")
+        ?.addEventListener(
+            "click",
+            abrirModalCandidato
+        );
+
+
+    $("cerrarModalCandidato")
+        ?.addEventListener(
+            "click",
+            cerrarModalCandidato
+        );
+
+
+    $("cancelarCandidato")
+        ?.addEventListener(
+            "click",
+            cerrarModalCandidato
+        );
+
+
+    $("formCandidato")
+        ?.addEventListener(
+            "submit",
+            guardarCandidato
+        );
+
+
+    $("formComentario")
+        ?.addEventListener(
+            "submit",
+            guardarComentario
+        );
+
+
+    $("btnEnviarCorreo")
+        ?.addEventListener(
+            "click",
+            abrirModalCorreo
+        );
+
+
+    $("cerrarModalCorreo")
+        ?.addEventListener(
+            "click",
+            cerrarModalCorreo
+        );
+
+
+    $("cancelarCorreo")
+        ?.addEventListener(
+            "click",
+            cerrarModalCorreo
+        );
+
+
+    $("formCorreo")
+        ?.addEventListener(
+            "submit",
+            prepararCorreo
+        );
+
+
+    $("btnGenerarReporte")
+        ?.addEventListener(
+            "click",
+            generarReporte
+        );
+
+
+    $("btnAdjuntarDocumento")
+        ?.addEventListener(
+            "click",
+            adjuntarDocumento
+        );
+
+
+    // Cerrar modal haciendo clic fuera
+    $("modalCandidato")
+        ?.addEventListener(
+            "click",
+            event => {
+
+                if (
+                    event.target ===
+                    $("modalCandidato")
+                ) {
+                    cerrarModalCandidato();
+                }
+            }
+        );
+
+
+    $("modalCorreo")
+        ?.addEventListener(
+            "click",
+            event => {
+
+                if (
+                    event.target ===
+                    $("modalCorreo")
+                ) {
+                    cerrarModalCorreo();
+                }
+            }
+        );
+
+
+    // ESC
+    document.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key === "Escape"
+            ) {
+
+                cerrarModalCandidato();
+                cerrarModalCorreo();
+            }
+        }
+    );
+}
+
+
+// ============================================================
+// CARGAR TODO
+// ============================================================
+
+async function cargarTodo() {
+
+    await cargarRequisicion();
+
+
+    await Promise.all([
+        cargarCandidatos(),
+        cargarHistorial(),
+        cargarComentarios()
+    ]);
+
+
+    /*
+       Historial terminó de cargar,
+       volvemos a dibujar timeline
+       para mostrar fechas.
+    */
+
+    renderTimeline();
+}
+
+
+// ============================================================
+// INICIALIZACIÓN
+// ============================================================
+
+async function iniciarAdministrarRequisicion() {
+
+    console.log(
+        "🚀 Inicializando Administrar Requisición Fase 3..."
+    );
+
+
+    try {
+
+        // ----------------------------------------------------
+        // ID
+        // ----------------------------------------------------
+
+        requisicionId =
+            obtenerRequisicionId();
+
+
+        if (!requisicionId) {
+
+            console.error(
+                "❌ No se recibió requisicion ID"
+            );
+
+
+            mostrarMensaje(
+                "No se encontró la requisición solicitada.",
+                "error"
+            );
+
+
+            setTimeout(
+                () => {
+                    window.location.href =
+                        "seguimiento.html";
+                },
+                1500
+            );
+
+
+            return;
+        }
+
+
+        console.log(
+            "📌 Requisición ID:",
+            requisicionId
+        );
+
+
+        // ----------------------------------------------------
+        // SUPABASE
+        // ----------------------------------------------------
+
+        supabaseAdminReq =
+            await obtenerClienteSupabase();
+
+
+        console.log(
+            "✅ Supabase disponible en administrar requisición"
+        );
+
+
+        // ----------------------------------------------------
+        // SESIÓN
+        // ----------------------------------------------------
+
+        const {
+            data: sessionData,
+            error: sessionError
+        } =
+            await supabaseAdminReq
+                .auth
+                .getSession();
+
+
+        if (sessionError) {
+            throw sessionError;
+        }
+
+
+        if (!sessionData?.session) {
+
+            console.warn(
+                "⚠️ No existe sesión activa"
+            );
+
+
+            window.location.href =
+                "index.html";
+
+
+            return;
+        }
+
+
+        // ----------------------------------------------------
+        // USUARIO
+        // ----------------------------------------------------
+
+        await cargarUsuarioActual();
+
+
+        // ----------------------------------------------------
+        // EVENTOS
+        // ----------------------------------------------------
+
+        configurarEventos();
+
+
+        // ----------------------------------------------------
+        // DATOS
+        // ----------------------------------------------------
+
+        await cargarTodo();
+
+
+        // ----------------------------------------------------
+        // REALTIME
+        // ----------------------------------------------------
+
+        iniciarRealtime();
+
+
+        console.log(
+            "✅ Administrar Requisición Fase 3 inicializado"
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ Error inicializando Administrar Requisición:",
+            error
+        );
+
+
+        mostrarMensaje(
+            `No se pudo cargar la requisición: ${
+                error.message ||
+                "Error desconocido"
+            }`,
+            "error"
+        );
+    }
+}
+
+
+// ============================================================
+// LIMPIEZA
+// ============================================================
+
+window.addEventListener(
+    "beforeunload",
+    () => {
+
+        if (
+            realtimeChannel &&
+            supabaseAdminReq
+        ) {
+
+            try {
+
+                supabaseAdminReq
+                    .removeChannel(
+                        realtimeChannel
+                    );
+
+            } catch (error) {
+
+                console.warn(
+                    "⚠️ Error cerrando Realtime:",
+                    error
+                );
+            }
+        }
+    }
+);
+
+
+// ============================================================
+// DOM READY
+// ============================================================
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        /*
+           Dejamos un pequeño margen para que
+           supabase-client.js y auth.js terminen
+           su inicialización.
+        */
+
+        setTimeout(
+            iniciarAdministrarRequisicion,
+            250
+        );
+    }
+);
+
+
+console.log(
+    "✅ administrar-requisicion.js Fase 3 cargado"
+);
