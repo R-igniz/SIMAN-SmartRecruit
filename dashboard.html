@@ -1,85 +1,640 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>SIMAN SmartRecruit - Dashboard</title>
-    <link rel="stylesheet" href="css/global.css" />
-    <link rel="stylesheet" href="css/dashboard.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    >
 </head>
+
 <body>
-    <div id="sidebar-container"></div>
-    
-    <div class="main-content">
-        <div id="topbar-container"></div>
-        
-        <!-- KPIs -->
-        <div class="kpi-grid">
-            <div class="kpi-card">
-                <div class="label">Vacantes abiertas</div>
-                <div class="value" id="kpiAbiertas">0</div>
-                <div class="trend" id="trendAbiertas">Datos reales</div>
-            </div>
-            <div class="kpi-card">
-                <div class="label">Vacantes cerradas</div>
-                <div class="value" id="kpiCerradas">0</div>
-                <div class="trend" id="trendCerradas">Datos reales</div>
-            </div>
-            <div class="kpi-card">
-                <div class="label">Contrataciones del mes</div>
-                <div class="value" id="kpiContrataciones">0</div>
-                <div class="trend" id="trendContrataciones">Datos reales</div>
-            </div>
-            <div class="kpi-card">
-                <div class="label">Tiempo promedio</div>
-                <div class="value" id="kpiTiempo">0d</div>
-                <div class="trend" id="trendTiempo">Datos reales</div>
-            </div>
-            <div class="kpi-card">
-                <div class="label">Solicitudes pendientes</div>
-                <div class="value" id="kpiPendientes">0</div>
-                <div class="trend" id="trendPendientes">Datos reales</div>
-            </div>
-            <div class="kpi-card">
-                <div class="label">Alertas</div>
-                <div class="value" id="kpiAlertas">0</div>
-                <div class="trend" id="trendAlertas">Datos reales</div>
-            </div>
-        </div>
-        
-        <!-- Gráficas -->
-        <div class="dash-grid">
-            <div class="card">
-                <div class="card-header">
-                    <span><i class="fas fa-chart-bar"></i> Vacantes por comercial</span>
-                    <span class="badge badge-blue">Últimos 30d</span>
+
+<!-- =========================================================
+     SIDEBAR
+========================================================== -->
+
+<div id="sidebar-container"></div>
+
+
+<!-- =========================================================
+     CONTENIDO
+========================================================== -->
+
+<div class="main-content">
+
+    <div id="topbar-container"></div>
+
+
+    <main class="dashboard-page">
+
+        <!-- =================================================
+             HERO / BIENVENIDA
+        ================================================== -->
+
+        <section class="dashboard-hero">
+
+            <div class="hero-content">
+
+                <div class="hero-label">
+                    <i class="fas fa-chart-line"></i>
+                    Centro de control
                 </div>
-                <div class="chart-placeholder" id="chartComerciales"></div>
-                <div class="chart-labels" id="chartLabels"></div>
+
+                <h1>
+                    Dashboard de Reclutamiento
+                </h1>
+
+                <p>
+                    Supervisa requisiciones, vacantes,
+                    contrataciones y actividad de reclutamiento
+                    desde un solo lugar.
+                </p>
+
             </div>
-            
-            <div class="card">
-                <div class="card-header">
-                    <span><i class="fas fa-clock"></i> Actividad reciente</span>
-                    <i class="far fa-calendar-alt"></i>
+
+
+            <div class="hero-actions">
+
+                <button
+                    type="button"
+                    class="btn-secondary-dashboard"
+                    onclick="window.location.href='/requisiciones.html'"
+                >
+                    <i class="fas fa-list"></i>
+                    Requisiciones
+                </button>
+
+
+                <button
+                    type="button"
+                    class="btn-primary-dashboard"
+                    onclick="window.location.href='/nueva-requisicion.html'"
+                >
+                    <i class="fas fa-plus"></i>
+                    Nueva requisición
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             KPI
+        ================================================== -->
+
+        <section class="kpi-grid">
+
+            <!-- ABIERTAS -->
+
+            <article class="kpi-card kpi-blue">
+
+                <div class="kpi-top">
+
+                    <div class="kpi-icon">
+                        <i class="fas fa-briefcase"></i>
+                    </div>
+
+                    <span class="kpi-status">
+                        Activas
+                    </span>
+
                 </div>
-                <div class="mini-list" id="actividadReciente"><div class="item"><span>Cargando...</span></div></div>
+
+                <div class="label">
+                    Vacantes abiertas
+                </div>
+
+                <div
+                    class="value"
+                    id="kpiAbiertas"
+                >
+                    0
+                </div>
+
+                <div
+                    class="trend"
+                    id="trendAbiertas"
+                >
+                    Datos reales
+                </div>
+
+            </article>
+
+
+            <!-- CERRADAS -->
+
+            <article class="kpi-card kpi-green">
+
+                <div class="kpi-top">
+
+                    <div class="kpi-icon">
+                        <i class="fas fa-circle-check"></i>
+                    </div>
+
+                    <span class="kpi-status">
+                        Histórico
+                    </span>
+
+                </div>
+
+                <div class="label">
+                    Vacantes cerradas
+                </div>
+
+                <div
+                    class="value"
+                    id="kpiCerradas"
+                >
+                    0
+                </div>
+
+                <div
+                    class="trend"
+                    id="trendCerradas"
+                >
+                    Datos reales
+                </div>
+
+            </article>
+
+
+            <!-- CONTRATACIONES -->
+
+            <article class="kpi-card kpi-purple">
+
+                <div class="kpi-top">
+
+                    <div class="kpi-icon">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+
+                    <span class="kpi-status">
+                        Este mes
+                    </span>
+
+                </div>
+
+                <div class="label">
+                    Contrataciones
+                </div>
+
+                <div
+                    class="value"
+                    id="kpiContrataciones"
+                >
+                    0
+                </div>
+
+                <div
+                    class="trend"
+                    id="trendContrataciones"
+                >
+                    Datos reales
+                </div>
+
+            </article>
+
+
+            <!-- TIEMPO -->
+
+            <article class="kpi-card kpi-cyan">
+
+                <div class="kpi-top">
+
+                    <div class="kpi-icon">
+                        <i class="fas fa-stopwatch"></i>
+                    </div>
+
+                    <span class="kpi-status">
+                        Promedio
+                    </span>
+
+                </div>
+
+                <div class="label">
+                    Tiempo de cobertura
+                </div>
+
+                <div
+                    class="value"
+                    id="kpiTiempo"
+                >
+                    0d
+                </div>
+
+                <div
+                    class="trend"
+                    id="trendTiempo"
+                >
+                    Datos reales
+                </div>
+
+            </article>
+
+
+            <!-- PENDIENTES -->
+
+            <article class="kpi-card kpi-orange">
+
+                <div class="kpi-top">
+
+                    <div class="kpi-icon">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+
+                    <span class="kpi-status">
+                        Atención
+                    </span>
+
+                </div>
+
+                <div class="label">
+                    Solicitudes pendientes
+                </div>
+
+                <div
+                    class="value"
+                    id="kpiPendientes"
+                >
+                    0
+                </div>
+
+                <div
+                    class="trend"
+                    id="trendPendientes"
+                >
+                    Datos reales
+                </div>
+
+            </article>
+
+
+            <!-- ALERTAS -->
+
+            <article class="kpi-card kpi-red">
+
+                <div class="kpi-top">
+
+                    <div class="kpi-icon">
+                        <i class="fas fa-triangle-exclamation"></i>
+                    </div>
+
+                    <span class="kpi-status">
+                        Prioridad
+                    </span>
+
+                </div>
+
+                <div class="label">
+                    Alertas
+                </div>
+
+                <div
+                    class="value"
+                    id="kpiAlertas"
+                >
+                    0
+                </div>
+
+                <div
+                    class="trend"
+                    id="trendAlertas"
+                >
+                    Datos reales
+                </div>
+
+            </article>
+
+        </section>
+
+
+        <!-- =================================================
+             ÁREA CENTRAL
+        ================================================== -->
+
+        <section class="dash-grid">
+
+            <!-- GRÁFICA -->
+
+            <article class="dashboard-card chart-card">
+
+                <div class="card-header">
+
+                    <div>
+
+                        <span class="card-eyebrow">
+                            Distribución
+                        </span>
+
+                        <h2>
+                            <i class="fas fa-chart-column"></i>
+                            Vacantes por comercial
+                        </h2>
+
+                    </div>
+
+
+                    <span class="badge badge-blue">
+                        Tiempo real
+                    </span>
+
+                </div>
+
+
+                <p class="card-description">
+                    Distribución de las requisiciones abiertas
+                    según centro comercial.
+                </p>
+
+
+                <div
+                    class="chart-placeholder"
+                    id="chartComerciales"
+                ></div>
+
+
+                <div
+                    class="chart-labels"
+                    id="chartLabels"
+                ></div>
+
+            </article>
+
+
+            <!-- ACTIVIDAD -->
+
+            <article class="dashboard-card activity-card">
+
+                <div class="card-header">
+
+                    <div>
+
+                        <span class="card-eyebrow">
+                            Movimientos
+                        </span>
+
+                        <h2>
+                            <i class="fas fa-clock-rotate-left"></i>
+                            Actividad reciente
+                        </h2>
+
+                    </div>
+
+
+                    <div class="live-indicator">
+                        <span></span>
+                        En vivo
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="mini-list activity-list"
+                    id="actividadReciente"
+                >
+
+                    <div class="item">
+                        <span>Cargando...</span>
+                    </div>
+
+                </div>
+
+            </article>
+
+        </section>
+
+
+        <!-- =================================================
+             PARTE INFERIOR
+        ================================================== -->
+
+        <section class="dashboard-bottom-grid">
+
+
+            <!-- ÚLTIMAS REQUISICIONES -->
+
+            <article class="dashboard-card requisitions-card">
+
+                <div class="card-header">
+
+                    <div>
+
+                        <span class="card-eyebrow">
+                            Reclutamiento
+                        </span>
+
+                        <h2>
+                            <i class="fas fa-file-lines"></i>
+                            Últimas requisiciones
+                        </h2>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        class="view-all-button"
+                        onclick="window.location.href='/requisiciones.html'"
+                    >
+                        Ver todas
+
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+
+                </div>
+
+
+                <div
+                    class="mini-list requisition-list"
+                    id="ultimasRequisiciones"
+                >
+
+                    <div class="item">
+                        <span>Cargando...</span>
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <!-- ACCESOS RÁPIDOS -->
+
+            <article class="dashboard-card quick-card">
+
+                <div class="card-header">
+
+                    <div>
+
+                        <span class="card-eyebrow">
+                            Accesos
+                        </span>
+
+                        <h2>
+                            <i class="fas fa-bolt"></i>
+                            Acciones rápidas
+                        </h2>
+
+                    </div>
+
+                </div>
+
+
+                <div class="quick-actions">
+
+
+                    <button
+                        type="button"
+                        class="quick-action"
+                        onclick="window.location.href='/nueva-requisicion.html'"
+                    >
+
+                        <span class="quick-icon quick-blue">
+                            <i class="fas fa-plus"></i>
+                        </span>
+
+                        <span class="quick-info">
+                            <strong>
+                                Nueva requisición
+                            </strong>
+
+                            <small>
+                                Crear una solicitud
+                            </small>
+                        </span>
+
+                        <i class="fas fa-chevron-right quick-arrow"></i>
+
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="quick-action"
+                        onclick="window.location.href='/candidatos.html'"
+                    >
+
+                        <span class="quick-icon quick-purple">
+                            <i class="fas fa-users"></i>
+                        </span>
+
+                        <span class="quick-info">
+                            <strong>
+                                Candidatos
+                            </strong>
+
+                            <small>
+                                Gestionar talento
+                            </small>
+                        </span>
+
+                        <i class="fas fa-chevron-right quick-arrow"></i>
+
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="quick-action"
+                        onclick="window.location.href='/seguimiento.html'"
+                    >
+
+                        <span class="quick-icon quick-green">
+                            <i class="fas fa-chart-line"></i>
+                        </span>
+
+                        <span class="quick-info">
+                            <strong>
+                                Seguimiento
+                            </strong>
+
+                            <small>
+                                Revisar procesos
+                            </small>
+                        </span>
+
+                        <i class="fas fa-chevron-right quick-arrow"></i>
+
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="quick-action"
+                        onclick="window.location.href='/reportes.html'"
+                    >
+
+                        <span class="quick-icon quick-orange">
+                            <i class="fas fa-chart-pie"></i>
+                        </span>
+
+                        <span class="quick-info">
+                            <strong>
+                                Reportes
+                            </strong>
+
+                            <small>
+                                Consultar indicadores
+                            </small>
+                        </span>
+
+                        <i class="fas fa-chevron-right quick-arrow"></i>
+
+                    </button>
+
+                </div>
+
+            </article>
+
+        </section>
+
+
+        <!-- =================================================
+             FOOTER
+        ================================================== -->
+
+        <div class="dashboard-footer">
+
+            <div>
+
+                <span class="footer-status"></span>
+
+                Información sincronizada con SmartRecruit
+
             </div>
+
+            <span>
+                Datos actualizados en tiempo real
+            </span>
+
         </div>
 
-        <!-- Últimas requisiciones -->
-        <div class="card" style="margin-top:24px;">
-            <div class="card-header">
-                <span><i class="fas fa-list"></i> Últimas requisiciones</span>
-                <span class="badge badge-blue" style="cursor:pointer;" onclick="navigateTo('/requisiciones.html')">Ver todas</span>
-            </div>
-            <div class="mini-list" id="ultimasRequisiciones"><div class="item"><span>Cargando...</span></div></div>
-        
-        </div>
-    </div>
-    
+    </main>
+
+</div>
+
+
+
+<!-- =========================================================
+     SCRIPTS
+========================================================== -->
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script src="js/supabase-client.js"></script>
@@ -91,5 +646,6 @@
 <script src="js/notifications.js"></script>
 
 <script src="js/dashboard.js"></script>
+
 </body>
 </html>
