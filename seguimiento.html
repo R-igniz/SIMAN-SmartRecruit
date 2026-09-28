@@ -1,74 +1,221 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Seguimiento | SIMAN SmartRecruit</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <title>
+        Seguimiento | SIMAN SmartRecruit
+    </title>
 
-    <link rel="stylesheet" href="css/global.css">
-    <link rel="stylesheet" href="css/sidebar.css">
-    <link rel="stylesheet" href="css/seguimiento.css">
+
+    <!-- =====================================================
+         FUENTE
+    ====================================================== -->
+
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+
+    <!-- =====================================================
+         ICONOS
+    ====================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
+
+
+    <!-- =====================================================
+         ESTILOS
+    ====================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="css/global.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="css/seguimiento.css"
+    >
+
 </head>
+
 
 <body>
 
+
+<!-- =========================================================
+     APP
+========================================================== -->
+
 <div class="app-layout">
 
-    <!-- SIDEBAR -->
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
     <aside id="sidebar-container"></aside>
 
-    <!-- CONTENIDO -->
+
+    <!-- =====================================================
+         CONTENIDO PRINCIPAL
+    ====================================================== -->
+
     <main class="main-content">
 
-        <!-- TOPBAR -->
+
+        <!-- =================================================
+             TOPBAR
+        ================================================== -->
+
         <div id="topbar-container"></div>
 
-        <section class="page-content">
 
-            <div class="page-header">
-                <div>
-                    <h1>
+        <!-- =================================================
+             PÁGINA
+        ================================================== -->
+
+        <section class="page-content seguimiento-page">
+
+
+            <!-- =============================================
+                 HEADER EJECUTIVO
+            ============================================== -->
+
+            <header class="seguimiento-header">
+
+                <div class="seguimiento-header-content">
+
+                    <div class="seguimiento-header-icon">
+
                         <i class="fa-solid fa-chart-line"></i>
-                        Seguimiento
-                    </h1>
 
-                    <p>
-                        Seguimiento en tiempo real de los procesos de reclutamiento.
-                    </p>
-                </div>
-            </div>
-
-            <div class="panel">
-
-                <div class="panel-header">
-
-                    <div class="panel-title">
-                        <i class="fa-solid fa-list-check"></i>
-                        <span>Seguimiento de Procesos</span>
                     </div>
 
-                    <span id="contadorProcesos" class="badge">
+
+                    <div>
+
+                        <span class="seguimiento-eyebrow">
+                            Reclutamiento
+                        </span>
+
+                        <h1>
+                            Seguimiento
+                        </h1>
+
+                        <p>
+                            Monitoreo en tiempo real de los procesos
+                            activos de reclutamiento.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="seguimiento-header-status">
+
+                    <span class="realtime-dot"></span>
+
+                    Tiempo real
+
+                </div>
+
+            </header>
+
+
+            <!-- =============================================
+                 PANEL DE PROCESOS
+            ============================================== -->
+
+            <section class="seguimiento-panel">
+
+
+                <!-- HEADER DEL PANEL -->
+
+                <div class="seguimiento-panel-header">
+
+                    <div>
+
+                        <div class="seguimiento-panel-title">
+
+                            <i class="fa-solid fa-list-check"></i>
+
+                            <span>
+                                Seguimiento de Procesos
+                            </span>
+
+                        </div>
+
+
+                        <p>
+                            Requisiciones actualmente en proceso
+                        </p>
+
+                    </div>
+
+
+                    <span
+                        id="contadorProcesos"
+                        class="procesos-badge"
+                    >
                         0 ACTIVOS
                     </span>
 
                 </div>
 
-                <!-- IMPORTANTE:
-                     seguimiento.js insertará aquí las requisiciones -->
+
+                <!-- =========================================
+                     CONTENEDOR
+                ========================================== -->
+
                 <div id="seguimientoContainer">
 
-                    <div class="loading-state">
-                        <i class="fa-solid fa-spinner fa-spin"></i>
-                        <p>Cargando procesos...</p>
+                    <div class="seguimiento-loading">
+
+                        <div class="loading-spinner">
+
+                            <i class="fa-solid fa-spinner fa-spin"></i>
+
+                        </div>
+
+                        <strong>
+                            Cargando procesos
+                        </strong>
+
+                        <p>
+                            Consultando información en tiempo real...
+                        </p>
+
                     </div>
 
                 </div>
 
-            </div>
+            </section>
+
 
         </section>
 
@@ -77,29 +224,34 @@
 </div>
 
 
-<!-- ============================= -->
-<!-- LIBRERÍAS -->
-<!-- ============================= -->
+<!-- =========================================================
+     SUPABASE
+========================================================== -->
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+></script>
 
 
-<!-- ============================= -->
-<!-- SISTEMA -->
-<!-- ============================= -->
+<!-- =========================================================
+     SISTEMA
+========================================================== -->
 
 <script src="js/supabase-client.js"></script>
+
 <script src="js/auth.js"></script>
+
 <script src="js/sidebar.js"></script>
+
 <script src="js/darkmode.js"></script>
-<link rel="stylesheet" href="css/sidebar.css">
 
 
-<!-- ============================= -->
-<!-- MÓDULO -->
-<!-- ============================= -->
+<!-- =========================================================
+     SEGUIMIENTO
+========================================================== -->
 
 <script src="js/seguimiento.js"></script>
+
 
 </body>
 </html>
