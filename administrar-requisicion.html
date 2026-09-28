@@ -2,7 +2,6 @@
 <html lang="es">
 
 <head>
-
     <meta charset="UTF-8">
 
     <meta
@@ -14,25 +13,31 @@
         Administrar Requisición | SIMAN SmartRecruit
     </title>
 
+    <!-- =====================================================
+         FUENTE
+    ====================================================== -->
 
-    <!-- FONT AWESOME -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- =====================================================
+         FONT AWESOME
+    ====================================================== -->
 
     <link
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     >
 
-
-    <!-- ESTILOS DEL SISTEMA -->
+    <!-- =====================================================
+         ESTILOS DEL SISTEMA
+    ====================================================== -->
 
     <link
         rel="stylesheet"
         href="css/global.css"
-    >
-
-    <link
-        rel="stylesheet"
-        href="css/sidebar.css"
     >
 
     <link
@@ -45,668 +50,712 @@
 
 <body>
 
+<!-- =========================================================
+     SIDEBAR
+========================================================== -->
 
-<div class="app-layout">
+<div id="sidebar-container"></div>
 
 
-    <!-- ===================================================== -->
-    <!-- SIDEBAR -->
-    <!-- ===================================================== -->
+<!-- =========================================================
+     CONTENIDO PRINCIPAL
+========================================================== -->
 
-    <aside id="sidebar-container"></aside>
+<div class="main-content">
 
+    <!-- =====================================================
+         TOPBAR
+    ====================================================== -->
 
+    <div id="topbar-container"></div>
 
-    <!-- ===================================================== -->
-    <!-- CONTENIDO PRINCIPAL -->
-    <!-- ===================================================== -->
 
-    <main class="main-content">
+    <!-- =====================================================
+         PÁGINA
+    ====================================================== -->
 
+    <main class="page-content">
 
-        <!-- TOPBAR -->
 
-        <div id="topbar-container"></div>
+        <!-- =================================================
+             ENCABEZADO
+        ================================================== -->
 
+        <section class="requisicion-header">
 
+            <!-- INFORMACIÓN -->
 
-        <!-- ================================================= -->
-        <!-- PÁGINA -->
-        <!-- ================================================= -->
+            <div>
 
-        <section class="page-content">
+                <a
+                    href="/seguimiento.html"
+                    class="btn-volver"
+                >
+                    <i class="fa-solid fa-arrow-left"></i>
 
+                    Volver a Seguimiento
+                </a>
 
-            <!-- ============================================= -->
-            <!-- ENCABEZADO -->
-            <!-- ============================================= -->
 
-            <div class="requisicion-header">
+                <h1 id="tituloRequisicion">
+                    Cargando requisición...
+                </h1>
 
 
-                <div>
+                <div class="requisicion-meta">
 
-                    <a
-                        href="seguimiento.html"
-                        class="btn-volver"
-                    >
-
-                        <i class="fa-solid fa-arrow-left"></i>
-
-                        Volver a Seguimiento
-
-                    </a>
-
-
-                    <h1 id="tituloRequisicion">
-
-                        Administrar Requisición
-
-                    </h1>
-
-
-                    <div class="requisicion-meta">
-
-                        <span>
-
-                            <i class="fa-solid fa-store"></i>
-
-                            <span id="tiendaRequisicion">
-                                —
-                            </span>
-
-                        </span>
-
-
-                        <span>
-
-                            <i class="fa-solid fa-briefcase"></i>
-
-                            <span id="puestoRequisicion">
-                                —
-                            </span>
-
-                        </span>
-
-
-                        <span
-                            id="badgeEstadoActual"
-                            class="status-badge"
-                        >
-
-                            CARGANDO
-
-                        </span>
-
-                    </div>
-
-                </div>
-
-
-
-                <!-- ACCIONES SUPERIORES -->
-
-                <div class="header-actions">
-
-
-                    <button
-                        type="button"
-                        id="btnEnviarCorreo"
-                        class="btn-secondary"
-                    >
-
-                        <i class="fa-solid fa-envelope"></i>
-
-                        Enviar Correo
-
-                    </button>
-
-
-                    <button
-                        type="button"
-                        id="btnRegistrarCandidato"
-                        class="btn-primary"
-                    >
-
-                        <i class="fa-solid fa-user-plus"></i>
-
-                        Registrar Candidato
-
-                    </button>
-
-
-                </div>
-
-
-            </div>
-
-
-
-            <!-- ============================================= -->
-            <!-- KPIS -->
-            <!-- ============================================= -->
-
-            <div class="kpi-grid">
-
-
-                <article class="kpi-card">
-
-                    <span class="kpi-label">
-                        Progreso
-                    </span>
-
-                    <strong id="kpiProgreso">
-                        0%
-                    </strong>
-
-                </article>
-
-
-                <article class="kpi-card">
-
-                    <span class="kpi-label">
-                        Candidatos
-                    </span>
-
-                    <strong id="kpiCandidatos">
-                        0
-                    </strong>
-
-                </article>
-
-
-                <article class="kpi-card">
-
-                    <span class="kpi-label">
-                        Días abierta
-                    </span>
-
-                    <strong id="kpiDiasAbierta">
-                        0
-                    </strong>
-
-                </article>
-
-
-                <article class="kpi-card">
-
-                    <span class="kpi-label">
-                        Prioridad
-                    </span>
-
-                    <strong id="kpiPrioridad">
-                        —
-                    </strong>
-
-                </article>
-
-
-            </div>
-
-
-
-            <!-- ============================================= -->
-            <!-- PROGRESO -->
-            <!-- ============================================= -->
-
-            <div class="progress-section">
-
-                <div class="progress-info">
+                    <!-- TIENDA -->
 
                     <span>
-                        Progreso del proceso
+
+                        <i class="fa-solid fa-store"></i>
+
+                        <span id="tiendaRequisicion">
+                            —
+                        </span>
+
                     </span>
 
-                    <strong id="porcentajeProceso">
-                        0%
-                    </strong>
 
-                </div>
+                    <!-- PUESTO -->
+
+                    <span>
+
+                        <i class="fa-solid fa-briefcase"></i>
+
+                        <span id="puestoRequisicion">
+                            —
+                        </span>
+
+                    </span>
 
 
-                <div class="progress-track">
+                    <!-- ESTADO -->
 
-                    <div
-                        id="barraProgreso"
-                        class="progress-bar"
-                        style="width: 0%;"
-                    ></div>
+                    <span
+                        id="badgeEstadoActual"
+                        class="status-badge"
+                    >
+                        CARGANDO
+                    </span>
 
                 </div>
 
             </div>
 
 
-
-            <!-- ============================================= -->
-            <!-- GRID PRINCIPAL -->
-            <!-- ============================================= -->
-
-            <div class="admin-grid">
-
-
-                <!-- ========================================= -->
-                <!-- COLUMNA IZQUIERDA -->
-                <!-- ========================================= -->
-
-                <div class="admin-column-main">
-
-
-                    <!-- INFORMACIÓN -->
-
-                    <article class="admin-card">
-
-
-                        <div class="card-header">
-
-                            <h2>
-
-                                <i class="fa-solid fa-circle-info"></i>
-
-                                Información de la Requisición
-
-                            </h2>
-
-                        </div>
-
-
-
-                        <div class="info-grid">
-
-
-                            <div class="info-item">
-
-                                <span>Código</span>
-
-                                <strong id="infoCodigo">
-                                    —
-                                </strong>
-
-                            </div>
-
-
-                            <div class="info-item">
-
-                                <span>Departamento</span>
-
-                                <strong id="infoDepartamento">
-                                    —
-                                </strong>
-
-                            </div>
-
-
-                            <div class="info-item">
-
-                                <span>Centro</span>
-
-                                <strong id="infoCentro">
-                                    —
-                                </strong>
-
-                            </div>
-
-
-                            <div class="info-item">
-
-                                <span>Tienda</span>
-
-                                <strong id="infoTienda">
-                                    —
-                                </strong>
-
-                            </div>
-
-
-                            <div class="info-item">
-
-                                <span>Tipo contratación</span>
-
-                                <strong id="infoContratacion">
-                                    —
-                                </strong>
-
-                            </div>
-
-
-                            <div class="info-item">
-
-                                <span>Motivo</span>
-
-                                <strong id="infoMotivo">
-                                    —
-                                </strong>
-
-                            </div>
-
-
-                            <div class="info-item">
-
-                                <span>Cantidad</span>
-
-                                <strong id="infoCantidad">
-                                    0
-                                </strong>
-
-                            </div>
-
-
-                            <div class="info-item">
-
-                                <span>Fecha límite</span>
-
-                                <strong id="infoFechaLimite">
-                                    —
-                                </strong>
-
-                            </div>
-
-
-                        </div>
-
-
-                        <div class="text-section">
-
-                            <h3>Descripción</h3>
-
-                            <p id="infoDescripcion">
-                                Sin descripción.
-                            </p>
-
-                        </div>
-
-
-                        <div class="text-section">
-
-                            <h3>Requisitos</h3>
-
-                            <p id="infoRequisitos">
-                                Sin requisitos registrados.
-                            </p>
-
-                        </div>
-
-
-                        <div class="text-section">
-
-                            <h3>Observaciones</h3>
-
-                            <p id="infoObservaciones">
-                                Sin observaciones.
-                            </p>
-
-                        </div>
-
-
-                    </article>
-
-
-
-                    <!-- CANDIDATOS -->
-
-                    <article class="admin-card">
-
-
-                        <div class="card-header">
-
-                            <h2>
-
-                                <i class="fa-solid fa-users"></i>
-
-                                Candidatos
-
-                            </h2>
-
-
-                            <span
-                                id="contadorCandidatos"
-                                class="small-badge"
-                            >
-
-                                0
-
-                            </span>
-
-                        </div>
-
-
-                        <div id="listaCandidatos">
-
-                            <div class="empty-state">
-
-                                No hay candidatos registrados.
-
-                            </div>
-
-                        </div>
-
-
-                    </article>
-
-
-
-                    <!-- COMENTARIOS -->
-
-                    <article class="admin-card">
-
-
-                        <div class="card-header">
-
-                            <h2>
-
-                                <i class="fa-solid fa-comments"></i>
-
-                                Comentarios
-
-                            </h2>
-
-
-                            <button
-                                type="button"
-                                id="btnNuevoComentario"
-                                class="btn-small"
-                            >
-
-                                <i class="fa-solid fa-plus"></i>
-
-                                Agregar
-
-                            </button>
-
-                        </div>
-
-
-                        <div id="listaComentarios">
-
-                            <div class="empty-state">
-
-                                No hay comentarios.
-
-                            </div>
-
-                        </div>
-
-
-                    </article>
-
-
-                </div>
-
-
-
-                <!-- ========================================= -->
-                <!-- COLUMNA DERECHA -->
-                <!-- ========================================= -->
-
-                <aside class="admin-column-side">
-
-
-                    <!-- RESPONSABLE -->
-
-                    <article class="admin-card">
-
-
-                        <div class="card-header">
-
-                            <h2>
-
-                                <i class="fa-solid fa-user-tie"></i>
-
-                                Responsable
-
-                            </h2>
-
-                        </div>
-
-
-                        <div class="responsable-box">
-
-                            <div class="responsable-avatar">
-
-                                <span id="responsableIniciales">
-                                    SR
-                                </span>
-
-                            </div>
-
-
-                            <div>
-
-                                <strong id="responsableNombre">
-                                    Sin asignar
-                                </strong>
-
-                                <p>
-                                    Reclutador responsable
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-                    </article>
-
-
-
-                    <!-- ACCIONES -->
-
-                    <article class="admin-card">
-
-
-                        <div class="card-header">
-
-                            <h2>
-
-                                <i class="fa-solid fa-bolt"></i>
-
-                                Acciones
-
-                            </h2>
-
-                        </div>
-
-
-                        <div class="action-list">
-
-
-                            <button
-                                type="button"
-                                id="btnAvanzarEstado"
-                                class="btn-primary action-button"
-                            >
-
-                                <i class="fa-solid fa-forward"></i>
-
-                                Avanzar Estado
-
-                            </button>
-
-
-                            <button
-                                type="button"
-                                id="btnGenerarReporte"
-                                class="btn-secondary action-button"
-                            >
-
-                                <i class="fa-solid fa-file-lines"></i>
-
-                                Generar Reporte
-
-                            </button>
-
-
-                            <button
-                                type="button"
-                                id="btnRegistrarCandidatoAccion"
-                                class="btn-secondary action-button"
-                            >
-
-                                <i class="fa-solid fa-user-plus"></i>
-
-                                Registrar Candidato
-
-                            </button>
-
-
-                        </div>
-
-
-                    </article>
-
-
-
-                    <!-- HISTORIAL -->
-
-                    <article class="admin-card">
-
-
-                        <div class="card-header">
-
-                            <h2>
-
-                                <i class="fa-solid fa-clock-rotate-left"></i>
-
-                                Historial Completo
-
-                            </h2>
-
-                        </div>
-
-
-                        <div id="listaHistorial">
-
-                            <div class="empty-state">
-
-                                Sin movimientos registrados.
-
-                            </div>
-
-                        </div>
-
-
-                    </article>
-
-
-                </aside>
-
+            <!-- =================================================
+                 ACCIONES SUPERIORES
+            ================================================== -->
+
+            <div class="header-actions">
+
+                <button
+                    type="button"
+                    id="btnEnviarCorreo"
+                    class="btn-secondary"
+                >
+                    <i class="fa-solid fa-envelope"></i>
+
+                    Enviar Correo
+                </button>
+
+
+                <button
+                    type="button"
+                    id="btnRegistrarCandidato"
+                    class="btn-primary"
+                >
+                    <i class="fa-solid fa-user-plus"></i>
+
+                    Registrar Candidato
+                </button>
 
             </div>
-
 
         </section>
 
 
-    </main>
+        <!-- =================================================
+             KPIs
+        ================================================== -->
 
+        <section class="kpi-grid">
+
+            <!-- PROGRESO -->
+
+            <article class="kpi-card">
+
+                <span class="kpi-label">
+                    Progreso
+                </span>
+
+                <strong id="kpiProgreso">
+                    0%
+                </strong>
+
+            </article>
+
+
+            <!-- CANDIDATOS -->
+
+            <article class="kpi-card">
+
+                <span class="kpi-label">
+                    Candidatos
+                </span>
+
+                <strong id="kpiCandidatos">
+                    0
+                </strong>
+
+            </article>
+
+
+            <!-- DÍAS ABIERTA -->
+
+            <article class="kpi-card">
+
+                <span class="kpi-label">
+                    Días abierta
+                </span>
+
+                <strong id="kpiDiasAbierta">
+                    0
+                </strong>
+
+            </article>
+
+
+            <!-- PRIORIDAD -->
+
+            <article class="kpi-card">
+
+                <span class="kpi-label">
+                    Prioridad
+                </span>
+
+                <strong id="kpiPrioridad">
+                    —
+                </strong>
+
+            </article>
+
+        </section>
+
+
+        <!-- =================================================
+             PROGRESO DEL PROCESO
+        ================================================== -->
+
+        <section class="progress-section">
+
+            <div class="progress-info">
+
+                <span>
+                    Progreso del proceso
+                </span>
+
+                <strong id="porcentajeProceso">
+                    0%
+                </strong>
+
+            </div>
+
+
+            <div class="progress-track">
+
+                <div
+                    id="barraProgreso"
+                    class="progress-bar"
+                    style="width: 0%;"
+                ></div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             GRID PRINCIPAL
+        ================================================== -->
+
+        <section class="admin-grid">
+
+
+            <!-- =================================================
+                 COLUMNA PRINCIPAL
+            ================================================== -->
+
+            <div class="admin-column-main">
+
+
+                <!-- =============================================
+                     INFORMACIÓN DE LA REQUISICIÓN
+                ============================================== -->
+
+                <article class="admin-card">
+
+                    <div class="card-header">
+
+                        <h2>
+
+                            <i class="fa-solid fa-circle-info"></i>
+
+                            Información de la Requisición
+
+                        </h2>
+
+                    </div>
+
+
+                    <!-- INFORMACIÓN -->
+
+                    <div class="info-grid">
+
+
+                        <!-- CÓDIGO -->
+
+                        <div class="info-item">
+
+                            <span>
+                                Código
+                            </span>
+
+                            <strong id="infoCodigo">
+                                —
+                            </strong>
+
+                        </div>
+
+
+                        <!-- DEPARTAMENTO -->
+
+                        <div class="info-item">
+
+                            <span>
+                                Departamento
+                            </span>
+
+                            <strong id="infoDepartamento">
+                                —
+                            </strong>
+
+                        </div>
+
+
+                        <!-- CENTRO -->
+
+                        <div class="info-item">
+
+                            <span>
+                                Centro
+                            </span>
+
+                            <strong id="infoCentro">
+                                —
+                            </strong>
+
+                        </div>
+
+
+                        <!-- TIENDA -->
+
+                        <div class="info-item">
+
+                            <span>
+                                Tienda
+                            </span>
+
+                            <strong id="infoTienda">
+                                —
+                            </strong>
+
+                        </div>
+
+
+                        <!-- CONTRATACIÓN -->
+
+                        <div class="info-item">
+
+                            <span>
+                                Tipo contratación
+                            </span>
+
+                            <strong id="infoContratacion">
+                                —
+                            </strong>
+
+                        </div>
+
+
+                        <!-- MOTIVO -->
+
+                        <div class="info-item">
+
+                            <span>
+                                Motivo
+                            </span>
+
+                            <strong id="infoMotivo">
+                                —
+                            </strong>
+
+                        </div>
+
+
+                        <!-- CANTIDAD -->
+
+                        <div class="info-item">
+
+                            <span>
+                                Cantidad
+                            </span>
+
+                            <strong id="infoCantidad">
+                                0
+                            </strong>
+
+                        </div>
+
+
+                        <!-- FECHA LÍMITE -->
+
+                        <div class="info-item">
+
+                            <span>
+                                Fecha límite
+                            </span>
+
+                            <strong id="infoFechaLimite">
+                                —
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- =========================================
+                         DESCRIPCIÓN
+                    ========================================== -->
+
+                    <div class="text-section">
+
+                        <h3>
+                            Descripción
+                        </h3>
+
+                        <p id="infoDescripcion">
+                            Sin descripción registrada.
+                        </p>
+
+                    </div>
+
+
+                    <!-- =========================================
+                         REQUISITOS
+                    ========================================== -->
+
+                    <div class="text-section">
+
+                        <h3>
+                            Requisitos
+                        </h3>
+
+                        <p id="infoRequisitos">
+                            Sin requisitos registrados.
+                        </p>
+
+                    </div>
+
+
+                    <!-- =========================================
+                         OBSERVACIONES
+                    ========================================== -->
+
+                    <div class="text-section">
+
+                        <h3>
+                            Observaciones
+                        </h3>
+
+                        <p id="infoObservaciones">
+                            Sin observaciones.
+                        </p>
+
+                    </div>
+
+                </article>
+
+
+                <!-- =============================================
+                     CANDIDATOS
+                ============================================== -->
+
+                <article class="admin-card">
+
+                    <div class="card-header">
+
+                        <h2>
+
+                            <i class="fa-solid fa-users"></i>
+
+                            Candidatos
+
+                        </h2>
+
+
+                        <span
+                            id="contadorCandidatos"
+                            class="small-badge"
+                        >
+                            0
+                        </span>
+
+                    </div>
+
+
+                    <div id="listaCandidatos">
+
+                        <div class="empty-state">
+
+                            <i class="fa-regular fa-user"></i>
+
+                            <br><br>
+
+                            No hay candidatos registrados.
+
+                        </div>
+
+                    </div>
+
+                </article>
+
+
+                <!-- =============================================
+                     COMENTARIOS
+                ============================================== -->
+
+                <article class="admin-card">
+
+                    <div class="card-header">
+
+                        <h2>
+
+                            <i class="fa-solid fa-comments"></i>
+
+                            Comentarios
+
+                        </h2>
+
+
+                        <button
+                            type="button"
+                            id="btnNuevoComentario"
+                            class="btn-small"
+                        >
+
+                            <i class="fa-solid fa-plus"></i>
+
+                            Agregar
+
+                        </button>
+
+                    </div>
+
+
+                    <div id="listaComentarios">
+
+                        <div class="empty-state">
+
+                            <i class="fa-regular fa-comment"></i>
+
+                            <br><br>
+
+                            No hay comentarios registrados.
+
+                        </div>
+
+                    </div>
+
+                </article>
+
+            </div>
+
+
+            <!-- =================================================
+                 COLUMNA LATERAL
+            ================================================== -->
+
+            <aside class="admin-column-side">
+
+
+                <!-- =============================================
+                     RESPONSABLE
+                ============================================== -->
+
+                <article class="admin-card">
+
+                    <div class="card-header">
+
+                        <h2>
+
+                            <i class="fa-solid fa-user-tie"></i>
+
+                            Responsable
+
+                        </h2>
+
+                    </div>
+
+
+                    <div class="responsable-box">
+
+                        <div class="responsable-avatar">
+
+                            <span id="responsableIniciales">
+                                SR
+                            </span>
+
+                        </div>
+
+
+                        <div>
+
+                            <strong id="responsableNombre">
+                                Sin asignar
+                            </strong>
+
+                            <p>
+                                Reclutador responsable
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </article>
+
+
+                <!-- =============================================
+                     ACCIONES
+                ============================================== -->
+
+                <article class="admin-card">
+
+                    <div class="card-header">
+
+                        <h2>
+
+                            <i class="fa-solid fa-bolt"></i>
+
+                            Acciones
+
+                        </h2>
+
+                    </div>
+
+
+                    <div class="action-list">
+
+
+                        <!-- AVANZAR ESTADO -->
+
+                        <button
+                            type="button"
+                            id="btnAvanzarEstado"
+                            class="btn-primary action-button"
+                        >
+
+                            <i class="fa-solid fa-forward"></i>
+
+                            Avanzar Estado
+
+                        </button>
+
+
+                        <!-- REPORTE -->
+
+                        <button
+                            type="button"
+                            id="btnGenerarReporte"
+                            class="btn-secondary action-button"
+                        >
+
+                            <i class="fa-solid fa-file-lines"></i>
+
+                            Generar Reporte
+
+                        </button>
+
+
+                        <!-- CANDIDATO -->
+
+                        <button
+                            type="button"
+                            id="btnRegistrarCandidatoAccion"
+                            class="btn-secondary action-button"
+                        >
+
+                            <i class="fa-solid fa-user-plus"></i>
+
+                            Registrar Candidato
+
+                        </button>
+
+                    </div>
+
+                </article>
+
+
+                <!-- =============================================
+                     HISTORIAL
+                ============================================== -->
+
+                <article class="admin-card">
+
+                    <div class="card-header">
+
+                        <h2>
+
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+
+                            Historial
+
+                        </h2>
+
+                    </div>
+
+
+                    <div id="listaHistorial">
+
+                        <div class="empty-state">
+
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+
+                            <br><br>
+
+                            Sin movimientos registrados.
+
+                        </div>
+
+                    </div>
+
+                </article>
+
+            </aside>
+
+        </section>
+
+    </main>
 
 </div>
 
 
-
-<!-- ========================================================= -->
-<!-- MODAL COMENTARIO -->
-<!-- ========================================================= -->
+<!-- =========================================================
+     MODAL COMENTARIO
+========================================================== -->
 
 <div
     id="modalComentario"
@@ -714,15 +763,25 @@
     hidden
 >
 
+    <!-- OVERLAY -->
+
     <div class="modal-overlay"></div>
 
 
-    <div class="modal-content">
+    <!-- CONTENIDO -->
 
+    <div
+        class="modal-content"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="tituloModalComentario"
+    >
+
+        <!-- HEADER -->
 
         <div class="modal-header">
 
-            <h2>
+            <h2 id="tituloModalComentario">
                 Agregar comentario
             </h2>
 
@@ -731,6 +790,7 @@
                 type="button"
                 id="cerrarModalComentario"
                 class="modal-close"
+                aria-label="Cerrar"
             >
 
                 <i class="fa-solid fa-xmark"></i>
@@ -740,8 +800,9 @@
         </div>
 
 
-        <form id="formComentario">
+        <!-- FORMULARIO -->
 
+        <form id="formComentario">
 
             <div class="form-group">
 
@@ -763,22 +824,22 @@
             </div>
 
 
-            <div class="modal-actions">
+            <!-- ACCIONES -->
 
+            <div class="modal-actions">
 
                 <button
                     type="button"
                     id="cancelarComentario"
                     class="btn-secondary"
                 >
-
                     Cancelar
-
                 </button>
 
 
                 <button
                     type="submit"
+                    id="btnGuardarComentario"
                     class="btn-primary"
                 >
 
@@ -788,53 +849,62 @@
 
                 </button>
 
-
             </div>
 
-
         </form>
-
 
     </div>
 
 </div>
 
 
-
-<!-- ========================================================= -->
-<!-- JAVASCRIPT -->
-<!-- ========================================================= -->
-
-
-<!-- SUPABASE -->
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- =========================================================
+     JAVASCRIPT
+========================================================== -->
 
 
-<!-- CLIENTE -->
+<!-- =========================================================
+     SUPABASE SDK
+========================================================== -->
+
+<script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+></script>
+
+
+<!-- =========================================================
+     CLIENTE SUPABASE
+========================================================== -->
 
 <script src="js/supabase-client.js"></script>
 
 
-<!-- AUTENTICACIÓN -->
+<!-- =========================================================
+     AUTENTICACIÓN / PERMISOS
+========================================================== -->
 
 <script src="js/auth.js"></script>
 
 
-<!-- COMPONENTES -->
+<!-- =========================================================
+     COMPONENTES DEL SISTEMA
+========================================================== -->
+
+<script src="js/router.js"></script>
 
 <script src="js/sidebar.js"></script>
 
 <script src="js/darkmode.js"></script>
 
+<script src="js/notifications.js"></script>
 
-<!-- IMPORTANTE:
-     administrar-requisicion.js SE EJECUTA.
-     NO se navega hacia este archivo. -->
+
+<!-- =========================================================
+     ADMINISTRAR REQUISICIÓN
+========================================================== -->
 
 <script src="js/administrar-requisicion.js"></script>
 
 
 </body>
-
 </html>
