@@ -1,13 +1,15 @@
 // ==========================================
 // CANDIDATOS
-// SMARTRECRUIT FASE 2
-// SUPABASE AUTH + UUID
+// SMARTRECRUIT FASE 4 PRD
+// SUPABASE AUTH + UUID + REALTIME + REQUISICION URL
 // ==========================================
 
 (function () {
 
     var candidatos = [];
     var requisiciones = [];
+    var guardandoCandidato = false;
+    var requisicionUrlId = null;
 
 
     // ======================================
@@ -35,6 +37,35 @@
         );
     }
 
+
+    // ======================================
+    // REQUISICION DESDE URL
+    // ======================================
+
+    function obtenerRequisicionDesdeUrl() {
+        var params = new URLSearchParams(window.location.search);
+        var valor = params.get('requisicion_id') || params.get('id');
+        var id = Number(valor);
+        return Number.isInteger(id) && id > 0 ? id : null;
+    }
+
+    function seleccionarRequisicionUrl() {
+        if (!requisicionUrlId) return;
+
+        var select = document.getElementById('candRequisicion');
+        if (!select) return;
+
+        var existe = Array.from(select.options).some(function (option) {
+            return Number(option.value) === requisicionUrlId;
+        });
+
+        if (existe) {
+            select.value = String(requisicionUrlId);
+            console.log('🔗 Requisición preseleccionada:', requisicionUrlId);
+        } else {
+            console.warn('⚠️ La requisición indicada en la URL no está disponible:', requisicionUrlId);
+        }
+    }
 
     // ======================================
     // MODAL
@@ -132,6 +163,7 @@
 
 
         poblarRequisiciones();
+        seleccionarRequisicionUrl();
 
         render();
 
@@ -419,6 +451,9 @@
 
         event.preventDefault();
 
+        if (guardandoCandidato) return;
+        guardandoCandidato = true;
+
 
         var boton =
             document.getElementById(
@@ -428,6 +463,7 @@
 
         if (boton) {
             boton.disabled = true;
+            boton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
         }
 
 
@@ -648,8 +684,11 @@
 
         } finally {
 
+            guardandoCandidato = false;
+
             if (boton) {
                 boton.disabled = false;
+                boton.innerHTML = '<i class="fas fa-save"></i> Guardar candidato';
             }
         }
     }
@@ -792,7 +831,15 @@
             }
 
 
+            requisicionUrlId = obtenerRequisicionDesdeUrl();
+
             cargar()
+                .then(function () {
+                    if (requisicionUrlId) {
+                        seleccionarRequisicionUrl();
+                        mostrarModal(true);
+                    }
+                })
                 .catch(
                     function (error) {
 
