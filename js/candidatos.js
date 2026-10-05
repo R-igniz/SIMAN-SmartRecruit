@@ -11,6 +11,9 @@
     var requisicionUrlId = null;
     var candidatoEditandoId = null;
     var modoFormulario = 'nuevo'; // nuevo | editar | ver
+    var candidatoActual = null;
+    var BUCKET_CV = 'candidatos-cv';
+    var MAX_CV_BYTES = 5 * 1024 * 1024;
 
     function escapar(valor) {
         return String(valor == null ? '' : valor).replace(/[&<>"']/g, function (c) {
@@ -142,15 +145,70 @@
         });
     }
 
+    function archivoCvSeleccionado() {
+        var input = el('candCv');
+        return input && input.files && input.files.length ? input.files[0] : null;
+    }
+
+    function validarCv(archivo) {
+        if (!archivo) return;
+        var nombre = String(archivo.name || '').toLowerCase();
+        if (archivo.type !== 'application/pdf' && !nombre.endsWith('.pdf')) {
+            throw new Error('El CV debe ser un archivo PDF.');
+        }
+        if (archivo.size > MAX_CV_BYTES) {
+            throw new Error('El CV supera el tamaño máximo permitido de 5 MB.');
+        }
+    }
+
+    function actualizarEstadoCv(cvPath) {
+        if (el('cvEstado')) el('cvEstado').textContent = cvPath ? 'CV disponible' : 'Sin CV';
+        if (el('verCvActual')) el('verCvActual').hidden = !cvPath;
+    }
+
+    async function subirCv(client, archivo, requisicionId, candidatoId) {
+        validarCv(archivo);
+        var carpetaReq = requisicionId ? ('requisicion-' + Number(requisicionId)) : 'sin-requisicion';
+        var ruta = carpetaReq + '/candidato-' + Number(candidatoId) + '/cv.pdf';
+        console.log('☁️ Subiendo CV privado:', ruta);
+        var subida = await client.storage.from(BUCKET_CV).upload(ruta, archivo, {
+            cacheControl: '3600',
+            contentType: 'application/pdf',
+            upsert: true
+        });
+        if (subida.error) throw subida.error;
+        console.log('✅ CV almacenado:', ruta);
+        return ruta;
+    }
+
+    async function abrirCvActual() {
+        var path = candidatoActual && candidatoActual.cv_path;
+        if (!path) return alert('Este candidato no tiene un CV registrado.');
+        try {
+            var client = await initSupabase();
+            var firmado = await client.storage.from(BUCKET_CV).createSignedUrl(path, 60);
+            if (firmado.error) throw firmado.error;
+            if (!firmado.data || !firmado.data.signedUrl) throw new Error('No se pudo generar la URL temporal del CV.');
+            window.open(firmado.data.signedUrl, '_blank', 'noopener,noreferrer');
+            console.log('📄 URL temporal de CV generada por 60 segundos');
+        } catch (error) {
+            console.error('❌ Error abriendo CV:', error);
+            alert('No se pudo abrir el CV:\n\n' + (error.message || error));
+        }
+    }
+
     function prepararNuevo() {
         modoFormulario = 'nuevo';
         candidatoEditandoId = null;
+        candidatoActual = null;
         var form = el('formCandidato');
         if (form) form.reset();
         setCamposDeshabilitados(false);
         if (el('tituloModalCandidato')) el('tituloModalCandidato').textContent = 'Nuevo candidato';
         if (el('subtituloModalCandidato')) el('subtituloModalCandidato').textContent = 'Registra un nuevo candidato en SmartRecruit.';
         if (el('guardarCandidato')) el('guardarCandidato').hidden = false;
+        if (el('candCv')) { el('candCv').value = ''; el('candCv').disabled = false; }
+        actualizarEstadoCv(null);
         if (el('textoGuardarCandidato')) el('textoGuardarCandidato').textContent = 'Guardar candidato';
         if (requisicionUrlId) seleccionarRequisicionUrl(); else limpiarBloqueoRequisicion();
         mostrarModal(true);
@@ -161,6 +219,7 @@
         if (!c) return alert('No se encontró el candidato seleccionado.');
         modoFormulario = modo;
         candidatoEditandoId = Number(c.id);
+        candidatoActual = c;
         limpiarBloqueoRequisicion();
         el('candNombre').value = c.nombre || '';
         el('candEmail').value = c.email || '';
@@ -173,6 +232,8 @@
         el('candNotas').value = c.notas || '';
         var ver = modo === 'ver';
         setCamposDeshabilitados(ver);
+        if (el('candCv')) { el('candCv').value = ''; el('candCv').disabled = ver; }
+        actualizarEstadoCv(c.cv_path);
         if (el('tituloModalCandidato')) el('tituloModalCandidato').textContent = ver ? 'Detalle del candidato' : 'Editar candidato';
         if (el('subtituloModalCandidato')) el('subtituloModalCandidato').textContent = ver ? 'Consulta la información registrada del candidato.' : 'Actualiza la información y etapa del candidato.';
         if (el('guardarCandidato')) el('guardarCandidato').hidden = ver;
@@ -209,7 +270,12 @@
             if (!usuario || !usuario.id) throw new Error('No existe una sesión válida de Supabase Auth.');
             var payload = construirPayload();
             var client = await initSupabase();
+            var archivoCv = archivoCvSeleccionado();
+            validarCv(archivoCv);
             if (modoFormulario === 'editar' && candidatoEditandoId) {
+                if (archivoCv) {
+                    payload.cv_path = await subirCv(client, archivoCv, payload.requisicion_id, candidatoEditandoId);
+                }
                 payload.updated_at = new Date().toISOString();
                 console.log('📦 Actualizando candidato:', candidatoEditandoId, payload);
                 var actualizado = await client.from('candidatos').update(payload).eq('id', candidatoEditandoId).select('*').single();
@@ -220,9 +286,23 @@
                 payload.reclutador_id = usuario.id;
                 console.log('👤 Candidato creado por:', usuario.email, '| UUID:', usuario.id);
                 console.log('📦 Payload candidato:', payload);
-                var creado = await client.from('candidatos').insert(payload).select('*');
+                var creado = await client.from('candidatos').insert(payload).select('*').single();
                 if (creado.error) throw creado.error;
                 console.log('✅ Candidato creado:', creado.data);
+                if (archivoCv) {
+                    try {
+                        var nuevaRutaCv = await subirCv(client, archivoCv, creado.data.requisicion_id, creado.data.id);
+                        var cvActualizado = await client.from('candidatos').update({
+                            cv_path: nuevaRutaCv,
+                            updated_at: new Date().toISOString()
+                        }).eq('id', creado.data.id).select('*').single();
+                        if (cvActualizado.error) throw cvActualizado.error;
+                        console.log('✅ CV vinculado al candidato:', creado.data.id);
+                    } catch (errorCv) {
+                        console.error('❌ Candidato creado, pero falló el CV:', errorCv);
+                        alert('El candidato fue creado correctamente, pero no se pudo guardar su CV. Puedes editarlo e intentar subir el PDF nuevamente.\n\n' + (errorCv.message || errorCv));
+                    }
+                }
             }
             mostrarModal(false);
             if (requisicionUrlId && modoFormulario === 'nuevo') {
@@ -231,6 +311,7 @@
             }
             modoFormulario = 'nuevo';
             candidatoEditandoId = null;
+            candidatoActual = null;
             await cargar();
         } catch (error) {
             console.error('❌ Error guardando candidato:', error);
@@ -255,6 +336,10 @@
         if (el('cerrarModalCandidato')) el('cerrarModalCandidato').onclick = function(){ mostrarModal(false); };
         if (el('cancelarCandidato')) el('cancelarCandidato').onclick = function(){ mostrarModal(false); };
         if (el('formCandidato')) el('formCandidato').addEventListener('submit', guardar);
+        if (el('verCvActual')) el('verCvActual').addEventListener('click', abrirCvActual);
+        if (el('candCv')) el('candCv').addEventListener('change', function(){
+            try { validarCv(archivoCvSeleccionado()); } catch (error) { alert(error.message); this.value = ''; }
+        });
         if (el('buscarCandidato')) el('buscarCandidato').addEventListener('input', render);
         if (el('filtroEstado')) el('filtroEstado').addEventListener('change', render);
         if (el('candidatosBody')) el('candidatosBody').addEventListener('click', function(event){
