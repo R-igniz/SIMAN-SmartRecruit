@@ -296,89 +296,47 @@ async function cargarUsuarioSeguimiento() {
 
     /*
      * FASE 4:
-     * auth.js es la única fuente de verdad de autenticación.
-     * Seguimiento NO vuelve a ejecutar auth.getUser(), evitando
-     * una segunda validación que pueda invalidar una sesión ya
-     * aceptada por auth.js.
+     * auth.js expone window.getCurrentUser(), que lee el perfil
+     * validado desde sessionStorage.currentUser.
+     *
+     * No ejecutamos auth.getUser() aquí y no creamos un segundo
+     * listener de autenticación.
      */
 
     await esperarAuth();
 
-    const usuarioAuth =
-        window.currentUser ||
-        window.usuarioActual ||
-        window.authUser ||
-        null;
+    const usuario =
+        window.getCurrentUser();
 
-    const id =
-        usuarioAuth?.id ||
-        usuarioAuth?.user_id ||
-        usuarioAuth?.uuid ||
-        null;
-
-    const email =
-        usuarioAuth?.email ||
-        "";
-
-    const nombre =
-        usuarioAuth?.nombre ||
-        usuarioAuth?.name ||
-        usuarioAuth?.user_metadata?.nombre ||
-        email ||
-        "Usuario";
-
-    const rol =
-        usuarioAuth?.rol ||
-        usuarioAuth?.role_code ||
-        usuarioAuth?.role ||
-        usuarioAuth?.user_metadata?.role_code ||
-        "";
-
-    if (!id) {
+    if (!usuario || !usuario.id) {
         throw new Error(
-            "Auth todavía no expuso un usuario válido para Seguimiento."
+            "Auth no devolvió un usuario válido para Seguimiento."
         );
     }
 
     usuarioSeguimiento = {
-        id,
-        email,
-        nombre,
-        rol,
-        activo: usuarioAuth?.activo ?? true
+        id: usuario.id,
+        email:
+            usuario.email ||
+            usuario.username ||
+            "",
+        nombre:
+            usuario.nombre ||
+            usuario.name ||
+            usuario.email ||
+            "Usuario",
+        rol:
+            usuario.role ||
+            (
+                typeof window.roleCodeToRole === "function"
+                    ? window.roleCodeToRole(usuario.role_code)
+                    : null
+            ) ||
+            usuario.role_code ||
+            "usuario",
+        activo:
+            usuario.activo ?? true
     };
-
-    /*
-     * Si auth.js no expone el rol en el objeto global, podemos
-     * completar SOLO el perfil desde PostgreSQL. Esto no vuelve
-     * a autenticar al usuario ni llama auth.getUser().
-     */
-    if (!usuarioSeguimiento.rol) {
-
-        const {
-            data: perfil,
-            error: profileError
-        } = await supabaseSeguimiento
-            .from("profiles")
-            .select("id,email,nombre,role_code,activo")
-            .eq("id", usuarioSeguimiento.id)
-            .maybeSingle();
-
-        if (profileError) {
-            console.warn(
-                "⚠️ No se pudo completar profile en Seguimiento:",
-                profileError
-            );
-        } else if (perfil) {
-            usuarioSeguimiento = {
-                id: perfil.id || usuarioSeguimiento.id,
-                email: perfil.email || usuarioSeguimiento.email,
-                nombre: perfil.nombre || usuarioSeguimiento.nombre,
-                rol: perfil.role_code || usuarioSeguimiento.rol || "usuario",
-                activo: perfil.activo ?? usuarioSeguimiento.activo
-            };
-        }
-    }
 
     console.log(
         "👤 Seguimiento desde auth.js:",
@@ -1528,26 +1486,23 @@ async function cargarDatosSeguimiento() {
 async function esperarAuth() {
 
     /*
-     * Esperamos a que auth.js exponga el usuario autenticado.
-     * No llamamos auth.getUser() desde este módulo.
+     * auth.js expone window.getCurrentUser().
+     * Esperamos hasta que inicializarAuth/restaurarSesion haya
+     * guardado sessionStorage.currentUser.
      */
 
     for (let intento = 0; intento < 50; intento++) {
 
-        const usuario =
-            window.currentUser ||
-            window.usuarioActual ||
-            window.authUser ||
-            null;
+        if (
+            typeof window.getCurrentUser === "function"
+        ) {
 
-        const id =
-            usuario?.id ||
-            usuario?.user_id ||
-            usuario?.uuid ||
-            null;
+            const usuario =
+                window.getCurrentUser();
 
-        if (id) {
-            return usuario;
+            if (usuario && usuario.id) {
+                return usuario;
+            }
         }
 
         await new Promise(
@@ -1556,7 +1511,7 @@ async function esperarAuth() {
     }
 
     throw new Error(
-        "No se pudo obtener el usuario autenticado desde auth.js."
+        "No se pudo obtener currentUser desde auth.js."
     );
 }
 
