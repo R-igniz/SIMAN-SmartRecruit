@@ -168,7 +168,7 @@
             var ver=e.target.closest('.btn-ver');
             var gestionar=e.target.closest('.btn-gestionar');
             if (ver) {
-                navegar('/detalle-requisicion.html?id='+Number(ver.dataset.id));
+                navegar('/administrar-requisicion.html?id='+Number(ver.dataset.id));
             } else if (gestionar) {
                 navegar('/administrar-requisicion.html?id='+Number(gestionar.dataset.id));
             }
