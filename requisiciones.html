@@ -19,10 +19,10 @@
             <div class="card-header">
                 <span><i class="fas fa-list-ul"></i> Mis Requisiciones</span>
                 <div>
-                    <button class="btn btn-outline" onclick="sincronizarRequisiciones()" style="margin-right:8px; padding:6px 14px;">
+                    <button id="btnSincronizar" class="btn btn-outline" type="button" style="margin-right:8px; padding:6px 14px;">
                         <i class="fas fa-sync-alt"></i> Sincronizar
                     </button>
-                    <button class="btn btn-primary" onclick="navigateTo('/nueva-requisicion.html')">
+                    <button id="btnNuevaRequisicion" class="btn btn-primary" type="button">
                         <i class="fas fa-plus"></i> Nueva
                     </button>
                 </div>
@@ -63,5 +63,6 @@
     <script src="js/notifications.js"></script>
     <script src="js/supabase-client.js"></script>
     <script src="js/configuracion.js"></script>
+    <script src="js/requisiciones.js"></script>
 </body>
 </html>
