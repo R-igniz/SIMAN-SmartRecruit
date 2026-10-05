@@ -61,7 +61,9 @@
 
         if (existe) {
             select.value = String(requisicionUrlId);
-            console.log('🔗 Requisición preseleccionada:', requisicionUrlId);
+            select.disabled = true;
+            select.dataset.requisicionBloqueada = String(requisicionUrlId);
+            console.log('🔒 Requisición fijada desde URL:', requisicionUrlId);
         } else {
             console.warn('⚠️ La requisición indicada en la URL no está disponible:', requisicionUrlId);
         }
@@ -541,19 +543,23 @@
                     null,
 
                 requisicion_id:
-                    document
-                        .getElementById(
-                            'candRequisicion'
-                        )
-                        .value
-                        ? Number(
+                    requisicionUrlId
+                        ? requisicionUrlId
+                        : (
                             document
                                 .getElementById(
                                     'candRequisicion'
                                 )
                                 .value
-                        )
-                        : null,
+                                ? Number(
+                                    document
+                                        .getElementById(
+                                            'candRequisicion'
+                                        )
+                                        .value
+                                )
+                                : null
+                        ),
 
                 estado:
                     document
@@ -664,6 +670,10 @@
 
             mostrarModal(false);
 
+            if (requisicionUrlId) {
+                requisicionUrlId = null;
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
 
             await cargar();
 
@@ -748,6 +758,12 @@
 
                 btnNuevo.onclick =
                     function () {
+
+                        var select = document.getElementById('candRequisicion');
+                        if (select && !requisicionUrlId) {
+                            select.disabled = false;
+                            delete select.dataset.requisicionBloqueada;
+                        }
 
                         mostrarModal(true);
                     };
