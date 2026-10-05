@@ -605,6 +605,34 @@
                 </label>
 
 
+                <!-- CV / SUPABASE STORAGE -->
+                <section class="cv-field" aria-labelledby="cvTitulo">
+                    <div class="cv-field-header">
+                        <span id="cvTitulo"><i class="fas fa-file-pdf"></i> Currículum / CV</span>
+                        <span class="cv-status" id="cvEstado">Sin CV</span>
+                    </div>
+
+                    <input
+                        id="candCv"
+                        type="file"
+                        accept="application/pdf,.pdf"
+                        aria-describedby="cvAyuda"
+                    >
+
+                    <small id="cvAyuda">Solo archivos PDF. Tamaño máximo: 5 MB.</small>
+
+                    <button
+                        type="button"
+                        class="btn btn-outline cv-view-btn"
+                        id="verCvActual"
+                        hidden
+                    >
+                        <i class="fas fa-file-arrow-down"></i>
+                        Ver CV actual
+                    </button>
+                </section>
+
+
                 <!-- BOTONES -->
 
                 <div class="modal-actions">
