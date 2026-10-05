@@ -786,3 +786,43 @@
     }
 
 }
+
+/* =========================================================
+   FASE 4 PRD - ACCIONES DE CANDIDATO
+========================================================= */
+.candidato-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.candidato-action {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: transform .15s ease, border-color .15s ease, background .15s ease;
+}
+
+.candidato-action:hover {
+    transform: translateY(-1px);
+    border-color: var(--primary);
+    background: rgba(30, 136, 229, .10);
+    color: var(--primary);
+}
+
+#guardarCandidato[hidden] { display: none !important; }
+
+.form-grid input:disabled,
+.form-grid select:disabled,
+.notas-field textarea:disabled {
+    opacity: .82;
+    cursor: not-allowed;
+}
