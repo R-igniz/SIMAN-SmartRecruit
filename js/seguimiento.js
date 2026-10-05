@@ -294,86 +294,94 @@ async function obtenerClienteSupabase() {
 
 async function cargarUsuarioSeguimiento() {
 
-    const {
-        data,
-        error
-    } = await supabaseSeguimiento.auth.getUser();
+    /*
+     * FASE 4:
+     * auth.js es la única fuente de verdad de autenticación.
+     * Seguimiento NO vuelve a ejecutar auth.getUser(), evitando
+     * una segunda validación que pueda invalidar una sesión ya
+     * aceptada por auth.js.
+     */
 
+    await esperarAuth();
 
-    if (error) {
-        throw error;
-    }
+    const usuarioAuth =
+        window.currentUser ||
+        window.usuarioActual ||
+        window.authUser ||
+        null;
 
+    const id =
+        usuarioAuth?.id ||
+        usuarioAuth?.user_id ||
+        usuarioAuth?.uuid ||
+        null;
 
-    if (!data?.user) {
+    const email =
+        usuarioAuth?.email ||
+        "";
 
+    const nombre =
+        usuarioAuth?.nombre ||
+        usuarioAuth?.name ||
+        usuarioAuth?.user_metadata?.nombre ||
+        email ||
+        "Usuario";
+
+    const rol =
+        usuarioAuth?.rol ||
+        usuarioAuth?.role_code ||
+        usuarioAuth?.role ||
+        usuarioAuth?.user_metadata?.role_code ||
+        "";
+
+    if (!id) {
         throw new Error(
-            "No existe una sesión activa."
+            "Auth todavía no expuso un usuario válido para Seguimiento."
         );
     }
-
-
-    const authUser = data.user;
-
-
-    let perfil = null;
-
-
-    const {
-        data: profileData,
-        error: profileError
-    } = await supabaseSeguimiento
-        .from("profiles")
-        .select(
-            "id,email,nombre,role_code,activo"
-        )
-        .eq(
-            "id",
-            authUser.id
-        )
-        .maybeSingle();
-
-
-    if (profileError) {
-
-        console.warn(
-            "⚠️ No se pudo cargar profile:",
-            profileError
-        );
-
-    } else {
-
-        perfil = profileData;
-    }
-
 
     usuarioSeguimiento = {
-
-        id: authUser.id,
-
-        email:
-            perfil?.email ||
-            authUser.email ||
-            "",
-
-        nombre:
-            perfil?.nombre ||
-            authUser.user_metadata?.nombre ||
-            authUser.email ||
-            "Usuario",
-
-        rol:
-            perfil?.role_code ||
-            authUser.user_metadata?.role_code ||
-            "usuario",
-
-        activo:
-            perfil?.activo ?? true
+        id,
+        email,
+        nombre,
+        rol,
+        activo: usuarioAuth?.activo ?? true
     };
 
+    /*
+     * Si auth.js no expone el rol en el objeto global, podemos
+     * completar SOLO el perfil desde PostgreSQL. Esto no vuelve
+     * a autenticar al usuario ni llama auth.getUser().
+     */
+    if (!usuarioSeguimiento.rol) {
+
+        const {
+            data: perfil,
+            error: profileError
+        } = await supabaseSeguimiento
+            .from("profiles")
+            .select("id,email,nombre,role_code,activo")
+            .eq("id", usuarioSeguimiento.id)
+            .maybeSingle();
+
+        if (profileError) {
+            console.warn(
+                "⚠️ No se pudo completar profile en Seguimiento:",
+                profileError
+            );
+        } else if (perfil) {
+            usuarioSeguimiento = {
+                id: perfil.id || usuarioSeguimiento.id,
+                email: perfil.email || usuarioSeguimiento.email,
+                nombre: perfil.nombre || usuarioSeguimiento.nombre,
+                rol: perfil.role_code || usuarioSeguimiento.rol || "usuario",
+                activo: perfil.activo ?? usuarioSeguimiento.activo
+            };
+        }
+    }
 
     console.log(
-        "👤 Seguimiento:",
+        "👤 Seguimiento desde auth.js:",
         usuarioSeguimiento.email,
         "|",
         usuarioSeguimiento.rol,
@@ -1520,34 +1528,36 @@ async function cargarDatosSeguimiento() {
 async function esperarAuth() {
 
     /*
-     * Damos oportunidad a auth.js de completar su proceso.
-     * No usamos un tiempo largo para no retrasar la página.
+     * Esperamos a que auth.js exponga el usuario autenticado.
+     * No llamamos auth.getUser() desde este módulo.
      */
 
-    for (
-        let intento = 0;
-        intento < 20;
-        intento++
-    ) {
+    for (let intento = 0; intento < 50; intento++) {
 
-        if (
-            typeof window.tienePermiso === "function" ||
-            typeof window.currentUser !== "undefined" ||
-            typeof window.usuarioActual !== "undefined"
-        ) {
+        const usuario =
+            window.currentUser ||
+            window.usuarioActual ||
+            window.authUser ||
+            null;
 
-            return;
+        const id =
+            usuario?.id ||
+            usuario?.user_id ||
+            usuario?.uuid ||
+            null;
+
+        if (id) {
+            return usuario;
         }
 
-
         await new Promise(
-            resolve =>
-                setTimeout(
-                    resolve,
-                    100
-                )
+            resolve => setTimeout(resolve, 100)
         );
     }
+
+    throw new Error(
+        "No se pudo obtener el usuario autenticado desde auth.js."
+    );
 }
 
 
@@ -1591,17 +1601,11 @@ async function iniciarSeguimiento() {
 
 
         // ---------------------------------------------
-        // USUARIO
-        // ---------------------------------------------
-
-        await cargarUsuarioSeguimiento();
-
-
-        // ---------------------------------------------
-        // AUTH
+        // AUTH + USUARIO (FUENTE ÚNICA: auth.js)
         // ---------------------------------------------
 
         await esperarAuth();
+        await cargarUsuarioSeguimiento();
 
 
         if (!validarPermisoSeguimiento()) {
@@ -1631,7 +1635,7 @@ async function iniciarSeguimiento() {
 
 
         console.log(
-            "✅ Seguimiento Fase 4 inicializado"
+            "✅ Seguimiento Fase 4 inicializado sin autenticación duplicada"
         );
 
     } catch (error) {
@@ -1657,49 +1661,6 @@ async function iniciarSeguimiento() {
 
 
 // ============================================================
-// AUTH STATE
-// ============================================================
-
-async function configurarAuthListener() {
-
-    if (!supabaseSeguimiento) {
-        return;
-    }
-
-
-    supabaseSeguimiento.auth.onAuthStateChange(
-        (
-            event,
-            session
-        ) => {
-
-            console.log(
-                "🔐 Seguimiento Auth:",
-                event
-            );
-
-
-            if (
-                event === "SIGNED_OUT" ||
-                !session
-            ) {
-
-                limpiarRealtimeSeguimiento();
-
-                return;
-            }
-
-
-            /*
-             * No volvemos a inicializar todo aquí porque
-             * auth.js ya gestiona INITIAL_SESSION y SIGNED_IN.
-             */
-        }
-    );
-}
-
-
-// ============================================================
 // DOM CONTENT LOADED
 // ============================================================
 
@@ -1715,12 +1676,6 @@ document.addEventListener(
         try {
 
             await iniciarSeguimiento();
-
-
-            if (supabaseSeguimiento) {
-
-                await configurarAuthListener();
-            }
 
         } catch (error) {
 
