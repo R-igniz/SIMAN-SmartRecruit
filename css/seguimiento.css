@@ -766,6 +766,26 @@
 
 
 /* ============================================================
+   PIPELINE DE CANDIDATOS
+   ============================================================ */
+.candidatos-resumen{margin:0 0 15px;padding:12px;border:1px solid #e8eef4;border-radius:10px;background:#f9fbfd}
+.candidatos-resumen-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;color:#53697d;font-size:8px;font-weight:700}
+.candidatos-resumen-header span{display:inline-flex;align-items:center;gap:6px}.candidatos-resumen-header i{color:#1677bd}
+.candidatos-resumen-header strong{min-width:25px;padding:4px 7px;border-radius:20px;background:#eaf4fd;color:#1677bd;text-align:center;font-size:8px}
+.candidatos-resumen-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.candidatos-resumen-grid>span{min-width:0;padding:7px 5px;border:1px solid #edf1f5;border-radius:8px;background:#fff;color:#82909d;font-size:7px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.candidatos-resumen-grid b{display:block;margin-bottom:2px;color:#294b68;font-size:10px}
+.seguimiento-actions{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.btn-candidatos{min-height:31px;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 11px;border:1px solid #d8e4ed;border-radius:8px;background:#fff;color:#4c6d88;font-family:inherit;font-size:8px;font-weight:650;cursor:pointer}
+.btn-candidatos:hover{transform:translateY(-1px);border-color:#4c8fbd;background:#eef6fc;color:#176da9}
+body.dark-mode .candidatos-resumen,body.dark .candidatos-resumen{border-color:#293c4e;background:#132232}
+body.dark-mode .candidatos-resumen-grid>span,body.dark .candidatos-resumen-grid>span{border-color:#293c4e;background:#182a3c;color:#93a5b6}
+body.dark-mode .candidatos-resumen-grid b,body.dark .candidatos-resumen-grid b{color:#d8e7f3}
+body.dark-mode .btn-candidatos,body.dark .btn-candidatos{border-color:#30475c;background:#1c3043;color:#93bddc}
+@media(max-width:760px){.candidatos-resumen-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.seguimiento-actions{width:100%}.btn-candidatos,.seguimiento-actions .btn-gestionar{flex:1;width:auto}}
+@media(max-width:520px){.candidatos-resumen-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.seguimiento-actions{flex-direction:column}.btn-candidatos,.seguimiento-actions .btn-gestionar{width:100%}}
+
+/* ============================================================
    CARGANDO
    ============================================================ */
 
