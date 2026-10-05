@@ -1,12 +1,12 @@
 /* ============================================================
    SIMAN SMARTRECRUIT
    seguimiento.js
-   FASE 3 - SUPABASE + REALTIME
+   FASE 4 - CANDIDATOS + SUPABASE + REALTIME
    ============================================================ */
 
 "use strict";
 
-console.log("📋 seguimiento.js Fase 3 cargando...");
+console.log("📋 seguimiento.js Fase 4 cargando...");
 
 
 // ============================================================
@@ -532,7 +532,7 @@ async function cargarCandidatos() {
         } = await supabaseSeguimiento
             .from("candidatos")
             .select(
-                "id,requisicion_id,estado,reclutador_id,created_at"
+                "id,requisicion_id,nombre,estado,reclutador_id,fecha_entrevista,cv_path,created_at,updated_at"
             );
 
 
@@ -584,6 +584,31 @@ function contarCandidatos(requisicionId) {
             Number(requisicionId)
     ).length;
 }
+
+function obtenerResumenCandidatos(requisicionId) {
+    const lista = candidatosSeguimiento.filter(c => Number(c.requisicion_id) === Number(requisicionId));
+    const r = { total: lista.length, nuevos: 0, entrevistas: 0, evaluacion: 0, oferta: 0, contratados: 0, conCv: 0 };
+    lista.forEach(c => {
+        const e = String(c.estado || "").trim().toLowerCase();
+        if (c.cv_path) r.conCv++;
+        if (e === "nuevo" || e === "preselección" || e === "preseleccion") r.nuevos++;
+        else if (e.includes("entrevista")) r.entrevistas++;
+        else if (e.includes("evalu")) r.evaluacion++;
+        else if (e.includes("oferta")) r.oferta++;
+        else if (e.includes("contrat")) r.contratados++;
+    });
+    return r;
+}
+
+function abrirCandidatosRequisicion(id) {
+    const requisicionId = Number(id);
+    if (!Number.isInteger(requisicionId) || requisicionId <= 0) {
+        mostrarMensaje("No se pudo identificar la requisición.", "error");
+        return;
+    }
+    window.location.assign(`/candidatos.html?requisicion_id=${encodeURIComponent(requisicionId)}`);
+}
+window.abrirCandidatosRequisicion = abrirCandidatosRequisicion;
 
 
 // ============================================================
@@ -733,6 +758,11 @@ function crearTarjetaSeguimiento(req) {
 
     const candidatos =
         contarCandidatos(
+            id
+        );
+
+    const resumenCandidatos =
+        obtenerResumenCandidatos(
             id
         );
 
@@ -931,6 +961,22 @@ function crearTarjetaSeguimiento(req) {
             </div>
 
 
+            <!-- PIPELINE DE CANDIDATOS -->
+            <div class="candidatos-resumen">
+                <div class="candidatos-resumen-header">
+                    <span><i class="fa-solid fa-user-group"></i> Pipeline de candidatos</span>
+                    <strong>${resumenCandidatos.total}</strong>
+                </div>
+                <div class="candidatos-resumen-grid">
+                    <span><b>${resumenCandidatos.nuevos}</b>Nuevos</span>
+                    <span><b>${resumenCandidatos.entrevistas}</b>Entrevistas</span>
+                    <span><b>${resumenCandidatos.evaluacion}</b>Evaluación</span>
+                    <span><b>${resumenCandidatos.oferta}</b>Oferta</span>
+                    <span><b>${resumenCandidatos.contratados}</b>Contratados</span>
+                    <span><b>${resumenCandidatos.conCv}</b>Con CV</span>
+                </div>
+            </div>
+
             <!-- PIE -->
 
             <div class="seguimiento-card-footer">
@@ -991,17 +1037,16 @@ function crearTarjetaSeguimiento(req) {
                     NUNCA abre administrar-requisicion.js.
                 -->
 
-                <button
-                    type="button"
-                    class="btn-gestionar"
-                    data-id="${id}"
-                >
-
-                    <i class="fa-solid fa-arrow-right"></i>
-
-                    Gestionar
-
-                </button>
+                <div class="seguimiento-actions">
+                    <button type="button" class="btn-candidatos" data-id="${id}">
+                        <i class="fa-solid fa-users"></i>
+                        Candidatos
+                    </button>
+                    <button type="button" class="btn-gestionar" data-id="${id}">
+                        <i class="fa-solid fa-arrow-right"></i>
+                        Gestionar
+                    </button>
+                </div>
 
             </div>
 
@@ -1109,26 +1154,25 @@ function configurarEventosSeguimiento() {
         "click",
         event => {
 
-            const boton =
-                event.target.closest(
-                    ".btn-gestionar"
-                );
+            const botonCandidatos = event.target.closest(".btn-candidatos");
 
+            if (botonCandidatos) {
+                event.preventDefault();
+                event.stopPropagation();
+                abrirCandidatosRequisicion(botonCandidatos.dataset.id);
+                return;
+            }
+
+            const boton = event.target.closest(".btn-gestionar");
 
             if (!boton) {
                 return;
             }
 
-
             event.preventDefault();
             event.stopPropagation();
 
-
-            const id =
-                boton.dataset.id;
-
-
-            gestionarRequisicion(id);
+            gestionarRequisicion(boton.dataset.id);
         }
     );
 
@@ -1527,7 +1571,7 @@ async function iniciarSeguimiento() {
 
 
     console.log(
-        "🚀 Inicializando Seguimiento Fase 3"
+        "🚀 Inicializando Seguimiento Fase 4"
     );
 
 
@@ -1587,7 +1631,7 @@ async function iniciarSeguimiento() {
 
 
         console.log(
-            "✅ Seguimiento Fase 3 inicializado"
+            "✅ Seguimiento Fase 4 inicializado"
         );
 
     } catch (error) {
@@ -1664,7 +1708,7 @@ document.addEventListener(
     async () => {
 
         console.log(
-            "📋 DOMContentLoaded Seguimiento Fase 3"
+            "📋 DOMContentLoaded Seguimiento Fase 4"
         );
 
 
@@ -1728,5 +1772,5 @@ window.gestionarRequisicion =
 
 
 console.log(
-    "✅ seguimiento.js Fase 3 cargado"
+    "✅ seguimiento.js Fase 4 cargado"
 );
