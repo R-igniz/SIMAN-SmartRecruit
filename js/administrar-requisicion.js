@@ -24,6 +24,12 @@ document.addEventListener(
 
         var candidatosActuales = [];
 
+        var comentariosActuales = [];
+
+        var historialActual = [];
+
+        var guardandoComentario = false;
+
         var usuarioActual = null;
 
         var cargando = false;
@@ -276,6 +282,57 @@ document.addEventListener(
         }
 
 
+        function formatearFechaHora(fecha) {
+
+            var valor = convertirFecha(fecha);
+
+            if (!valor) {
+                return '—';
+            }
+
+            return valor.toLocaleString(
+                'es-GT',
+                {
+                    year: 'numeric',
+                    month: 'short',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }
+            );
+        }
+
+
+        function obtenerUsuarioId() {
+
+            if (!usuarioActual) {
+                return null;
+            }
+
+            return (
+                usuarioActual.id ||
+                usuarioActual.user_id ||
+                usuarioActual.uuid ||
+                null
+            );
+        }
+
+
+        function obtenerUsuarioNombre() {
+
+            if (!usuarioActual) {
+                return 'Usuario';
+            }
+
+            return (
+                usuarioActual.nombre ||
+                usuarioActual.name ||
+                usuarioActual.email ||
+                'Usuario'
+            );
+        }
+
+
         // ====================================================
         // AUTENTICACIÓN
         // ====================================================
@@ -521,6 +578,297 @@ document.addEventListener(
                 '👥 Candidatos encontrados:',
                 candidatosActuales.length
             );
+        }
+
+
+        // ====================================================
+        // COMENTARIOS E HISTORIAL - SUPABASE
+        // ====================================================
+
+        async function cargarComentarios() {
+
+            var resultado =
+                await supabaseAdminReq
+                    .from('requisicion_comentarios')
+                    .select('*')
+                    .eq('requisicion_id', requisicionId)
+                    .order('created_at', { ascending: false });
+
+
+            if (resultado.error) {
+
+                console.error(
+                    '❌ Error cargando comentarios:',
+                    resultado.error
+                );
+
+                comentariosActuales = [];
+                return;
+            }
+
+
+            comentariosActuales =
+                resultado.data || [];
+
+
+            console.log(
+                '💬 Comentarios encontrados:',
+                comentariosActuales.length
+            );
+        }
+
+
+        async function cargarHistorial() {
+
+            var resultado =
+                await supabaseAdminReq
+                    .from('requisicion_historial')
+                    .select('*')
+                    .eq('requisicion_id', requisicionId)
+                    .order('created_at', { ascending: false });
+
+
+            if (resultado.error) {
+
+                console.error(
+                    '❌ Error cargando historial:',
+                    resultado.error
+                );
+
+                historialActual = [];
+                return;
+            }
+
+
+            historialActual =
+                resultado.data || [];
+
+
+            console.log(
+                '🕘 Movimientos de historial:',
+                historialActual.length
+            );
+        }
+
+
+        function renderizarComentarios() {
+
+            var container =
+                document.getElementById(
+                    'listaComentarios'
+                );
+
+
+            if (!container) {
+                return;
+            }
+
+
+            if (!comentariosActuales.length) {
+
+                container.innerHTML =
+                    '<div class="empty-state">' +
+                    '<i class="fa-regular fa-comment-dots"></i><br><br>' +
+                    'No hay comentarios registrados.' +
+                    '</div>';
+
+                return;
+            }
+
+
+            container.innerHTML =
+                comentariosActuales
+                    .map(
+                        function (comentario) {
+
+                            var autor =
+                                comentario.usuario_nombre ||
+                                'Usuario';
+
+                            return (
+                                '<div class="comment-item">' +
+
+                                    '<div class="comment-avatar">' +
+                                        escapeHtml(
+                                            obtenerIniciales(autor)
+                                        ) +
+                                    '</div>' +
+
+                                    '<div class="comment-content">' +
+
+                                        '<div class="comment-header">' +
+                                            '<strong>' +
+                                                escapeHtml(autor) +
+                                            '</strong>' +
+                                            '<span>' +
+                                                escapeHtml(
+                                                    formatearFechaHora(
+                                                        comentario.created_at
+                                                    )
+                                                ) +
+                                            '</span>' +
+                                        '</div>' +
+
+                                        '<p>' +
+                                            escapeHtml(
+                                                comentario.comentario ||
+                                                ''
+                                            ) +
+                                        '</p>' +
+
+                                    '</div>' +
+
+                                '</div>'
+                            );
+                        }
+                    )
+                    .join('');
+        }
+
+
+        function renderizarHistorial() {
+
+            var historial =
+                document.getElementById(
+                    'listaHistorial'
+                );
+
+
+            if (!historial) {
+                return;
+            }
+
+
+            if (!historialActual.length) {
+
+                historial.innerHTML =
+                    '<div class="empty-state">' +
+                    'Sin movimientos registrados.' +
+                    '</div>';
+
+                return;
+            }
+
+
+            historial.innerHTML =
+                historialActual
+                    .map(
+                        function (movimiento) {
+
+                            var titulo =
+                                movimiento.tipo === 'cambio_estado'
+                                    ? (
+                                        'Cambio de estado' +
+                                        (
+                                            movimiento.estado_anterior ||
+                                            movimiento.estado_nuevo
+                                                ? ': ' +
+                                                  escapeHtml(
+                                                      movimiento.estado_anterior ||
+                                                      '—'
+                                                  ) +
+                                                  ' → ' +
+                                                  escapeHtml(
+                                                      movimiento.estado_nuevo ||
+                                                      '—'
+                                                  )
+                                                : ''
+                                        )
+                                    )
+                                    : (
+                                        movimiento.tipo ||
+                                        'Movimiento'
+                                    );
+
+                            var detalle =
+                                movimiento.descripcion ||
+                                'Movimiento registrado';
+
+                            var meta =
+                                (
+                                    movimiento.usuario_nombre ||
+                                    'Usuario'
+                                ) +
+                                ' · ' +
+                                formatearFechaHora(
+                                    movimiento.created_at
+                                );
+
+                            return (
+                                '<div class="history-item">' +
+                                    '<strong>' +
+                                        escapeHtml(titulo) +
+                                    '</strong>' +
+                                    '<span>' +
+                                        escapeHtml(detalle) +
+                                    '</span>' +
+                                    '<small>' +
+                                        escapeHtml(meta) +
+                                    '</small>' +
+                                '</div>'
+                            );
+                        }
+                    )
+                    .join('');
+        }
+
+
+        async function registrarHistorialCambioEstado(
+            estadoAnterior,
+            estadoNuevo
+        ) {
+
+            var usuarioId =
+                obtenerUsuarioId();
+
+            if (!usuarioId) {
+                throw new Error(
+                    'No se pudo identificar el UUID del usuario.'
+                );
+            }
+
+
+            var payload = {
+                requisicion_id:
+                    requisicionId,
+
+                tipo:
+                    'cambio_estado',
+
+                estado_anterior:
+                    estadoAnterior,
+
+                estado_nuevo:
+                    estadoNuevo,
+
+                descripcion:
+                    'Estado actualizado de ' +
+                    estadoAnterior +
+                    ' a ' +
+                    estadoNuevo,
+
+                usuario_id:
+                    usuarioId,
+
+                usuario_nombre:
+                    obtenerUsuarioNombre()
+            };
+
+
+            var resultado =
+                await supabaseAdminReq
+                    .from('requisicion_historial')
+                    .insert(payload)
+                    .select('*')
+                    .single();
+
+
+            if (resultado.error) {
+                throw resultado.error;
+            }
+
+
+            return resultado.data;
         }
 
 
@@ -1004,14 +1352,8 @@ document.addEventListener(
                 }
 
 
-                if (
-                    usuarioActual &&
-                    usuarioActual.id
-                ) {
-
-                    cambios.updated_by =
-                        usuarioActual.id;
-                }
+                cambios.updated_by =
+                    obtenerUsuarioNombre();
 
 
                 var resultado =
@@ -1036,6 +1378,30 @@ document.addEventListener(
 
                 requisicionActual =
                     resultado.data;
+
+
+                try {
+
+                    await registrarHistorialCambioEstado(
+                        estadoActual,
+                        nuevoEstado
+                    );
+
+                    await cargarHistorial();
+                    renderizarHistorial();
+
+                } catch (historialError) {
+
+                    console.error(
+                        '❌ El estado fue actualizado, pero no se pudo registrar el historial:',
+                        historialError
+                    );
+
+                    alert(
+                        'El estado fue actualizado, pero no fue posible registrar el movimiento en el historial. ' +
+                        'Por favor informa este evento a soporte.'
+                    );
+                }
 
 
                 renderizarRequisicion();
@@ -1083,11 +1449,6 @@ document.addEventListener(
         // ====================================================
         // COMENTARIOS
         // ====================================================
-        // IMPORTANTE:
-        // No guardamos comentarios falsos/locales.
-        // Hasta confirmar el esquema de la tabla correspondiente,
-        // la interfaz queda preparada pero no persiste información.
-        // ====================================================
 
         function configurarComentarios() {
 
@@ -1096,24 +1457,35 @@ document.addEventListener(
                     'modalComentario'
                 );
 
-
             var abrir =
                 document.getElementById(
                     'btnNuevoComentario'
                 );
-
 
             var cerrar =
                 document.getElementById(
                     'cerrarModalComentario'
                 );
 
-
             var cancelar =
                 document.getElementById(
                     'cancelarComentario'
                 );
 
+            var formulario =
+                document.getElementById(
+                    'formComentario'
+                );
+
+            var textarea =
+                document.getElementById(
+                    'textoComentario'
+                );
+
+            var guardar =
+                document.getElementById(
+                    'btnGuardarComentario'
+                );
 
             var overlay =
                 modal
@@ -1129,21 +1501,12 @@ document.addEventListener(
                     return;
                 }
 
-                modal.hidden =
-                    false;
-
-
-                var textarea =
-                    document.getElementById(
-                        'textoComentario'
-                    );
-
+                modal.hidden = false;
 
                 if (textarea) {
 
                     setTimeout(
                         function () {
-
                             textarea.focus();
                         },
                         50
@@ -1158,40 +1521,36 @@ document.addEventListener(
                     return;
                 }
 
-                modal.hidden =
-                    true;
+                modal.hidden = true;
+
+                if (textarea) {
+                    textarea.value = '';
+                }
             }
 
 
             if (abrir) {
-
                 abrir.addEventListener(
                     'click',
                     abrirModal
                 );
             }
 
-
             if (cerrar) {
-
                 cerrar.addEventListener(
                     'click',
                     cerrarModal
                 );
             }
 
-
             if (cancelar) {
-
                 cancelar.addEventListener(
                     'click',
                     cerrarModal
                 );
             }
 
-
             if (overlay) {
-
                 overlay.addEventListener(
                     'click',
                     cerrarModal
@@ -1199,92 +1558,151 @@ document.addEventListener(
             }
 
 
-            var formulario =
-                document.getElementById(
-                    'formComentario'
-                );
-
-
             if (formulario) {
 
                 formulario.addEventListener(
                     'submit',
-                    function (event) {
+                    async function (event) {
 
                         event.preventDefault();
 
+                        if (guardandoComentario) {
+                            return;
+                        }
 
-                        alert(
-                            'El módulo visual de comentarios está listo. ' +
-                            'La persistencia se activará al conectar la tabla de comentarios en Supabase.'
-                        );
+
+                        var comentario =
+                            textarea
+                                ? textarea.value.trim()
+                                : '';
+
+
+                        if (!comentario) {
+
+                            alert(
+                                'Escribe un comentario antes de guardar.'
+                            );
+
+                            if (textarea) {
+                                textarea.focus();
+                            }
+
+                            return;
+                        }
+
+
+                        var usuarioId =
+                            obtenerUsuarioId();
+
+
+                        if (!usuarioId) {
+
+                            alert(
+                                'No fue posible identificar al usuario autenticado.'
+                            );
+
+                            return;
+                        }
+
+
+                        guardandoComentario = true;
+
+
+                        if (guardar) {
+
+                            guardar.disabled = true;
+
+                            guardar.innerHTML =
+                                '<i class="fa-solid fa-spinner fa-spin"></i>' +
+                                ' Guardando...';
+                        }
+
+
+                        try {
+
+                            var payload = {
+                                requisicion_id:
+                                    requisicionId,
+
+                                comentario:
+                                    comentario,
+
+                                usuario_id:
+                                    usuarioId,
+
+                                usuario_nombre:
+                                    obtenerUsuarioNombre()
+                            };
+
+
+                            var resultado =
+                                await supabaseAdminReq
+                                    .from(
+                                        'requisicion_comentarios'
+                                    )
+                                    .insert(payload)
+                                    .select('*')
+                                    .single();
+
+
+                            if (resultado.error) {
+                                throw resultado.error;
+                            }
+
+
+                            console.log(
+                                '💬 Comentario guardado:',
+                                resultado.data
+                            );
+
+
+                            await cargarComentarios();
+                            renderizarComentarios();
+                            cerrarModal();
+
+
+                            if (
+                                typeof agregarNotificacion ===
+                                'function'
+                            ) {
+
+                                agregarNotificacion(
+                                    'success',
+                                    'Comentario agregado a la requisición.',
+                                    '/administrar-requisicion.html?id=' +
+                                    requisicionId
+                                );
+                            }
+
+
+                        } catch (error) {
+
+                            console.error(
+                                '❌ Error guardando comentario:',
+                                error
+                            );
+
+                            alert(
+                                'No fue posible guardar el comentario. ' +
+                                'Verifica tu sesión y los permisos de Supabase.'
+                            );
+
+                        } finally {
+
+                            guardandoComentario = false;
+
+                            if (guardar) {
+
+                                guardar.disabled = false;
+
+                                guardar.innerHTML =
+                                    '<i class="fa-solid fa-floppy-disk"></i>' +
+                                    ' Guardar';
+                            }
+                        }
                     }
                 );
             }
-        }
-
-
-        // ====================================================
-        // HISTORIAL
-        // ====================================================
-
-        function renderizarHistorialBase() {
-
-            var historial =
-                document.getElementById(
-                    'listaHistorial'
-                );
-
-
-            if (!historial) {
-                return;
-            }
-
-
-            if (!requisicionActual) {
-
-                historial.innerHTML =
-                    '<div class="empty-state">' +
-                    'Sin movimientos registrados.' +
-                    '</div>';
-
-                return;
-            }
-
-
-            historial.innerHTML =
-                '<div class="history-item">' +
-
-                    '<strong>' +
-                        'Requisición creada' +
-                    '</strong>' +
-
-                    '<span>' +
-                        escapeHtml(
-                            formatearFecha(
-                                requisicionActual.created_at ||
-                                requisicionActual.fecha
-                            )
-                        ) +
-                    '</span>' +
-
-                '</div>' +
-
-                '<div class="history-item">' +
-
-                    '<strong>' +
-                        'Estado actual: ' +
-                        escapeHtml(
-                            requisicionActual.estado ||
-                            'Nueva'
-                        ) +
-                    '</strong>' +
-
-                    '<span>' +
-                        'Información actual de la requisición' +
-                    '</span>' +
-
-                '</div>';
         }
 
 
@@ -1409,12 +1827,18 @@ document.addEventListener(
 
                 await cargarCandidatos();
 
+                await cargarComentarios();
+
+                await cargarHistorial();
+
 
                 renderizarRequisicion();
 
                 renderizarCandidatos();
 
-                renderizarHistorialBase();
+                renderizarComentarios();
+
+                renderizarHistorial();
 
 
                 console.log(
@@ -1582,6 +2006,68 @@ document.addEventListener(
 
 
                         cargarTodo();
+                    }
+                }
+            );
+
+
+            await suscribirseATabla(
+                'requisicion_comentarios',
+                function (payload) {
+
+                    var registro =
+                        payload.new ||
+                        payload.old;
+
+
+                    if (
+                        registro &&
+                        Number(
+                            registro.requisicion_id
+                        ) ===
+                        Number(requisicionId)
+                    ) {
+
+                        console.log(
+                            '📡 Cambio de comentario detectado:',
+                            payload.eventType
+                        );
+
+                        cargarComentarios()
+                            .then(
+                                renderizarComentarios
+                            );
+                    }
+                }
+            );
+
+
+            await suscribirseATabla(
+                'requisicion_historial',
+                function (payload) {
+
+                    var registro =
+                        payload.new ||
+                        payload.old;
+
+
+                    if (
+                        registro &&
+                        Number(
+                            registro.requisicion_id
+                        ) ===
+                        Number(requisicionId)
+                    ) {
+
+                        console.log(
+                            '📡 Cambio de historial detectado:',
+                            payload.eventType
+                        );
+
+                        cargarHistorial()
+                            .then(
+                                renderizarHistorial
+                            );
                     }
                 }
             );
