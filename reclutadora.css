@@ -1,0 +1,61 @@
+/* ==========================================
+   RECLUTADORA - ESTILOS
+   ========================================== */
+
+.filter-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    padding: 16px;
+    background: var(--bg-body);
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.filter-group label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.filter-group select,
+.filter-group input {
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border-color);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-family: var(--font);
+}
+
+.filter-group select:focus,
+.filter-group input:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 86, 166, 0.1);
+}
+
+@media (max-width: 480px) {
+    .filter-bar {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* ===== MOBILE MODULE HARDENING ===== */
+@media(max-width:900px){
+ .table-container{overflow-x:auto!important;-webkit-overflow-scrolling:touch;}
+ .modern-table{min-width:720px;}
+}
+@media(max-width:600px){
+ .req-actions,.report-actions,.notification-actions,.config-actions{display:flex!important;flex-wrap:wrap!important;gap:8px!important;}
+ .req-actions .btn,.report-actions .btn,.notification-actions .btn,.config-actions .btn{flex:1 1 140px;margin:0!important;}
+}
