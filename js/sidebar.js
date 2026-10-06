@@ -162,6 +162,9 @@ function getTopbarHTML(user) {
 
     return `
         <div class="topbar">
+            <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Abrir menú" aria-expanded="false">
+                <i class="fas fa-bars"></i>
+            </button>
             <div class="greeting">
                 <div>
                     <h2>Bienvenido, ${name}</h2>
@@ -203,6 +206,8 @@ function initLayout() {
     if (topbarContainer) {
         topbarContainer.innerHTML = getTopbarHTML(user);
     }
+
+    initMobileSidebar();
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -237,3 +242,57 @@ window.limpiarDatos = window.limpiarDatos || function() {
         alert('⚠️ La función de limpieza no está disponible.');
     }
 };
+
+// ==========================================
+// SIDEBAR RESPONSIVE / MOBILE
+// ==========================================
+function initMobileSidebar() {
+    var sidebar = document.getElementById('sidebar');
+    var button = document.getElementById('mobileMenuBtn');
+    if (!sidebar || !button) return;
+
+    var backdrop = document.getElementById('sidebarBackdrop');
+    if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.id = 'sidebarBackdrop';
+        backdrop.className = 'sidebar-backdrop';
+        document.body.appendChild(backdrop);
+    }
+
+    function closeMenu() {
+        sidebar.classList.remove('mobile-open');
+        document.body.classList.remove('sidebar-mobile-open');
+        button.setAttribute('aria-expanded', 'false');
+        button.setAttribute('aria-label', 'Abrir menú');
+        var icon = button.querySelector('i');
+        if (icon) icon.className = 'fas fa-bars';
+    }
+
+    function openMenu() {
+        sidebar.classList.add('mobile-open');
+        document.body.classList.add('sidebar-mobile-open');
+        button.setAttribute('aria-expanded', 'true');
+        button.setAttribute('aria-label', 'Cerrar menú');
+        var icon = button.querySelector('i');
+        if (icon) icon.className = 'fas fa-times';
+    }
+
+    button.onclick = function() {
+        sidebar.classList.contains('mobile-open') ? closeMenu() : openMenu();
+    };
+    backdrop.onclick = closeMenu;
+
+    sidebar.querySelectorAll('a.nav-item').forEach(function(link) {
+        link.addEventListener('click', closeMenu);
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeMenu();
+    });
+
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 900) closeMenu();
+    });
+}
+
+window.initMobileSidebar = initMobileSidebar;
