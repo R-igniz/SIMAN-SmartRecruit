@@ -58,3 +58,14 @@ body.dark-mode .table-container{border-color:#263752}
   .main-content{margin:0!important}.report-page{max-width:none;padding:0}.report-hero{background:#fff!important;color:#000!important;box-shadow:none;border:1px solid #ccc}.report-panel,.kpi-card{box-shadow:none}
   .table-container{overflow:visible}.modern-table{min-width:0;font-size:8pt}.modern-table th,.modern-table td{padding:5px}
 }
+
+
+/* ===== MOBILE MODULE HARDENING ===== */
+@media(max-width:900px){
+ .table-container{overflow-x:auto!important;-webkit-overflow-scrolling:touch;}
+ .modern-table{min-width:720px;}
+}
+@media(max-width:600px){
+ .req-actions,.report-actions,.notification-actions,.config-actions{display:flex!important;flex-wrap:wrap!important;gap:8px!important;}
+ .req-actions .btn,.report-actions .btn,.notification-actions .btn,.config-actions .btn{flex:1 1 140px;margin:0!important;}
+}

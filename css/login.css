@@ -1121,3 +1121,14 @@ body {
     }
 
 }
+
+
+/* ===== MOBILE MODULE HARDENING ===== */
+@media(max-width:900px){
+ .table-container{overflow-x:auto!important;-webkit-overflow-scrolling:touch;}
+ .modern-table{min-width:720px;}
+}
+@media(max-width:600px){
+ .req-actions,.report-actions,.notification-actions,.config-actions{display:flex!important;flex-wrap:wrap!important;gap:8px!important;}
+ .req-actions .btn,.report-actions .btn,.notification-actions .btn,.config-actions .btn{flex:1 1 140px;margin:0!important;}
+}

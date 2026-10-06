@@ -6,3 +6,14 @@
 @media(max-width:900px){.access-grid{grid-template-columns:1fr}.permission-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.access-card{grid-template-columns:auto 1fr auto}.access-stat{display:none}.roles-panel-head{flex-direction:column}.permission-grid{grid-template-columns:1fr}}
 body.dark-mode .access-section,body.dark-mode .access-card{background:#132238;border-color:#2a3c55;color:#e8eef7}body.dark-mode .roles-panel{background:#0f1c2e;border-color:#2a3c55}body.dark-mode .access-heading h2,body.dark-mode .access-card strong,body.dark-mode .roles-panel-head h3,body.dark-mode .permission-chip{color:#e8eef7}body.dark-mode .access-heading p,body.dark-mode .access-card small,body.dark-mode .roles-panel-head p{color:#9eb0c6}body.dark-mode .permission-chip,body.dark-mode .role-tab{background:#162840;border-color:#2a3c55;color:#e8eef7}body.dark-mode .role-tab.active{background:#0056a6}
+
+
+/* ===== MOBILE MODULE HARDENING ===== */
+@media(max-width:900px){
+ .table-container{overflow-x:auto!important;-webkit-overflow-scrolling:touch;}
+ .modern-table{min-width:720px;}
+}
+@media(max-width:600px){
+ .req-actions,.report-actions,.notification-actions,.config-actions{display:flex!important;flex-wrap:wrap!important;gap:8px!important;}
+ .req-actions .btn,.report-actions .btn,.notification-actions .btn,.config-actions .btn{flex:1 1 140px;margin:0!important;}
+}

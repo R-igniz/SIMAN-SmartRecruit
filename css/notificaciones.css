@@ -12,3 +12,14 @@
 .empty-state{min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;color:#718096}.empty-state i{font-size:2rem}.empty-state.error{color:#a83232}
 body.dark-mode .notifications-panel,body.dark-mode .notification-item{background:#111c2e;border-color:#263752}body.dark-mode .notification-item.unread{background:#15243a}body.dark-mode .notification-title{color:#eef3fa}body.dark-mode .notification-content p{color:#aebbd0}
 @media(max-width:700px){.notifications-page{padding:14px}.notifications-hero{flex-direction:column;align-items:flex-start;padding:22px}.hero-actions{width:100%}.notifications-toolbar{align-items:flex-start;flex-direction:column}.notification-item{padding:14px}.notification-header{flex-direction:column}.notifications-hero h1{font-size:1.6rem}}
+
+
+/* ===== MOBILE MODULE HARDENING ===== */
+@media(max-width:900px){
+ .table-container{overflow-x:auto!important;-webkit-overflow-scrolling:touch;}
+ .modern-table{min-width:720px;}
+}
+@media(max-width:600px){
+ .req-actions,.report-actions,.notification-actions,.config-actions{display:flex!important;flex-wrap:wrap!important;gap:8px!important;}
+ .req-actions .btn,.report-actions .btn,.notification-actions .btn,.config-actions .btn{flex:1 1 140px;margin:0!important;}
+}
