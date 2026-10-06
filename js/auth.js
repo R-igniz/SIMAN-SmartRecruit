@@ -848,6 +848,43 @@ function protegerRuta(
 
 
 // ============================================================
+// FASE 4.2 - HELPERS DE AUTORIZACIÓN
+// ============================================================
+
+function requerirPermiso(permiso, redirectUrl) {
+    if (tienePermiso(permiso)) {
+        return true;
+    }
+
+    console.warn(
+        '⛔ Acción bloqueada por permiso:',
+        permiso
+    );
+
+    if (redirectUrl) {
+        window.location.replace(redirectUrl);
+    }
+
+    return false;
+}
+
+function puedeAccederRuta(pathname) {
+    var pagina = normalizarRuta(pathname || window.location.pathname);
+
+    if (pagina === '/' || pagina === '/login.html') {
+        return true;
+    }
+
+    if (!Object.prototype.hasOwnProperty.call(permisosPorPagina, pagina)) {
+        return false;
+    }
+
+    var permiso = permisosPorPagina[pagina];
+    return !permiso || tienePermiso(permiso);
+}
+
+
+// ============================================================
 // MAPA DE PÁGINAS
 // ============================================================
 
@@ -1067,23 +1104,16 @@ async function inicializarAuth() {
 
         if (!tieneRuta) {
 
-            console.warn(
-                '⚠️ Página no registrada:',
-                pagina
+            // FASE 4.2: política fail-closed.
+            // Una página HTML nueva debe registrarse explícitamente
+            // en permisosPorPagina antes de quedar accesible.
+            console.error(
+                '⛔ Ruta protegida no registrada:',
+                pagina,
+                '| Acceso bloqueado por seguridad'
             );
 
-
-            /*
-             * No redireccionamos.
-             * La página requiere sesión válida,
-             * pero no tiene permiso específico.
-             */
-
-            console.log(
-                '✅ Usuario autenticado. Página permitida.'
-            );
-
-
+            window.location.replace('/dashboard.html');
             return;
         }
 
@@ -1292,6 +1322,12 @@ window.esAdministrador =
 
 window.protegerRuta =
     protegerRuta;
+
+window.requerirPermiso =
+    requerirPermiso;
+
+window.puedeAccederRuta =
+    puedeAccederRuta;
 
 window.roleCodeToRole =
     roleCodeToRole;

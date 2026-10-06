@@ -1,5 +1,5 @@
 // ==========================================
-// MENÚ LATERAL - CONFIGURACIÓN POR ROL
+// MENÚ LATERAL - CONFIGURACIÓN POR ROL - FASE 4.2
 // ==========================================
 
 var MENU_CONFIG = {
@@ -66,7 +66,10 @@ function getSidebarHTML() {
     var user = getCurrentUser();
     if (!user) return '';
 
-    var items = MENU_CONFIG[user.role] || MENU_CONFIG['Reclutadora'];
+    var items = MENU_CONFIG[user.role] || [];
+    if (!MENU_CONFIG[user.role]) {
+        console.error('⛔ Sidebar: rol no reconocido:', user.role);
+    }
     var navHTML = '';
     var currentPage = window.location.pathname.split('/').pop() || 'dashboard.html';
 
