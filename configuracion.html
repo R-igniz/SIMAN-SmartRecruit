@@ -9,6 +9,17 @@
 <button class="config-card" data-catalogo="prioridades" onclick="abrirGestion('prioridades')"><span class="card-icon"><i class="fas fa-flag"></i></span><span class="card-copy"><strong>Prioridades</strong><small>Niveles de urgencia</small></span><span class="card-meta"><b data-count="prioridades">0</b><i class="fas fa-chevron-right"></i></span></button>
 <button class="config-card" data-catalogo="motivos" onclick="abrirGestion('motivos')"><span class="card-icon"><i class="fas fa-clipboard-question"></i></span><span class="card-copy"><strong>Motivos</strong><small>Motivos de requisición</small></span><span class="card-meta"><b data-count="motivos">0</b><i class="fas fa-chevron-right"></i></span></button>
 </div></section>
+<section class="access-section" id="accesoSistema">
+  <div class="section-heading access-heading"><div><span class="section-kicker">SEGURIDAD Y ACCESO</span><h2>Usuarios, roles y permisos</h2><p>Consulta la estructura de acceso y administra usuarios desde el módulo protegido de SmartRecruit.</p></div></div>
+  <div class="access-grid">
+    <button class="access-card" id="cardUsuariosConfig" type="button" onclick="abrirUsuariosConfig()"><span class="access-icon"><i class="fas fa-users-gear"></i></span><span><strong>Usuarios</strong><small>Altas, edición, roles y estado de cuentas</small></span><span class="access-stat"><b id="totalUsuariosConfig">—</b><small>registrados</small></span><i class="fas fa-arrow-right"></i></button>
+    <button class="access-card" type="button" onclick="mostrarRolesPermisos()"><span class="access-icon"><i class="fas fa-shield-halved"></i></span><span><strong>Roles y permisos</strong><small>Matriz efectiva definida por Auth Fase 2</small></span><span class="access-stat"><b id="totalRolesConfig">4</b><small>roles</small></span><i class="fas fa-arrow-right"></i></button>
+  </div>
+  <div class="roles-panel" id="rolesPermisosPanel" hidden>
+    <div class="roles-panel-head"><div><span class="section-kicker">CONTROL DE ACCESO</span><h3>Matriz de roles y permisos</h3><p>Vista de solo lectura. Los permisos efectivos continúan siendo controlados por <code>auth.js</code>.</p></div><button class="btn btn-outline" type="button" onclick="cerrarRolesPermisos()"><i class="fas fa-xmark"></i> Cerrar</button></div>
+    <div class="role-tabs" id="roleTabsConfig"></div><div class="permission-grid" id="permisosRolConfig"></div>
+  </div>
+</section>
 <section class="management-panel" id="gestionPanel"><div class="management-head"><div><span class="section-kicker">GESTIÓN DEL CATÁLOGO</span><h2><span id="gestionTituloTexto">Centros comerciales</span></h2><p id="gestionSubtitulo">Administra los registros disponibles en SmartRecruit.</p></div><button class="btn btn-primary" onclick="abrirModalAgregar()"><i class="fas fa-plus"></i><span id="btnNuevoTexto">Nuevo centro comercial</span></button></div>
 <div class="management-tools"><label class="search-box"><i class="fas fa-search"></i><input id="buscarConfig" type="search" placeholder="Buscar por nombre..." oninput="filtrarGestion()"></label><select id="filtroEstadoConfig" onchange="filtrarGestion()"><option value="todos">Todos los estados</option><option value="activo">Activos</option><option value="inactivo">Inactivos</option></select></div>
 <div class="table-container"><table class="modern-table"><thead id="gestionThead"></thead><tbody id="gestionBody"></tbody></table></div></section></main></div>
