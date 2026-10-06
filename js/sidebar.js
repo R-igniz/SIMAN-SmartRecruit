@@ -258,3 +258,11 @@ function initMobileSidebar(){
  window.addEventListener('resize',function(){if(innerWidth>900)close();});
 }
 window.initMobileSidebar=initMobileSidebar;
+
+
+// Fase 4.3: volver a pintar el layout cuando auth.js confirme el perfil
+// real recuperado desde Supabase. Esto elimina inconsistencias visuales
+// si el rol fue cambiado por un administrador entre navegaciones.
+window.addEventListener('smartrecruit:auth-ready', function () {
+    initLayout();
+});

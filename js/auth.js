@@ -1044,6 +1044,13 @@ async function inicializarAuth() {
             usuario.id
         );
 
+        // Fase 4.3: notificar al layout que el perfil real de Supabase
+        // ya fue restaurado. Evita renderizar el sidebar con un rol
+        // antiguo almacenado en sessionStorage.
+        window.dispatchEvent(new CustomEvent('smartrecruit:auth-ready', {
+            detail: { usuario: usuario }
+        }));
+
 
         // ----------------------------------
         // CAMBIO OBLIGATORIO DE CONTRASEÑA
@@ -1250,10 +1257,20 @@ async function escucharCambiosAuth() {
                     session.user
                 ) {
 
-                    console.log(
-                        '✅ Sesión Supabase activa:',
-                        session.user.email
-                    );
+                    var firma = 'SIGNED_IN:' + session.user.id;
+
+                    if (escucharCambiosAuth._ultimaFirma !== firma) {
+                        escucharCambiosAuth._ultimaFirma = firma;
+                        console.log(
+                            '✅ Sesión Supabase activa:',
+                            session.user.email
+                        );
+                    } else {
+                        console.debug(
+                            'ℹ️ Evento SIGNED_IN duplicado ignorado:',
+                            session.user.email
+                        );
+                    }
                 }
             }
         );
