@@ -954,14 +954,28 @@ function actualizarResumen(){
 
 async function abrirGestion(tipo){
     if(!CATALOGOS_UI[tipo])return;
+
+    var titulo=document.getElementById('gestionTituloTexto');
+    var subtitulo=document.getElementById('gestionSubtitulo');
+    var btnNuevo=document.getElementById('btnNuevoTexto');
+    var panel=document.getElementById('gestionPanel');
+    var body=document.getElementById('gestionBody');
+
+    // configuracion.js también es utilizado como servicio por otros módulos.
+    // Si no estamos en la UI de Configuración, no intentamos manipular su DOM.
+    if(!titulo||!subtitulo||!btnNuevo||!panel||!body){
+        console.debug('ℹ️ UI de gestión no disponible en esta página; abrirGestion omitido.');
+        return;
+    }
+
     catalogoActual=tipo;
     document.querySelectorAll('.config-card').forEach(function(x){x.classList.toggle('active',x.dataset.catalogo===tipo);});
     var cfg=CATALOGOS_UI[tipo];
-    document.getElementById('gestionTituloTexto').textContent=cfg.titulo;
-    document.getElementById('gestionSubtitulo').textContent='Administra los registros disponibles en SmartRecruit.';
-    document.getElementById('btnNuevoTexto').textContent='Nuevo '+cfg.singular.toLowerCase();
-    document.getElementById('gestionPanel').style.display='block';
-    document.getElementById('gestionBody').innerHTML='<tr><td colspan="4" class="loading-cell"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>';
+    titulo.textContent=cfg.titulo;
+    subtitulo.textContent='Administra los registros disponibles en SmartRecruit.';
+    btnNuevo.textContent='Nuevo '+cfg.singular.toLowerCase();
+    panel.style.display='block';
+    body.innerHTML='<tr><td colspan="4" class="loading-cell"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>';
     try { itemsGestion=await cargarItemsGestion(tipo); renderGestion(); }
     catch(e){console.error('❌ Error cargando catálogo:',e);toastConfig('No se pudo cargar el catálogo','error');}
 }
@@ -1097,14 +1111,27 @@ window.cerrarRolesPermisos=cerrarRolesPermisos;
 // INICIALIZACIÓN FASE 4
 // ============================================================
 document.addEventListener('DOMContentLoaded',async function(){
+    var pagina=String(window.location.pathname||'').split('?')[0].split('#')[0].toLowerCase();
+
+    // Este archivo expone funciones de configuración usadas por otros módulos,
+    // pero el Centro de Configuración solo debe inicializarse en su propia página.
+    if(pagina!=='/configuracion.html'&&pagina!=='/configuracion'){
+        console.debug('ℹ️ configuracion.js en modo servicio; UI Fase 4.1.1 no inicializada en:',pagina);
+        return;
+    }
+
     try{
         var usuario=typeof getCurrentUser==='function'?getCurrentUser():null;
         if(!usuario&&typeof requireAuth==='function') usuario=await requireAuth();
         if(!usuario)return;
         if(typeof tienePermiso==='function'&&!tienePermiso('ver_configuracion'))return;
-        await cargarConfiguracionSupabase(); await iniciarRealtimeConfiguracion(); actualizarResumen(); await cargarResumenAcceso(); await abrirGestion('comerciales');
-        console.log('✅ Centro de Configuración Fase 4.1 inicializado');
-    }catch(error){console.error('❌ No se pudo inicializar Configuración Fase 4:',error);toastConfig('No se pudo cargar Configuración','error');}
+        await cargarConfiguracionSupabase();
+        await iniciarRealtimeConfiguracion();
+        actualizarResumen();
+        await cargarResumenAcceso();
+        await abrirGestion('comerciales');
+        console.log('✅ Centro de Configuración Fase 4.1.1 inicializado');
+    }catch(error){console.error('❌ No se pudo inicializar Configuración Fase 4.1.1:',error);toastConfig('No se pudo cargar Configuración','error');}
 });
 
-console.log('✅ configuracion.js Fase 4.1 cargado');
+console.log('✅ configuracion.js Fase 4.1.1 cargado');
