@@ -1,80 +1,99 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SIMAN SmartRecruit - Login</title>
-    <link rel="stylesheet" href="css/global.css" />
-    <link rel="stylesheet" href="css/login.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>SmartRecruit | SIMAN</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/login.css">
 </head>
 <body>
-    <div class="login-page">
-        <div class="login-left">
-            <div class="login-box">
-                <div class="logo-area">
-                    <div class="logo-icon">S</div>
-                    <div>
-                        <span class="logo-text">SIMAN</span>
-                        <span class="logo-sub">SmartRecruit</span>
-                    </div>
-                </div>
-                <h1>Iniciar sesión</h1>
-                <p class="sub">Sistema Inteligente de Requisición y Gestión de Personal</p>
+  <main class="login-shell">
+    <section class="brand-message" aria-label="SmartRecruit">
+      <div class="brand-copy">
+        <div class="brand-kicker">SIMAN · SMARTRECRUIT</div>
+        <h1>Conectamos<br>talento con<br><span>oportunidades.</span></h1>
+        <div class="accent-line"></div>
+        <p>Impulsamos el potencial de cada candidato y conectamos a las personas con nuevas oportunidades.</p>
+      </div>
+    </section>
 
-                <div id="errorMessage" class="error-message" style="display:none; background:#ffdede; color:#b33c3c; padding:10px 16px; border-radius:12px; margin-bottom:16px;">
-                    <i class="fas fa-exclamation-circle"></i> <span id="errorText">Usuario o contraseña incorrectos</span>
-                </div>
+    <section class="login-center">
+      <div class="login-card">
+        <div class="card-brand">
+          <div class="brand-mark">S</div>
+          <div>
+            <strong>SIMAN</strong>
+            <span>SmartRecruit</span>
+          </div>
+        </div>
 
-                <form id="loginForm">
-                    <div class="form-group">
-                        <label>Usuario corporativo</label>
-                        <input type="email" id="username" placeholder="usuario@siman.com" required />
-                    </div>
-                    <div class="form-group">
-                        <label>Contraseña</label>
-                        <input type="password" id="password" placeholder="••••••••" required />
-                    </div>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</button>
-                </form>
+        <div class="card-body">
+          <div class="login-header">
+            <span class="eyebrow">PORTAL DE RECLUTAMIENTO</span>
+            <h2>Iniciar sesión</h2>
+            <p>Ingresa con tus credenciales corporativas.</p>
+          </div>
 
-                <button class="btn btn-microsoft" onclick="alert('Redirigiendo a Microsoft 365...')" style="background:#2b2b2b; color:white; width:100%; padding:12px; border-radius:40px; border:none; font-weight:500; font-size:0.9rem; cursor:pointer; margin-top:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
-                    <i class="fab fa-microsoft"></i> Microsoft 365
+          <form id="loginForm">
+            <div class="form-group">
+              <label for="username">Usuario corporativo</label>
+              <div class="field">
+                <i class="fa-regular fa-envelope"></i>
+                <input type="email" id="username" placeholder="usuario@siman.com" autocomplete="username" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="password">Contraseña</label>
+              <div class="field password-field">
+                <i class="fa-solid fa-lock"></i>
+                <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" required>
+                <button type="button" class="password-toggle" id="passwordToggle" aria-label="Mostrar contraseña">
+                  <i class="fa-regular fa-eye"></i>
                 </button>
-
-                <div class="forgot" onclick="alert('Se enviará un correo para restablecer su contraseña')" style="text-align:right; font-size:0.8rem; color:var(--primary); margin-top:12px; cursor:pointer;">
-                    Olvidé mi contraseña
-                </div>
-
-                <div class="test-users" style="margin-top:16px; padding:16px; background:var(--bg-body); border-radius:12px; font-size:0.8rem; color:var(--text-muted); line-height:1.8;">
-
-                    </span>
-                    <span style="display:block; font-size:0.7rem; color:var(--text-muted); margin-top:4px;">
-                        ℹ️ Desde Configuración podrás crear más usuarios con diferentes roles
-                    </span>
-                    <span style="display:block; font-size:0.7rem; color:var(--text-muted); margin-top:4px;">
-                        🔄 Los datos se sincronizan automáticamente en la nube (Supabase)
-                    </span>
-                    <span style="display:block; font-size:0.7rem; color:var(--text-muted); margin-top:4px;">
-                        🌐 Puedes iniciar sesión desde cualquier dispositivo con los mismos credenciales
-                    </span>
-                </div>
+              </div>
             </div>
-        </div>
-        <div class="login-right">
-            <div class="illustration" style="text-align:center; padding:40px; background:var(--bg-card); border-radius:24px; box-shadow:var(--shadow); max-width:400px; width:100%;">
-                <i class="fas fa-users-cog" style="font-size:80px; color:#0056A6;"></i>
-                <p style="margin-top:20px; color:var(--text-muted); font-size:18px;">Gestión de Talento Moderna</p>
-                <p style="color:var(--text-muted); font-size:14px;">SIMAN SmartRecruit v2.0</p>
-            </div>
-        </div>
-    </div>
 
-    <!-- SCRIPTS - ORDEN CORRECTO -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/js/supabase-client.js"></script>
-<script src="/js/auth.js"></script>
-<script src="/js/login.js"></script>
+            <div id="loginError" class="login-error" role="alert"></div>
+
+            <button type="submit" class="btn btn-primary">
+              <span>Iniciar sesión</span><i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </form>
+
+          <div class="security-note"><i class="fa-solid fa-shield-halved"></i> Acceso seguro para personal autorizado</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="visual-panel" aria-hidden="true">
+      <div class="visual-orb"></div>
+      <div class="talent-visual">
+        <i class="fa-solid fa-user-tie"></i>
+        <div class="visual-card visual-card-one"><i class="fa-solid fa-users"></i><span>Talento</span></div>
+        <div class="visual-card visual-card-two"><i class="fa-solid fa-briefcase"></i><span>Oportunidad</span></div>
+      </div>
+    </section>
+
+    <footer>SmartRecruit · SIMAN © 2026</footer>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/login.js"></script>
+  <script>
+    (function(){
+      var input=document.getElementById('password'), btn=document.getElementById('passwordToggle');
+      if(!input||!btn)return;
+      btn.addEventListener('click',function(){
+        var show=input.type==='password';
+        input.type=show?'text':'password';
+        btn.setAttribute('aria-label',show?'Ocultar contraseña':'Mostrar contraseña');
+        var icon=btn.querySelector('i');
+        if(icon) icon.className=show?'fa-regular fa-eye-slash':'fa-regular fa-eye';
+      });
+    })();
+  </script>
 </body>
 </html>
