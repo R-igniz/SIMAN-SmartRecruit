@@ -1033,6 +1033,67 @@ async function refrescarCentroConfiguracion(){var b=document.getElementById('btn
 window.abrirGestion=abrirGestion;window.abrirModalAgregar=abrirModalAgregar;window.editarItemConfig=editarItemConfig;window.cambiarEstadoConfig=cambiarEstadoConfig;window.guardarItem=guardarItem;window.cerrarModal=cerrarModal;window.filtrarGestion=filtrarGestion;window.refrescarCentroConfiguracion=refrescarCentroConfiguracion;
 
 // ============================================================
+// FASE 4.1 - USUARIOS, ROLES Y PERMISOS
+// ============================================================
+var rolConfigActual = 'Administrador';
+
+async function cargarResumenAcceso(){
+    var total=document.getElementById('totalUsuariosConfig');
+    try{
+        var db=await initSupabase();
+        var r=await db.from('profiles').select('id,activo,role_code');
+        if(r.error)throw r.error;
+        if(total)total.textContent=(r.data||[]).length;
+        console.log('👥 Usuarios para Configuración:',(r.data||[]).length);
+    }catch(e){
+        console.warn('⚠️ No se pudo obtener resumen de usuarios:',e);
+        if(total)total.textContent='—';
+    }
+}
+
+function abrirUsuariosConfig(){
+    if(typeof tienePermiso==='function'&&!tienePermiso('ver_usuarios')){
+        toastConfig('No tienes permiso para administrar usuarios','error');
+        return;
+    }
+    window.location.href='/usuarios.html';
+}
+
+function etiquetaPermiso(p){
+    return String(p||'').replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});
+}
+
+function mostrarRolesPermisos(){
+    var panel=document.getElementById('rolesPermisosPanel');
+    if(!panel)return;
+    panel.hidden=false;
+    var roles=(typeof PERMISOS==='object'&&PERMISOS)?Object.keys(PERMISOS):[];
+    var tabs=document.getElementById('roleTabsConfig');
+    if(!roles.length){
+        tabs.innerHTML='';
+        document.getElementById('permisosRolConfig').innerHTML='<div class="empty-state"><strong>Permisos no disponibles</strong><span>auth.js no expuso la matriz de permisos.</span></div>';
+        return;
+    }
+    if(roles.indexOf(rolConfigActual)===-1)rolConfigActual=roles[0];
+    tabs.innerHTML=roles.map(function(rol){return '<button type="button" class="role-tab '+(rol===rolConfigActual?'active':'')+'" onclick="seleccionarRolConfig(\''+escapeConfig(rol)+'\')">'+escapeConfig(rol)+'</button>';}).join('');
+    renderPermisosRolConfig();
+    panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function seleccionarRolConfig(rol){rolConfigActual=rol;mostrarRolesPermisos();}
+function renderPermisosRolConfig(){
+    var box=document.getElementById('permisosRolConfig');if(!box)return;
+    var lista=(typeof PERMISOS==='object'&&PERMISOS&&PERMISOS[rolConfigActual])||[];
+    box.innerHTML=lista.length?lista.map(function(p){return '<div class="permission-chip"><i class="fas fa-circle-check"></i><span>'+escapeConfig(etiquetaPermiso(p))+'</span></div>';}).join(''):'<div class="empty-state"><strong>Sin permisos configurados</strong></div>';
+}
+function cerrarRolesPermisos(){var p=document.getElementById('rolesPermisosPanel');if(p)p.hidden=true;}
+
+window.abrirUsuariosConfig=abrirUsuariosConfig;
+window.mostrarRolesPermisos=mostrarRolesPermisos;
+window.seleccionarRolConfig=seleccionarRolConfig;
+window.cerrarRolesPermisos=cerrarRolesPermisos;
+
+// ============================================================
 // INICIALIZACIÓN FASE 4
 // ============================================================
 document.addEventListener('DOMContentLoaded',async function(){
@@ -1041,9 +1102,9 @@ document.addEventListener('DOMContentLoaded',async function(){
         if(!usuario&&typeof requireAuth==='function') usuario=await requireAuth();
         if(!usuario)return;
         if(typeof tienePermiso==='function'&&!tienePermiso('ver_configuracion'))return;
-        await cargarConfiguracionSupabase(); await iniciarRealtimeConfiguracion(); actualizarResumen(); await abrirGestion('comerciales');
-        console.log('✅ Centro de Configuración Fase 4 inicializado');
+        await cargarConfiguracionSupabase(); await iniciarRealtimeConfiguracion(); actualizarResumen(); await cargarResumenAcceso(); await abrirGestion('comerciales');
+        console.log('✅ Centro de Configuración Fase 4.1 inicializado');
     }catch(error){console.error('❌ No se pudo inicializar Configuración Fase 4:',error);toastConfig('No se pudo cargar Configuración','error');}
 });
 
-console.log('✅ configuracion.js Fase 4 cargado');
+console.log('✅ configuracion.js Fase 4.1 cargado');
