@@ -1,94 +1,18 @@
-// SIMAN SmartRecruit - Usuarios Fase 4 / Supabase profiles
-console.log('👥 usuarios.js Fase 4 cargando...');
-
-var usuariosCache = [];
-var supabaseUsuarios = null;
-var canalUsuarios = null;
-
-var ROLES_USUARIOS = {
-  admin: 'Administrador', administrador: 'Administrador',
-  gerente_rh: 'Gerente RH', gerente: 'Gerente RH',
-  reclutadora: 'Reclutadora', ejecutivo: 'Ejecutivo'
-};
-
-function escaparHTML(v) {
-  return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
-}
-function nombreRol(code) {
-  var k = String(code || '').trim().toLowerCase();
-  return ROLES_USUARIOS[k] || code || 'Sin rol';
-}
-async function obtenerClienteUsuarios() {
-  if (typeof window.initSupabase === 'function') return await window.initSupabase();
-  if (typeof window.getSupabaseClient === 'function') return await window.getSupabaseClient();
-  if (window.supabaseClient) return window.supabaseClient;
-  if (window.supabaseDB && typeof window.supabaseDB.from === 'function') return window.supabaseDB;
-  throw new Error('No se encontró el cliente Supabase.');
-}
-function claseRol(code) {
-  var k = String(code || '').toLowerCase();
-  if (k === 'admin' || k === 'administrador') return 'badge-red';
-  if (k === 'gerente_rh' || k === 'gerente') return 'badge-blue';
-  if (k === 'reclutadora') return 'badge-yellow';
-  if (k === 'ejecutivo') return 'badge-green';
-  return 'badge-gray';
-}
-async function cargarUsuarios() {
-  var tbody = document.getElementById('usuariosBody');
-  if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fas fa-spinner fa-spin"></i> Cargando usuarios...</td></tr>';
-  try {
-    if (!supabaseUsuarios) supabaseUsuarios = await obtenerClienteUsuarios();
-    var resultado = await supabaseUsuarios.from('profiles')
-      .select('id,email,nombre,role_code,activo').order('nombre', {ascending:true});
-    if (resultado.error) throw resultado.error;
-    usuariosCache = resultado.data || [];
-    renderizarUsuarios();
-    console.log('✅ Usuarios cargados desde profiles:', usuariosCache.length);
-  } catch (error) {
-    console.error('❌ Error cargando usuarios:', error);
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-state error-state"><i class="fas fa-triangle-exclamation"></i> Error al cargar usuarios</td></tr>';
-  }
-}
-function renderizarUsuarios() {
-  var tbody = document.getElementById('usuariosBody');
-  if (!tbody) return;
-  if (!usuariosCache.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fas fa-inbox"></i> No hay usuarios registrados</td></tr>';
-    return;
-  }
-  tbody.innerHTML = usuariosCache.map(function(u) {
-    var activo = u.activo !== false;
-    return '<tr>' +
-      '<td class="uuid-cell" title="'+escaparHTML(u.id)+'">'+escaparHTML(String(u.id).slice(0,8))+'…</td>' +
-      '<td><strong>'+escaparHTML(u.nombre || 'Sin nombre')+'</strong></td>' +
-      '<td>'+escaparHTML(u.email || '—')+'</td>' +
-      '<td><span class="badge '+claseRol(u.role_code)+'">'+escaparHTML(nombreRol(u.role_code))+'</span></td>' +
-      '<td><span class="badge '+(activo?'badge-green':'badge-red')+'">'+(activo?'Activo':'Inactivo')+'</span></td>' +
-      '</tr>';
-  }).join('');
-}
-function iniciarRealtimeUsuarios() {
-  if (!supabaseUsuarios || !supabaseUsuarios.channel || canalUsuarios) return;
-  canalUsuarios = supabaseUsuarios.channel('usuarios-profiles-fase4')
-    .on('postgres_changes', {event:'*', schema:'public', table:'profiles'}, function(payload) {
-      console.log('📡 Cambio Realtime profiles:', payload.eventType);
-      cargarUsuarios();
-    })
-    .subscribe(function(status) {
-      if (status === 'SUBSCRIBED') console.log('📡 Realtime Usuarios activo');
-    });
-}
-document.addEventListener('DOMContentLoaded', async function() {
-  try {
-    if (typeof window.tienePermiso === 'function' && !window.tienePermiso('ver_usuarios')) return;
-    supabaseUsuarios = await obtenerClienteUsuarios();
-    await cargarUsuarios();
-    iniciarRealtimeUsuarios();
-    console.log('✅ Usuarios Fase 4 inicializado');
-  } catch (error) {
-    console.error('❌ No se pudo inicializar Usuarios Fase 4:', error);
-  }
-});
-window.cargarUsuarios = cargarUsuarios;
+console.log("👥 Usuarios Fase 4.1.2");
+let sb=null, cache=[], channel=null;
+const roles={admin:"Administrador",gerente_rh:"Gerente RH",reclutadora:"Reclutadora",ejecutivo:"Ejecutivo"};
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+async function client(){if(sb)return sb;if(window.initSupabase)sb=await window.initSupabase();else if(window.getSupabaseClient)sb=await window.getSupabaseClient();else sb=window.supabaseClient||window.supabaseDB;if(!sb)throw Error("Cliente Supabase no disponible");return sb}
+function can(p){return !window.tienePermiso||window.tienePermiso(p)}
+async function load(){const c=await client();const {data,error}=await c.from("profiles").select("id,email,nombre,role_code,activo,requiere_cambio_password").order("nombre");if(error)throw error;cache=data||[];render();console.log("✅ Usuarios cargados:",cache.length)}
+function render(){let b=$("usuariosBody");if(!cache.length){b.innerHTML='<tr><td colspan="6" class="empty-state">No hay usuarios registrados</td></tr>';return}b.innerHTML=cache.map(u=>`<tr><td><strong>${esc(u.nombre||"Sin nombre")}</strong></td><td>${esc(u.email||"")}</td><td><span class="pill">${esc(roles[u.role_code]||u.role_code||"Sin rol")}</span></td><td><span class="pill ${u.activo!==false?"ok":"off"}">${u.activo!==false?"Activo":"Inactivo"}</span></td><td>${u.requiere_cambio_password?'<span class="pill warn">Pendiente</span>':'No'}</td><td class="acts">${can("editar_usuario")?`<button onclick="editUser('${u.id}')">✏️</button><button onclick="resetPass('${u.id}')">🔑</button>`:""}</td></tr>`).join("")}
+function open(id){$(id).classList.add("show")}function closeAll(){document.querySelectorAll(".modal-u").forEach(x=>x.classList.remove("show"))}
+window.editUser=id=>{let u=cache.find(x=>x.id===id);if(!u)return;$("modalTitulo").textContent="Editar usuario";$("usuarioId").value=u.id;$("usuarioNombre").value=u.nombre||"";$("usuarioEmail").value=u.email||"";$("usuarioEmail").readOnly=true;$("usuarioRol").value=u.role_code||"reclutadora";$("usuarioActivo").value=String(u.activo!==false);$("wrapTemp").style.display="none";$("wrapActivo").style.display="block";open("modalUsuario")}
+window.resetPass=id=>{let u=cache.find(x=>x.id===id);$("passwordUserId").value=id;$("passwordUsuario").textContent=u?`${u.nombre} · ${u.email}`:"";$("passwordTemporal").value="";open("modalPassword")}
+async function invoke(body){const c=await client();const {data,error}=await c.functions.invoke("admin-users",{body});if(error)throw error;if(!data?.ok)throw Error(data?.error||"Operación no completada");return data}
+$("btnNuevo")?.addEventListener("click",()=>{if(!can("crear_usuario"))return alert("Sin permiso");$("formUsuario").reset();$("usuarioId").value="";$("modalTitulo").textContent="Nuevo usuario";$("usuarioEmail").readOnly=false;$("wrapTemp").style.display="block";$("wrapActivo").style.display="none";open("modalUsuario")});
+$("formUsuario")?.addEventListener("submit",async e=>{e.preventDefault();try{let id=$("usuarioId").value;if(id){await invoke({action:"update",user_id:id,nombre:$("usuarioNombre").value.trim(),role_code:$("usuarioRol").value,activo:$("usuarioActivo").value==="true"})}else{let pw=$("usuarioPassword").value;if(pw.length<8)throw Error("La contraseña temporal debe tener al menos 8 caracteres");await invoke({action:"create",nombre:$("usuarioNombre").value.trim(),email:$("usuarioEmail").value.trim(),role_code:$("usuarioRol").value,password:pw})}closeAll();await load();alert("✅ Usuario guardado")}catch(err){console.error(err);alert("❌ "+err.message)}});
+$("formPassword")?.addEventListener("submit",async e=>{e.preventDefault();try{let pw=$("passwordTemporal").value;if(pw.length<8)throw Error("Mínimo 8 caracteres");await invoke({action:"reset_password",user_id:$("passwordUserId").value,password:pw});closeAll();await load();alert("✅ Contraseña temporal asignada")}catch(err){console.error(err);alert("❌ "+err.message)}});
+document.querySelectorAll("[data-close]").forEach(x=>x.addEventListener("click",closeAll));
+document.addEventListener("DOMContentLoaded",async()=>{try{if(!can("ver_usuarios"))return;await load();const c=await client();channel=c.channel("profiles-users-412").on("postgres_changes",{event:"*",schema:"public",table:"profiles"},()=>load()).subscribe(s=>{if(s==="SUBSCRIBED")console.log("📡 Realtime Usuarios activo")});console.log("✅ Usuarios Fase 4.1.2 inicializado")}catch(e){console.error("❌ Usuarios:",e)}});
