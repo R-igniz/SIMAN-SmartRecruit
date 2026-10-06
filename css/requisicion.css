@@ -344,20 +344,39 @@ body.dark-mode .btn-icon.danger:hover {
     }
 }
 
-/* ===== Requisiciones Fase 4 PRD ===== */
-.req-actions { display:inline-flex; gap:6px; }
-.badge { display:inline-flex; align-items:center; justify-content:center; min-height:26px;
-    padding:4px 9px; border-radius:999px; font-size:.7rem; font-weight:700; white-space:nowrap; }
-.badge-blue { background:rgba(37,99,235,.12); color:#2563eb; }
-.badge-yellow { background:rgba(217,119,6,.13); color:#b45309; }
-.badge-green { background:rgba(5,150,105,.12); color:#047857; }
-.badge-purple { background:rgba(124,58,237,.12); color:#6d28d9; }
-.badge-gray { background:rgba(100,116,139,.12); color:#64748b; }
-.empty-state strong,.empty-state span { display:block; }
-.empty-state strong { margin-top:6px; color:var(--text-primary); }
-#btnSincronizar:disabled { opacity:.6; cursor:wait; }
-body.dark-mode .badge-blue { color:#93c5fd; }
-body.dark-mode .badge-yellow { color:#fcd34d; }
-body.dark-mode .badge-green { color:#6ee7b7; }
-body.dark-mode .badge-purple { color:#c4b5fd; }
-body.dark-mode .badge-gray { color:#cbd5e1; }
+/* ===== REQUISICIONES: MOBILE FIX ===== */
+.requisiciones-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+
+@media (max-width:900px){
+    .modern-table{min-width:820px;}
+}
+
+@media (max-width:600px){
+    .card-header{
+        display:flex !important;
+        flex-direction:column;
+        align-items:stretch !important;
+    }
+    .card-header > span{
+        font-size:1.05rem;
+        line-height:1.35;
+    }
+    .requisiciones-actions{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        width:100%;
+        gap:8px;
+    }
+    .requisiciones-actions .btn{
+        width:100%;
+        margin:0 !important;
+        padding:9px 10px !important;
+        justify-content:center;
+        white-space:nowrap;
+    }
+    .table-container{margin-top:4px;}
+    .modern-table{min-width:760px;font-size:.78rem;}
+}
+@media(max-width:380px){
+    .requisiciones-actions{grid-template-columns:1fr;}
+}
