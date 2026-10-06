@@ -204,7 +204,7 @@ async function obtenerPerfilSupabase(authUser) {
             await client
                 .from('profiles')
                 .select(
-                    'id,email,nombre,role_code,activo'
+                    'id,email,nombre,role_code,activo,requiere_cambio_password'
                 )
                 .eq(
                     'id',
@@ -298,6 +298,9 @@ async function obtenerPerfilSupabase(authUser) {
 
             activo:
                 profile.activo,
+
+            requiere_cambio_password:
+                profile.requiere_cambio_password === true,
 
             estado:
                 profile.activo
@@ -896,7 +899,12 @@ var permisosPorPagina = {
         'ver_ia',
 
     '/perfil.html':
-        'ver_perfil'
+        'ver_perfil',
+
+    // Cambio obligatorio de contraseña:
+    // requiere sesión válida, pero no un permiso de rol.
+    '/cambiar-password.html':
+        null
 };
 
 
@@ -998,6 +1006,50 @@ async function inicializarAuth() {
             '| UUID:',
             usuario.id
         );
+
+
+        // ----------------------------------
+        // CAMBIO OBLIGATORIO DE CONTRASEÑA
+        // ----------------------------------
+        // Esta validación ocurre ANTES de permisos de página.
+        // Así el usuario no puede saltarse el cambio escribiendo
+        // manualmente /dashboard.html u otra ruta protegida.
+
+        if (
+            usuario.requiere_cambio_password === true &&
+            pagina !== '/cambiar-password.html'
+        ) {
+
+            console.warn(
+                '🔑 Cambio de contraseña obligatorio:',
+                usuario.email
+            );
+
+            window.location.replace(
+                '/cambiar-password.html'
+            );
+
+            return;
+        }
+
+
+        // Si el cambio ya fue completado, no permitimos volver
+        // a la pantalla obligatoria.
+        if (
+            usuario.requiere_cambio_password !== true &&
+            pagina === '/cambiar-password.html'
+        ) {
+
+            console.log(
+                '✅ Cambio de contraseña no requerido. Redirigiendo al Dashboard.'
+            );
+
+            window.location.replace(
+                '/dashboard.html'
+            );
+
+            return;
+        }
 
 
         // ----------------------------------
