@@ -84,19 +84,57 @@
             $('guardarRol').disabled = !!actual?.protegido;
         }
     }
+    // Esperar el evento de auth.js, que restaura el perfil y los permisos RBAC.
+    // No llamar restaurarSesion() otra vez: auth.js es el responsable de la sesión.
+    function esperarAutenticacion() {
+        return new Promise((resolve, reject) => {
+            let finalizado = false;
+            const comenzar = Date.now();
+            let temporizador;
+            const terminar = (error, usuario) => {
+                if (finalizado) return;
+                finalizado = true;
+                window.removeEventListener('smartrecruit:auth-ready', alAutenticar);
+                clearInterval(temporizador);
+                if (error) reject(error); else resolve(usuario);
+            };
+            const verificar = (usuario) => {
+                const actual = usuario || window.getCurrentUser?.();
+                if (!actual || !Array.isArray(actual.permisos)) return false;
+                // La validación de autorización usa la API compartida de auth.js.
+                if (!window.tienePermiso?.('gestionar_roles')) {
+                    terminar(new Error('Acceso denegado: necesitas el permiso gestionar_roles.'));
+                } else {
+                    terminar(null, actual);
+                }
+                return true;
+            };
+            const alAutenticar = (evento) => verificar(evento.detail?.usuario);
+            window.addEventListener('smartrecruit:auth-ready', alAutenticar);
+            // También funciona si auth-ready ocurrió antes de registrar el listener.
+            if (verificar()) return;
+            temporizador = setInterval(() => {
+                if (verificar()) return;
+                if (Date.now() - comenzar > 12000) {
+                    terminar(new Error('No se pudo completar la autenticación. Recarga la página e inicia sesión nuevamente.'));
+                }
+            }, 150);
+        });
+    }
+
     async function iniciar() {
+        $('rolesLista').textContent = 'Verificando sesión y permisos...';
+        $('guardarRol').disabled = true;
         try {
+            await esperarAutenticacion();
             db = await initSupabase();
-            // La sesión debe provenir de Supabase; no confiar en el caché inicial.
-            const usuario = await window.restaurarSesion();
-            if (!usuario || !Array.isArray(usuario.permisos) || !window.tienePermiso('gestionar_roles')) {
-                throw new Error('Acceso denegado: necesitas el permiso gestionar_roles.');
-            }
+            $('rolesLista').textContent = 'Cargando roles desde Supabase...';
             await cargar();
             $('nuevoRol').addEventListener('click', () => seleccionar(null));
             $('guardarRol').addEventListener('click', guardar);
+            console.info('✅ Roles y permisos: catálogo y roles cargados', roles.length, catalogo.length);
         } catch (e) {
-            console.error('Roles y permisos:',e);
+            console.error('Roles y permisos:', e);
             estado(e.message || 'Error cargando roles.', 'error');
             $('rolesLista').textContent = 'No se pudieron cargar los roles.';
             $('guardarRol').disabled = true;
