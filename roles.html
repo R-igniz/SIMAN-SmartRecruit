@@ -1,1 +1,32 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SIMAN | Roles y permisos</title><link rel="stylesheet" href="css/global.css"><link rel="stylesheet" href="css/roles.css"></head><body><div id="sidebar-container"></div><main class="main-content"><div id="topbar-container"></div><section class="rbac"><header><div><h1>Roles y permisos</h1><p>Administración de accesos por módulo y acción</p></div><button id="nuevoRol">+ Crear rol</button></header><div class="rbac-grid"><aside><h2>Roles</h2><div id="rolesLista">Cargando...</div></aside><article><h2 id="rolTitulo">Selecciona un rol</h2><label>Nombre<input id="rolNombre" maxlength="100"></label><label>Descripción<textarea id="rolDescripcion" maxlength="500"></textarea></label><label class="check"><input type="checkbox" id="rolActivo" checked> Rol activo</label><div id="permisosLista"></div><footer><button id="guardarRol">Guardar cambios</button><span id="estadoRol"></span></footer></article></div></section></main><script src="js/auth.js"></script><script src="js/router.js"></script><script src="js/sidebar.js"></script><script src="js/darkmode.js"></script><script src="js/notifications.js"></script><script src="js/supabase-client.js"></script><script src="js/roles.js"></script></body></html>
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SIMAN | Roles y permisos</title>
+  <link rel="stylesheet" href="css/global.css"><link rel="stylesheet" href="css/roles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body>
+  <div id="sidebar-container"></div>
+  <main class="main-content">
+    <div id="topbar-container"></div>
+    <section class="rbac" aria-label="Administración de roles">
+      <header class="rbac-heading">
+        <div><div class="rbac-eyebrow"><i class="fas fa-shield-alt"></i> SEGURIDAD Y ACCESOS</div><h1>Roles y permisos</h1><p>Administra los accesos de los colaboradores a los módulos de SmartRecruit.</p></div>
+        <button id="nuevoRol" class="rbac-btn rbac-primary" type="button"><i class="fas fa-plus"></i> Nuevo rol</button>
+      </header>
+      <div class="rbac-stats"><div class="rbac-stat"><span>Roles registrados</span><strong id="totalRoles">—</strong></div><div class="rbac-stat"><span>Roles activos</span><strong id="rolesActivos">—</strong></div><div class="rbac-stat"><span>Permisos disponibles</span><strong id="totalPermisos">—</strong></div></div>
+      <div class="rbac-grid">
+        <aside class="rbac-panel"><div class="rbac-panel-title"><h2><i class="fas fa-users-cog"></i> Roles</h2><span id="contadorRoles"></span></div><div id="rolesLista" class="rbac-roles" aria-label="Lista de roles">Cargando roles...</div></aside>
+        <article class="rbac-panel"><div class="rbac-panel-title"><div><h2 id="rolTitulo">Selecciona un rol</h2><p id="rolAyuda">Configura la información y los permisos del rol.</p></div><span id="rolProtegido" class="rbac-protected" hidden><i class="fas fa-lock"></i> Protegido</span></div>
+          <div class="rbac-form"><label for="rolNombre">Nombre del rol<input id="rolNombre" maxlength="100" placeholder="Ej. Supervisor de reclutamiento" autocomplete="off"></label><label for="rolDescripcion">Descripción<textarea id="rolDescripcion" maxlength="500" rows="3" placeholder="Describe las responsabilidades del rol"></textarea></label></div>
+          <label class="rbac-toggle"><input type="checkbox" id="rolActivo" checked><span>Rol activo</span><small>Permite utilizar este rol cuando está habilitado.</small></label>
+          <div class="rbac-permissions-header"><h3>Permisos por módulo</h3><span id="permisosSeleccionados">0 seleccionados</span></div>
+          <div id="permisosLista" class="rbac-permissions"></div>
+          <footer class="rbac-footer"><span id="estadoRol" role="status" aria-live="polite"></span><button id="guardarRol" class="rbac-btn rbac-primary" type="button"><i class="fas fa-save"></i> Guardar cambios</button></footer>
+        </article>
+      </div>
+    </section>
+  </main>
+  <script src="js/auth.js"></script><script src="js/router.js"></script><script src="js/sidebar.js"></script><script src="js/darkmode.js"></script><script src="js/notifications.js"></script><script src="js/supabase-client.js"></script><script src="js/roles.js"></script>
+</body></html>
