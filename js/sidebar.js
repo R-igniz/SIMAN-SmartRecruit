@@ -16,6 +16,7 @@ var MENU_CONFIG = {
         { icon: 'fas fa-crown', label: 'Dashboard Ejecutivo', link: '/dashboard-ejecutivo.html', permiso: 'ver_dashboard_ejecutivo' },
         { divider: true },
         { icon: 'fas fa-users-cog', label: 'Usuarios', link: '/usuarios.html', permiso: 'ver_usuarios' },
+        { icon: 'fas fa-user-shield', label: 'Roles y permisos', link: '/roles.html', permiso: 'gestionar_roles' },
         { icon: 'fas fa-cog', label: 'Configuración', link: '/configuracion.html', permiso: 'ver_configuracion' },
         { icon: 'fas fa-bell', label: 'Notificaciones', link: '/notificaciones.html', permiso: 'ver_notificaciones' },
         { icon: 'fas fa-user-circle', label: 'Perfil', link: '/perfil.html', permiso: null },
@@ -66,10 +67,26 @@ function getSidebarHTML() {
     var user = getCurrentUser();
     if (!user) return '';
 
-    var items = MENU_CONFIG[user.role] || [];
-    if (!MENU_CONFIG[user.role]) {
-        console.error('⛔ Sidebar: rol no reconocido:', user.role);
-    }
+    var items = MENU_CONFIG[user.role] || [
+        { icon: 'fas fa-chart-pie', label: 'Dashboard', link: '/dashboard.html', permiso: 'ver_dashboard' },
+        { icon: 'fas fa-plus-circle', label: 'Nueva Requisición', link: '/nueva-requisicion.html', permiso: 'crear_requisicion' },
+        { icon: 'fas fa-list-ul', label: 'Requisiciones', link: '/requisiciones.html', permiso: 'ver_requisiciones' },
+        { icon: 'fas fa-user-tie', label: 'Reclutamiento', link: '/reclutadora.html', permiso: 'ver_reclutadora' },
+        { icon: 'fas fa-briefcase', label: 'Vacantes', link: '/vacantes.html', permiso: 'ver_vacantes' },
+        { icon: 'fas fa-users', label: 'Candidatos', link: '/candidatos.html', permiso: 'ver_candidatos' },
+        { icon: 'fas fa-tasks', label: 'Seguimiento', link: '/seguimiento.html', permiso: 'ver_seguimiento' },
+        { divider: true },
+        { icon: 'fas fa-chart-line', label: 'Reportes', link: '/reportes.html', permiso: 'ver_reportes' },
+        { icon: 'fas fa-crown', label: 'Dashboard Ejecutivo', link: '/dashboard-ejecutivo.html', permiso: 'ver_dashboard_ejecutivo' },
+        { divider: true },
+        { icon: 'fas fa-users-cog', label: 'Usuarios', link: '/usuarios.html', permiso: 'ver_usuarios' },
+        { icon: 'fas fa-user-shield', label: 'Roles y permisos', link: '/roles.html', permiso: 'gestionar_roles' },
+        { icon: 'fas fa-cog', label: 'Configuración', link: '/configuracion.html', permiso: 'ver_configuracion' },
+        { icon: 'fas fa-bell', label: 'Notificaciones', link: '/notificaciones.html', permiso: 'ver_notificaciones' },
+        { icon: 'fas fa-robot', label: 'Smart AI', link: '/ia.html', permiso: 'ver_ia' },
+        { icon: 'fas fa-user-circle', label: 'Perfil', link: '/perfil.html', permiso: null }
+    ];
+
     var navHTML = '';
     var currentPage = window.location.pathname.split('/').pop() || 'dashboard.html';
 
@@ -214,7 +231,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var currentPage = window.location.pathname;
     if (!currentPage.includes('login.html') && currentPage !== '/') {
         var user = getCurrentUser();
-        if (user) {
+        if (user && Array.isArray(user.permisos)) {
             initLayout();
         }
     }
