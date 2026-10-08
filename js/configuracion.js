@@ -1,10 +1,10 @@
 // ============================================================
 // SIMAN SMARTRECRUIT
-// CONFIGURACION.JS - FASE 3
+// CONFIGURACION.JS - FASE 4.3.2
 // SUPABASE = FUENTE ÚNICA DE CONFIGURACIÓN
 // ============================================================
 
-console.log('⚙️ Configuración Supabase Fase 3 cargando...');
+console.log('⚙️ Configuración Supabase Fase 4.3.2 cargando...');
 
 
 // ============================================================
@@ -296,6 +296,86 @@ async function cargarReclutadores() {
     });
 }
 
+
+// ============================================================
+// CARGAR TODA LA CONFIGURACIÓN
+// ============================================================
+
+async function cargarConfiguracionSupabase(forzar) {
+    if (datosCargados && !forzar) return datosConfiguracion;
+    if (promesaConfiguracion && !forzar) return promesaConfiguracion;
+
+    cargandoConfiguracion = true;
+    promesaConfiguracion = (async function () {
+        try {
+            console.log('🔄 Cargando configuración desde Supabase...');
+
+            var resultados = await Promise.all([
+                cargarCentrosComerciales(),
+                cargarTiendas(),
+                cargarDepartamentos(),
+                cargarTiposContratacion(),
+                cargarPrioridades(),
+                cargarMotivos(),
+                cargarReclutadores()
+            ]);
+
+            datosConfiguracion.comerciales = ordenarPorNombre(resultados[0]);
+            datosConfiguracion.tiendas = ordenarPorNombre(resultados[1]);
+            datosConfiguracion.departamentos = ordenarPorNombre(resultados[2]);
+            datosConfiguracion.tiposContratacion = ordenarPorNombre(resultados[3]);
+            datosConfiguracion.prioridades = ordenarPorNombre(resultados[4]);
+            datosConfiguracion.motivos = ordenarPorNombre(resultados[5]);
+            datosConfiguracion.reclutadores = ordenarPorNombre(resultados[6]);
+            datosCargados = true;
+
+            console.log('✅ Configuración cargada desde Supabase');
+            console.log('🏢 Centros:', datosConfiguracion.comerciales.length);
+            console.log('🛒 Tiendas:', datosConfiguracion.tiendas.length);
+            console.log('🏛️ Departamentos:', datosConfiguracion.departamentos.length);
+            console.log('👩‍💼 Reclutadores:', datosConfiguracion.reclutadores.length);
+
+            window.dispatchEvent(new CustomEvent('datosConfiguracionListos', {
+                detail: datosConfiguracion
+            }));
+
+            return datosConfiguracion;
+        } catch (error) {
+            datosCargados = false;
+            console.error('❌ Error cargando configuración:', error);
+            throw error;
+        } finally {
+            cargandoConfiguracion = false;
+            promesaConfiguracion = null;
+        }
+    })();
+
+    return promesaConfiguracion;
+}
+
+// ============================================================
+// API PÚBLICA / COMPATIBILIDAD ENTRE MÓDULOS
+// ============================================================
+
+function obtenerDatosConfig() {
+    return datosConfiguracion;
+}
+
+function obtenerComerciales() {
+    return solamenteActivos(datosConfiguracion.comerciales);
+}
+
+function obtenerTiendas() {
+    return solamenteActivos(datosConfiguracion.tiendas);
+}
+
+function obtenerDepartamentos() {
+    return solamenteActivos(datosConfiguracion.departamentos);
+}
+
+function obtenerTiposContratacion() {
+    return solamenteActivos(datosConfiguracion.tiposContratacion);
+}
 
 function obtenerPrioridades() {
 
@@ -871,4 +951,4 @@ document.addEventListener('DOMContentLoaded',async function(){
     }catch(error){console.error('❌ No se pudo inicializar Configuración Fase 4.1.1:',error);toastConfig('No se pudo cargar Configuración','error');}
 });
 
-console.log('✅ configuracion.js Fase 4.1.1 cargado');
+console.log('✅ configuracion.js Fase 4.3.2 cargado');
