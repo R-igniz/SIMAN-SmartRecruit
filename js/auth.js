@@ -174,7 +174,7 @@ function roleCodeToRole(roleCode) {
             .toLowerCase();
 
 
-    return roles[codigo] || null;
+    return roles[codigo] || String(roleCode).trim();
 }
 
 
@@ -311,6 +311,18 @@ async function obtenerPerfilSupabase(authUser) {
                 'Central'
         };
 
+
+        // Fase 4.4.2: permisos reales de Supabase, nunca conceder acceso por fallback.
+        var respuestaPermisos = await client.rpc('rbac_mis_permisos');
+        if (respuestaPermisos.error || !Array.isArray(respuestaPermisos.data)) {
+            console.error('❌ No se pudieron cargar permisos RBAC:', respuestaPermisos.error);
+            usuario.permisos = [];
+            usuario.rbac_error = true;
+        } else {
+            usuario.permisos = respuestaPermisos.data.map(function (fila) { return fila.permiso; });
+            usuario.rbac_error = false;
+            console.log('✅ Permisos RBAC cargados:', usuario.permisos.length);
+        }
 
         return usuario;
 
@@ -751,16 +763,10 @@ function tienePermiso(permiso) {
     }
 
 
-    var permisosRol =
-        PERMISOS[usuario.role] ||
-        [];
-
-
-    var permitido =
-        permisosRol.indexOf(
-            permiso
-        ) !== -1;
-
+    // Los permisos se obtienen de rbac_mis_permisos() al restaurar la sesión.
+    // No utilizar PERMISOS fijo como alternativa: fallar cerrado.
+    var permisosRol = Array.isArray(usuario.permisos) ? usuario.permisos : [];
+    var permitido = permisosRol.indexOf(permiso) !== -1;
 
     console.log(
         '🔍 Permiso:',
@@ -925,6 +931,9 @@ var permisosPorPagina = {
 
     '/usuarios.html':
         'ver_usuarios',
+
+    '/roles.html':
+        'gestionar_roles',
 
     '/configuracion.html':
         'ver_configuracion',
